@@ -1,0 +1,5 @@
+{"landing_height":-135.5965,"eroded_cells":-127.8894,"row_trans":-98.20315,"col_trans":-70.89582,"pits":-676.4979,"cuml_wells":-20.46972,"tetris":25400.9219,"tetris_progress":358.7894}
+
+#HANDCODED REVISION TO VALUE OF SCORING A TETRIS ABOVE. Ramped up by two orders of magnitude.
+
+{"landing_height":-135.5965,"eroded_cells":-127.8894,"row_trans":-98.20315,"col_trans":-70.89582,"pits":-676.4979,"cuml_wells":-20.46972,"tetris":254.9219,"tetris_progress":358.7894}
