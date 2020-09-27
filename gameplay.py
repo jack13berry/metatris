@@ -359,7 +359,7 @@ class World( object ):
     else:
       #self.screen = pygame.display.set_mode( modes[1], 0 )
       self.screen = pygame.display.set_mode( (800,600), 0 )
-      pygame.display.set_caption("Meta-T")
+      pygame.display.set_caption("Game Changer")
     self.worldsurf = self.screen.copy()
     self.worldsurf_rect = self.worldsurf.get_rect()
 

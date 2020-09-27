@@ -17,7 +17,8 @@ build_options = {
   ]
 } # 'packages': [], 'excludes': []}
 
-base = 'Console'
+#base = 'Console'
+base = 'Win32GUI'
 
 executables = [
   Executable(
