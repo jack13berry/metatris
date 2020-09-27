@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, r'.\lib')
+sys.path.insert(0, r'.\extlib')
 
 from cx_Freeze import setup, Executable
 

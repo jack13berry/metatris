@@ -1,7 +1,7 @@
 # Based on the work by John K. Lindstedt
 
 import sys
-sys.path.insert(0, r'.\lib')
+sys.path.insert(0, r'.\extlib')
 
 try:
   import pyviewx
