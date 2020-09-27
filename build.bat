@@ -1,6 +1,8 @@
 @echo off
-rem "python setup.py build"
-rem for %%a in (.\build\exe.*) do echo %%a
+
+python setup.py build
+for %%a in (.\build\exe.*) do echo %%a
+
 for /D /r %%P in ("build\exe.*") do (
   echo Will copy resources into build\%%~nxP
   for %%a in (boards configs controllers media) do (
