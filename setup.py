@@ -30,8 +30,6 @@ executables = [
     'main.py',
     base=base,
     targetName = 'game-changer',
-    shortcutName = 'Game Changer',
-    shortcutDir = 'StartupFolder',
     icon = 'media/game-changer.ico'
   )
 ]
