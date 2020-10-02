@@ -1,4 +1,5 @@
 import pygame, platform, time
+import pygame, numpy
 
 get_time = time.time if platform.system() == 'Windows' else time.process_time
 
@@ -152,10 +153,15 @@ def pauseView( self ):
     textSurface(self, "High:", self.scores_font, ( 210, 210, 210 ), self.high_lab_left, self.worldsurf, "midleft" )
     textSurface(self, str( self.high_score ), self.scores_font, ( 210, 210, 210 ), self.high_left, self.worldsurf, "midright" )
 
-  textSurface(self, "Game %d" % self.game_number, self.intro_font, ( 196, 196, 196 ), ( self.gamesurf_rect.centerx, self.gamesurf_rect.top / 2 ), self.worldsurf )
+  # textSurface(self, "Game %d" % self.game_number, self.intro_font, ( 196, 196, 196 ), ( self.gamesurf_rect.centerx, self.gamesurf_rect.top / 2 ), self.worldsurf )
+  textSurface(self, "Game %d" % self.game_number, self.intro_font, ( 196, 196, 196 ), ( 120, 60 ), self.worldsurf )
+
+  textSurface(self, "Tetrises:", self.scores_font, ( 210, 210, 210 ), self.zoids_lab_left, self.worldsurf, "midleft" )
   textSurface(self, "Score:", self.scores_font, ( 210, 210, 210 ), self.score_lab_left, self.worldsurf, "midleft" )
   textSurface(self, "Lines:", self.scores_font, ( 210, 210, 210 ), self.lines_lab_left, self.worldsurf, "midleft" )
   textSurface(self, "Level:", self.scores_font, ( 210, 210, 210 ), self.level_lab_left, self.worldsurf, "midleft" )
+
+  textSurface(self, str( self.zoids_placed ), self.scores_font, ( 210, 210, 210 ), self.zoids_left, self.worldsurf, "midright" )
   textSurface(self, str( self.score ), self.scores_font, ( 210, 210, 210 ), self.score_left, self.worldsurf, "midright" )
   textSurface(self, str( self.lines_cleared ), self.scores_font, ( 210, 210, 210 ), self.lines_left, self.worldsurf, "midright" )
   textSurface(self, str( self.level ), self.scores_font, ( 210, 210, 210 ), self.level_left, self.worldsurf, "midright" )
@@ -261,7 +267,6 @@ def draw_AAR(self):
 
   draw_gridlines(self)
 
-
   #self.nextsurf.fill( ( 100, 100, 100 ) )
   self.nextsurf.fill( self.bg_color )
   draw_next_zoid(self)
@@ -274,14 +279,9 @@ def draw_AAR(self):
     textSurface(self, "High:", self.scores_font, ( 210, 210, 210 ), self.high_lab_left, self.worldsurf, "midleft" )
     textSurface(self, str( self.high_score ), self.scores_font, ( 210, 210, 210 ), self.high_left, self.worldsurf, "midright" )
 
-  textSurface(self, "Game %d" % self.game_number, self.intro_font, ( 196, 196, 196 ), ( self.gamesurf_rect.centerx, self.gamesurf_rect.top / 2 ), self.worldsurf )
-  textSurface(self, "Score:", self.scores_font, ( 210, 210, 210 ), self.score_lab_left, self.worldsurf, "midleft" )
-  textSurface(self, "Lines:", self.scores_font, ( 210, 210, 210 ), self.lines_lab_left, self.worldsurf, "midleft" )
-  textSurface(self, "Level:", self.scores_font, ( 210, 210, 210 ), self.level_lab_left, self.worldsurf, "midleft" )
-  textSurface(self, str( self.score ), self.scores_font, ( 210, 210, 210 ), self.score_left, self.worldsurf, "midright" )
-  textSurface(self, str( self.lines_cleared ), self.scores_font, ( 210, 210, 210 ), self.lines_left, self.worldsurf, "midright" )
-  textSurface(self, str( self.level ), self.scores_font, ( 210, 210, 210 ), self.level_left, self.worldsurf, "midright" )
-  draw_newscore(self)
+  # textSurface(self, "Game %d" % self.game_number, self.intro_font, ( 196, 196, 196 ), ( self.gamesurf_rect.centerx, self.gamesurf_rect.top / 2 ), self.worldsurf )
+  textSurface(self, "Game %d" % self.game_number, self.intro_font, ( 196, 196, 196 ), ( 120, 60 ), self.worldsurf )
+  draw_scores(self)
 
   draw_AAR_zoids(self)
 
@@ -309,19 +309,22 @@ def draw_game( self ):
     draw_kept_zoid(self)
 
 
-  textSurface(self, "Game %d" % self.game_number, self.intro_font, ( 196, 196, 196 ), ( self.gamesurf_rect.centerx, self.gamesurf_rect.top / 2 ), self.worldsurf )
+  # textSurface(self, "Game %d" % self.game_number, self.intro_font, ( 196, 196, 196 ), ( self.gamesurf_rect.centerx, self.gamesurf_rect.top / 2 ), self.worldsurf )
+  textSurface(self, "Game %d" % self.game_number, self.intro_font, ( 196, 196, 196 ), ( 120, 60 ), self.worldsurf )
 
-###
 
 def draw_scores( self ):
+  textSurface(self, "Tetrises:", self.scores_font, ( 210, 210, 210 ), self.zoids_lab_left, self.worldsurf, "midleft" )
   textSurface(self, "Score:", self.scores_font, ( 210, 210, 210 ), self.score_lab_left, self.worldsurf, "midleft" )
   textSurface(self, "Lines:", self.scores_font, ( 210, 210, 210 ), self.lines_lab_left, self.worldsurf, "midleft" )
   textSurface(self, "Level:", self.scores_font, ( 210, 210, 210 ), self.level_lab_left, self.worldsurf, "midleft" )
+
+  textSurface(self, str( self.zoids_placed ), self.scores_font, ( 210, 210, 210 ), self.zoids_left, self.worldsurf, "midright" )
   textSurface(self, str( self.score ), self.scores_font, ( 210, 210, 210 ), self.score_left, self.worldsurf, "midright" )
   textSurface(self, str( self.lines_cleared ), self.scores_font, ( 210, 210, 210 ), self.lines_left, self.worldsurf, "midright" )
   textSurface(self, str( self.level ), self.scores_font, ( 210, 210, 210 ), self.level_left, self.worldsurf, "midright" )
   draw_newscore(self)
-###
+
 
 def draw_newscore( self ):
   #Notes
@@ -352,9 +355,11 @@ def draw_newscore( self ):
     pygame.draw.rect( self.worldsurf, (0, 255, 0), (bar_x,bar_y-red_height-orange_height-yellow_height-green_height,bar_width,green_height), bar_thickness)
 
   #textSurface(self, "New:", self.scores_font, ( 210, 210, 210 ), self.newscore_lab_left, self.worldsurf, "midleft" )
+  # print ("Score: '%s' / '%s'" % (self.newscore, self.metascore))
   textSurface(self, "{:0.2f}".format(self.newscore), self.scores_font, ( 210, 210, 210 ), (bar_x+bar_width+40,bar_top), self.worldsurf, "midright" )
   textSurface(self, "Meta:", self.scores_font, ( 210, 210, 210 ), (600,185), self.worldsurf, "midleft" )
   textSurface(self, "{:0.3f}".format(self.metascore), self.scores_font, ( 210, 210, 210 ), (720,185), self.worldsurf, "midright" )
+  textSurface(self, "{:0.3f}".format(self.newscore), self.scores_font, (77, 77, 77), (400, 30), self.worldsurf)
 
 ###
 
@@ -365,7 +370,11 @@ def draw_borders( self ):
     color = (min(250,150+(avg_conf/3)),max(150,250-(avg_conf/3)),50)
   else:
     color = self.border_color
-  pygame.draw.rect( self.worldsurf, color, self.gamesurf_border_rect, self.border_thickness )
+
+  metagreen = max(0, int( (100-self.newscore)*(2.55) ))
+  metared = min(400 - metagreen, 255)
+  metacolor = ( metared, metagreen, 90 )
+  pygame.draw.rect( self.worldsurf, metacolor, self.gamesurf_border_rect, self.border_thickness )
   if self.look_ahead > 0:
     pygame.draw.rect( self.worldsurf, color, self.nextsurf_border_rect, self.border_thickness )
   if self.keep_zoid:

@@ -18,11 +18,11 @@ import tkinter.simpledialog
 
 import pygame, numpy
 
-import logger, cnf, drawer
 
 from zoid import Zoid
 
 from simulator import TetrisSimulator
+import logger, cnf, drawer
 
 try:
   #from pyfixation import VelocityFP
@@ -40,12 +40,9 @@ except ImportError:
   # print("Warning: Eyetracker not supported on this machine.")
   eyetrackerSupport = False
 
-get_time = time.time
 
 sep = os.path.sep
-if platform.system() == 'Windows':
-  get_time = time.process_time
-
+get_time = time.time if platform.system() == 'Windows' else time.process_time
 
 zoid_col_offset = {
   "O":[4],
@@ -477,16 +474,19 @@ class World( object ):
 
 
     # Text labels
-
-    self.score_lab_left = ( self.score_offset, self.worldsurf_rect.height / 2 )
-    self.high_lab_left = ( self.score_offset, self.score_lab_left[1] - 50 )
-    self.lines_lab_left = ( self.score_offset, self.score_lab_left[1] + 50 )
-    self.level_lab_left = ( self.score_offset, self.lines_lab_left[1] + 50 )
-    self.newscore_lab_left = ( self.score_offset, self.level_lab_left[1] + 50 )
-    self.metascore_lab_left = ( self.score_offset, self.newscore_lab_left[1] + 50 )
+    midtopy = self.worldsurf_rect.height / 2
+    lineheight = 50
+    self.high_lab_left = ( self.score_offset, midtopy - 2*lineheight )
+    self.zoids_lab_left = ( self.score_offset, midtopy - lineheight )
+    self.score_lab_left = ( self.score_offset, midtopy )
+    self.lines_lab_left = ( self.score_offset, midtopy + lineheight )
+    self.level_lab_left = ( self.score_offset, midtopy + 2*lineheight )
+    self.newscore_lab_left = ( self.score_offset, midtopy + 3*lineheight )
+    self.metascore_lab_left = ( self.score_offset, midtopy + 4*lineheight )
 
     self.label_offset = int(280.0 / 1440.0 * self.worldsurf_rect.width)
     self.high_left = ( self.score_offset + self.label_offset, self.high_lab_left[1] )
+    self.zoids_left = ( self.score_offset + self.label_offset, self.zoids_lab_left[1] )
     self.score_left = ( self.score_offset + self.label_offset, self.score_lab_left[1] )
     self.lines_left = ( self.score_offset + self.label_offset, self.lines_lab_left[1] )
     self.level_left = ( self.score_offset + self.label_offset, self.level_lab_left[1] )
@@ -764,7 +764,6 @@ class World( object ):
             elif event.button == self.JOY_RIGHT:
               self.input_trans_stop(1)
 
-
       #Gameplay state controls
       elif self.state == self.STATE_PLAY:
         if event.type == pygame.KEYDOWN:
@@ -801,7 +800,6 @@ class World( object ):
           elif event.key == pygame.K_e:
             self.input_swap()
 
-
           elif event.key == pygame.K_q:
             self.input_mask_toggle(True)
 
@@ -824,7 +822,6 @@ class World( object ):
               self.hints += 1
               self.hint_toggle = True
 
-
         elif event.type == pygame.KEYUP:
           if event.key == pygame.K_DOWN or event.key == pygame.K_s:
             self.input_stop_drop()
@@ -836,18 +833,21 @@ class World( object ):
             self.input_trans_stop(1)
           elif event.key == pygame.K_q:
             self.input_mask_toggle(False)
+
           elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
             if self.inverted:
               if pygame.KMOD_SHIFT:
                 self.add_latency("RL")
               else:
                 self.add_latency("RR")
+
           elif event.key == pygame.K_UP or event.key == pygame.K_w:
             if not self.inverted:
               if pygame.KMOD_SHIFT:
                 self.add_latency("RL")
               else:
                 self.add_latency("RR")
+
           elif event.key == pygame.K_j:
             self.add_latency("RR")
           elif event.key == pygame.K_k:
@@ -940,8 +940,6 @@ class World( object ):
               #print("pressed", pressed)
 
 
-
-
         elif event.type == pygame.JOYBUTTONDOWN:
           #player 1
           if not self.two_player or event.joy == 0:
@@ -983,7 +981,6 @@ class World( object ):
               self.input_place()
 
 
-
         elif event.type == pygame.JOYBUTTONUP:
           if not self.two_player or event.joy == 0:
             if event.button == self.JOY_DOWN:
@@ -1010,6 +1007,7 @@ class World( object ):
         if event.type == pygame.JOYBUTTONDOWN:
           if event.button == self.JOY_START:
             self.input_pause()
+
 
       #Gameover state controls
       elif self.state == self.STATE_GAMEOVER:
@@ -1339,7 +1337,7 @@ class World( object ):
 
   #Stamps the current zoid onto the board representation.
   def place_zoid( self ):
-
+    self.zoids_placed += 1
     do_place = True
     if self.n_back:
       if len(self.zoid_buff) <= self.nback_n:
@@ -1752,6 +1750,7 @@ class World( object ):
     #reset score
     self.level = self.starting_level
     self.lines_cleared = 0
+    self.zoids_placed = 0
     self.score = 0
     self.newscore = 0
     self.metascore = 0

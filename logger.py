@@ -226,8 +226,6 @@ def universal( self, event_type, loglist, complete = False, evt_id = False, evt_
       for i in range(0, 18):
         data.append("")
 
-
-
   if features or (event_type == "GAME_EVENT" and evt_id == "KEYPRESS" and evt_data1 == "PRESS" and self.episode_number > 0):
     factor1  = 0.663025211
     factor2  = 0.213249645
