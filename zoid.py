@@ -3,6 +3,7 @@ John K. Lindstedt
 """
 
 import math
+import logger
 
 class Zoid( object ):
     next_reps = {
@@ -37,7 +38,7 @@ class Zoid( object ):
         'TWO':    [[28,28]],
         'ONE':    [[29]]
         }
-    
+
     #piece representation in game
     #empty rows present to aid in rotation.
     shapes = {
@@ -60,7 +61,7 @@ class Zoid( object ):
                [[7, 7, 0], [0, 7, 0], [0, 7, 0]],
                [[0, 0, 7], [7, 7, 7], [0, 0, 0]],
                [[0, 7, 0], [0, 7, 0], [0, 7, 7]]],
-               
+
         #Pentix pieces
         'BIG_T':  [[[8,8,8], [0,8,0],[0,8,0]],
                    [[0,0,8], [8,8,8],[0,0,8]],
@@ -76,7 +77,7 @@ class Zoid( object ):
                    [[0,11,11,0],[0,0,11,0],[0,0,11,0],[0,0,11,0]],
                    [[0,0,0,0],[0,0,0,11],[11,11,11,11],[0,0,0,0]],
                    [[0,11,0,0],[0,11,0,0],[0,11,0,0],[0,11,11,0]]],
-                   
+
         'BIG_S':  [[[0,12,12],[0,12,0],[12,12,0]],
                    [[12,0,0],[12,12,12],[0,0,12]]],
         'BIG_Z':  [[[13,13,0],[0,13,0],[0,13,13]],
@@ -126,7 +127,7 @@ class Zoid( object ):
                    [[0,0,25,0],[0,0,25,0],[0,25,25,0],[0,25,0,0]],
                    [[0,0,0,0],[25,25,0,0],[0,25,25,25],[0,0,0,0]],
                    [[0,0,25,0],[0,25,25,0],[0,25,0,0],[0,25,0,0]]],
-        
+
         #Pentix FULL pieces
         'MINI_I': [[[0,0,0],[26,26,26],[0,0,0]],
                    [[0,26,0],[0,26,0],[0,26,0]]],
@@ -138,23 +139,23 @@ class Zoid( object ):
                    [[28,0],[28,0]]],
         'ONE':    [[[29]]]
         }
-    
-    
+
+
     set_tetris = ["I", "O", "T", "S", "Z", "J", "L"]
     set_pentix = ["BIG_T","BIG_I","BIG_J","BIG_L","BIG_S","BIG_Z",
                   "PLUS","U","BIG_V","D","B","W",
                   "J_DOT","L_DOT","J_STILT","L_STILT","LONG_S","LONG_Z"]
     set_tiny = ["MINI_I","V","TWO","ONE"]
-    
+
     #NES color types
     tetris_color_types = [0, 0, 0, 2, 1, 2, 1]
-    pentix_color_types =  [0, 0, 2, 1, 2, 1, 
-                         0, 0, 0, 2, 1, 0, 
+    pentix_color_types =  [0, 0, 2, 1, 2, 1,
+                         0, 0, 0, 2, 1, 0,
                          2, 1, 2, 1, 2, 1]
     tiny_color_types = [0, 0, 0, 0]
-    
+
     all_color_types = tetris_color_types + pentix_color_types + tiny_color_types
-        
+
     NES_colors = [
             [( 74, 0, 255 ), ( 0, 165, 255 )], #L0
             [( 0, 148, 0 ), ( 148, 214, 0 )], #L1
@@ -167,7 +168,7 @@ class Zoid( object ):
             [( 74, 0, 255 ), ( 189, 66, 0 )], #L8
             [( 189, 66, 0 ), ( 239, 166, 0 )], #L9
             ]
-    
+
     #IOTSZJL
     STANDARD_colors = [
             (200,200,200),
@@ -179,38 +180,38 @@ class Zoid( object ):
             (11, 36, 251),
             (239, 121, 33)
             ]
-    
+
     #for starting position and location logging
             #['Type'][rotation][row,col]
-    offset = {'I':[[2,0],[0,2]], 
-              'O':[[1,1]], 
-              'T':[[1,0],[0,0],[0,0],[0,1]], 
-              'S':[[1,0],[0,1]], 
-              'Z':[[1,0],[0,1]], 
-              'J':[[1,0],[0,0],[0,0],[0,1]], 
-              'L':[[1,0],[0,0],[0,0],[0,1]], 
-              'BIG_T':[[0,0],[0,0],[0,0],[0,0]], 
+    offset = {'I':[[2,0],[0,2]],
+              'O':[[1,1]],
+              'T':[[1,0],[0,0],[0,0],[0,1]],
+              'S':[[1,0],[0,1]],
+              'Z':[[1,0],[0,1]],
+              'J':[[1,0],[0,0],[0,0],[0,1]],
+              'L':[[1,0],[0,0],[0,0],[0,1]],
+              'BIG_T':[[0,0],[0,0],[0,0],[0,0]],
               'BIG_I':[[2,0],[0,2]],
-              
-              'BIG_J':[[1,0],[0,1],[1,0],[0,1]], 
-              'BIG_L':[[1,0],[0,1],[1,0],[0,1]], 
-              'BIG_S':[[0,0],[0,0]], 
-              'BIG_Z':[[0,0],[0,0]], 
-              'PLUS':[[0,0]], 
-              'U': [[1,0],[0,0],[0,0],[0,1]], 
-              'BIG_V': [[0,0],[0,0],[0,0],[0,0]], 
-              'D': [[1,0],[1,0],[1,1],[1,1]], 
-              'B': [[1,1],[1,1],[1,0],[0,1]], 
-              'W': [[0,0],[0,0],[0,0],[0,0]], 
-              'J_DOT': [[0,0],[0,0],[0,0],[0,0]], 
-              'L_DOT': [[0,0],[0,0],[0,0],[0,0]], 
-              'J_STILT': [[1,0],[0,1],[1,0],[0,1]], 
-              'L_STILT': [[1,0],[0,1],[1,0],[0,1]], 
-              'LONG_S': [[1,0],[0,1],[1,0],[0,1]], 
-              'LONG_Z': [[1,0],[0,1],[1,0],[0,1]], 
-              'MINI_I': [[1,0],[0,1]], 
-              'V': [[0,0],[0,0],[0,0],[0,0]], 
-              'TWO': [[0,0],[0,0]], 
+
+              'BIG_J':[[1,0],[0,1],[1,0],[0,1]],
+              'BIG_L':[[1,0],[0,1],[1,0],[0,1]],
+              'BIG_S':[[0,0],[0,0]],
+              'BIG_Z':[[0,0],[0,0]],
+              'PLUS':[[0,0]],
+              'U': [[1,0],[0,0],[0,0],[0,1]],
+              'BIG_V': [[0,0],[0,0],[0,0],[0,0]],
+              'D': [[1,0],[1,0],[1,1],[1,1]],
+              'B': [[1,1],[1,1],[1,0],[0,1]],
+              'W': [[0,0],[0,0],[0,0],[0,0]],
+              'J_DOT': [[0,0],[0,0],[0,0],[0,0]],
+              'L_DOT': [[0,0],[0,0],[0,0],[0,0]],
+              'J_STILT': [[1,0],[0,1],[1,0],[0,1]],
+              'L_STILT': [[1,0],[0,1],[1,0],[0,1]],
+              'LONG_S': [[1,0],[0,1],[1,0],[0,1]],
+              'LONG_Z': [[1,0],[0,1],[1,0],[0,1]],
+              'MINI_I': [[1,0],[0,1]],
+              'V': [[0,0],[0,0],[0,0],[0,0]],
+              'TWO': [[0,0],[0,0]],
               'ONE': [[0,0]]
               }
 
@@ -225,12 +226,12 @@ class Zoid( object ):
         self.refresh_floor()
         ##account for proper initial placement
         #...#
-    
+
     ###
-    
+
     def init_pos( self ):
         self.col = int(self.world.game_wd / 2) - 2 #normally column 3
-        self.row = Zoid.offset[self.type][0][0] + self.world.game_ht 
+        self.row = Zoid.offset[self.type][0][0] + self.world.game_ht
         self.rot = 0
 
     def get_shape( self, rot = None ):
@@ -238,19 +239,19 @@ class Zoid( object ):
             rot = self.rot
         return self.shape[rot]
     ###
-    
+
     def get_row( self ):
         return self.row - Zoid.offset[self.type][self.rot][0]
-    
+
     def get_col( self ):
         return self.col + Zoid.offset[self.type][self.rot][1]
-    
+
     def get_pos( self ):
         return[self.get_col(), self.get_row()]
-            
+
     def get_next_rep( self ):
         return Zoid.next_reps[self.type]
-    
+
     #remember: + is CLOCKWISE, - is COUNTERCLOCKWISE
     def rotate( self, dir ):
         if dir == 1:
@@ -259,14 +260,14 @@ class Zoid( object ):
         elif dir == -1:
             #self.world.add_latency("SRL")
             self.world.rots += 1
-        self.world.log_game_event( "ZOID", "ROTATE", dir )
+        logger.game_event(self.world, "ZOID", "ROTATE", dir )
         new_rot = ( self.rot + dir ) % self.rots
         if not self.collide( self.col, self.row, new_rot, self.world.board ):
             self.rot = new_rot
             self.world.sounds['rotate'].play()
-        
+
         else:
-            self.world.log_game_event( "ZOID", data1 = "ROTATE", data2 = "FAILURE")
+            logger.game_event( self.world, "ZOID", data1 = "ROTATE", data2 = "FAILURE")
             if self.world.wall_kicking:
                 if not self.collide( self.col - 1, self.row, new_rot, self.world.board ):
                     self.rot = new_rot
@@ -281,55 +282,55 @@ class Zoid( object ):
                     self.col = self.col + 2
                     self.world.sounds['rotate'].play()
         self.refresh_floor()
-        
+
     ###
 
     def translate( self, dir ):
-        self.world.log_game_event( "ZOID", "TRANSLATE", dir )
+        logger.game_event(self.world, "ZOID", "TRANSLATE", dir )
         new_col = self.col + dir
         if not self.collide( new_col, self.row, self.rot, self.world.board ):
             self.col = new_col
             self.world.sounds['trans'].play()
         else:
-            self.world.log_game_event( "ZOID", data1 = "TRANSLATE", data2 = "FAILURE")
+            logger.game_event(self.world, "ZOID", data1 = "TRANSLATE", data2 = "FAILURE")
         self.refresh_floor()
     ###
 
     def down( self , user_down ):
         #log event
         if user_down == 0:
-            self.world.log_game_event( "ZOID", "DOWN" )
+            logger.game_event(self.world, "ZOID", "DOWN" )
             self.world.add_latency("SD")
             self.world.s_drops += 1
         else:
-            self.world.log_game_event( "ZOID", "U-DOWN")
+            logger.game_event(self.world, "ZOID", "U-DOWN")
             self.world.add_latency("UD")
             self.world.u_drops += 1
-        
+
         #If no collision
         new_row = self.row - 1
         if not self.collide( self.col, new_row, self.rot, self.world.board ):
             self.row = new_row
-            
+
             #score bonus for user-downs
             if user_down == 1 and self.world.drop_bonus:
                 self.world.drop_score += 1
-        
+
         #otherwise
         elif self.world.gravity:
             self.world.end_trial()
-            
+
         #player-downs award 1 point per down
     ###
-    
+
     def to_bottom( self, move = False ):
         if move:
             self.row = self.floor
             self.world.drop_score += self.floor_bonus
         return self.floor
-    
+
     #made this so it only calculates when needed, as opposed to every drawing frame!
-    def refresh_floor( self ): 
+    def refresh_floor( self ):
         if self.world.zoid_slam or self.world.ghost_zoid:
             self.floor = self.row
             self.floor_bonus = 0
@@ -339,13 +340,13 @@ class Zoid( object ):
                     self.floor -= 1
                     if self.world.drop_bonus:
                         self.floor_bonus += 1
-        
-    
+
+
     def place( self ):
         new_row = self.row - 1
         if self.collide( self.col, new_row, self.rot, self.world.board ):
             self.world.end_trial()
-    
+
     def place_pos( self, col, rot, row, move = True):
         #print("col:",self.col,"rot:",self.rot,"row",self.row)
         newcol = col - Zoid.offset[self.type][rot][1]
@@ -409,5 +410,3 @@ class Zoid( object ):
             iy += 1
         return False
     ###
-
-    
