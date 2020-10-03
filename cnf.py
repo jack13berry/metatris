@@ -67,8 +67,6 @@ def load( self, name = "default" ):
 
   self.set_var('continues', 0, 'int')
 
-  self.set_var('time_limit', 30, 'int') #defaults to 30secs
-
   ## Game definitions
 
   # Manipulable variable setup
@@ -284,7 +282,5 @@ def load( self, name = "default" ):
   self.set_var('calibration_auto', True, 'bool')
   self.set_var('validation_accuracy', 0.8, 'float')
   self.set_var('automated_revalidation', True, 'bool')
-
-  self.set_var('episode_timeout', True, 'bool')
 
   return True
