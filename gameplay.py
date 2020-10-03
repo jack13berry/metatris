@@ -729,13 +729,11 @@ class World( object ):
         if event.type == pygame.KEYDOWN:
           if event.key == pygame.K_SPACE:
             self.state += 1
-            self.time_limit_start = get_time()
 
         #joystick controls
         elif event.type == pygame.JOYBUTTONDOWN:
           if event.button == self.JOY_START :
             self.state += 1
-            self.time_limit_start = get_time()
 
       #After-Action Review controls
       elif self.state == self.STATE_AAR:
@@ -1011,14 +1009,14 @@ class World( object ):
 
       #Gameover state controls
       elif self.state == self.STATE_GAMEOVER:
-        if self.implement_gameover_fixcross != True or self.time_over() or self.episode_number == self.max_eps - 1:
+        if self.implement_gameover_fixcross != True or self.episode_number == self.max_eps - 1:
           if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
               self.input_continue()
           if event.type == pygame.JOYBUTTONDOWN:
             if event.button == self.JOY_START:
               self.input_continue()
-        elif self.implement_gameover_fixcross == True and self.time_over() != True and self.episode_number != self.max_eps - 1:
+        elif self.implement_gameover_fixcross == True and self.episode_number != self.max_eps - 1:
           if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
               logger.game_event(self, "GAMEOVER_FIXCROSS", "START")
@@ -1184,7 +1182,7 @@ class World( object ):
       logger.game_event(self, "MASK_TOGGLE", on)
 
   def input_continue( self ):
-    if self.continues != 0 and not self.time_over() and self.gameover_anim_tick > self.gameover_tick_max:
+    if self.continues != 0 and self.gameover_anim_tick > self.gameover_tick_max:
       self.state = self.STATE_SETUP
 
   def input_solve( self ):
@@ -1610,23 +1608,18 @@ class World( object ):
         self.hint_toggle = False
 
     logger.game_event(self,  "EPISODE", "END", self.episode_number )
-    if self.time_over() and self.episode_timeout == "episode":
-      self.game_over()
-      logger.game_event(self,  "TIME_OVER" )
     if self.episode_number == self.max_eps - 1:
       self.game_over()
       logger.game_event(self,  "EPISODE_LIMIT_REACHED" )
 
-  def time_over( self ):
-    return (get_time() - self.time_limit_start) >= self.time_limit
 
   #game over detected, change state
   def game_over( self ):
     logger.game_event(self,  "GAME", "END", self.game_number )
-    logger.gameresults(self, complete = False if self.time_over() else True)
+    logger.gameresults(self, complete = True)
     self.continues -= 1
     self.state = self.STATE_GAMEOVER
-    if self.time_over() or self.episode_number == self.max_eps - 1:
+    if self.episode_number == self.max_eps - 1:
       self.sounds['pause'].play()
     else:
       self.sounds['crash'].play()

@@ -67,7 +67,7 @@ def load( self, name = "default" ):
 
   self.set_var('continues', 0, 'int')
 
-  self.set_var('time_limit', 3600, 'int') #defaults to 1 hour
+  self.set_var('time_limit', 30, 'int') #defaults to 30secs
 
   ## Game definitions
 

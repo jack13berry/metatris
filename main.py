@@ -83,11 +83,6 @@ def main():
     type = int,
     help = "Sets number of games to be played this session. Set to 0 for infinite.")
 
-  parser.add_argument( '-tl', '--timelimit',
-    action = "store", dest = "time_limit",
-    type = int,
-    help = "Sets amount of time to play this session. Set to 0 for infinite.")
-
   parser.add_argument( '-wd', '--width',
     action = "store", dest = "game_wd",
     type = int,

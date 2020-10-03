@@ -427,17 +427,15 @@ def draw_game_over( self ):
     colors =  self.NES_colors[self.level%len(self.NES_colors)]
     col = colors[1]
 
-    time_up = (get_time() - self.time_limit_start) >= self.time_limit
     game_complete = self.episode_number == self.max_eps - 1
-    if self.continues == 0 or time_up:
+    if self.continues == 0:
       msg1 = ""
       msg2 = ""
       msg3 = ""
       offset = 0
       col = colors[0]
-    if time_up:
-      msg0 = "TIME'S UP!"
-    elif game_complete:
+
+    if game_complete:
       msg0 = "COMPLETED!"
     elif self.continues < 0:
       msg1 = "Continue?"
