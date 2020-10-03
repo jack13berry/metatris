@@ -376,7 +376,7 @@ def draw_borders( self ):
   metacolor = ( metared, metagreen, 90 )
   pygame.draw.rect( self.worldsurf, metacolor, self.gamesurf_border_rect, self.border_thickness )
   if self.look_ahead > 0:
-    pygame.draw.rect( self.worldsurf, color, self.nextsurf_border_rect, self.border_thickness )
+    pygame.draw.rect( self.worldsurf, metacolor, self.nextsurf_border_rect, self.border_thickness )
   if self.keep_zoid:
     pygame.draw.rect( self.worldsurf, color, self.keptsurf_border_rect, self.border_thickness )
 
