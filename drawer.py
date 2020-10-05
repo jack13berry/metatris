@@ -1,5 +1,6 @@
 import pygame, platform, time
 import pygame, numpy
+import states
 
 get_time = time.time if platform.system() == 'Windows' else time.process_time
 
@@ -449,9 +450,9 @@ def draw_game_over( self ):
 
 #main draw updater
 def drawTheWorld( self ):
-  if self.state == self.STATE_INTRO:
+  if self.state == states.Intro:
     intro(self)
-  elif self.state == self.STATE_PLAY:
+  elif self.state == states.Play:
     self.bg_color = self.tetris_flash_colors[self.tetris_flash_tick % 2]
     if self.tetris_flash_tick > 0:
       self.tetris_flash_tick -= 1
@@ -459,14 +460,14 @@ def drawTheWorld( self ):
     draw_game(self)
     draw_scores(self)
     draw_borders(self)
-  elif self.state == self.STATE_PAUSE:
+  elif self.state == states.Pause:
     self.worldsurf.fill( ( 0, 0, 0 ) )
     pauseView(self)
-  elif self.state == self.STATE_GAMEOVER:
+  elif self.state == states.Gameover:
     draw_game_over(self)
     draw_scores(self)
     draw_borders(self)
-  elif self.state == self.STATE_AAR:
+  elif self.state == states.Aar:
     draw_AAR(self)
   if self.args.eyetracker and eyetrackerSupport and (self.draw_fixation or self.draw_samps or self.draw_avg or self.draw_err or self.spotlight):
     draw_fix(self)

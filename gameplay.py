@@ -23,7 +23,7 @@ from zoid import Zoid
 
 from simulator import TetrisSimulator
 
-import logger, cnf, drawer, inputhandler
+import states, logger, cnf, drawer, inputhandler
 
 try:
   #from pyfixation import VelocityFP
@@ -65,20 +65,11 @@ class World( object ):
   #initializes the game object with most needed resources at startup
   def __init__( self, args ):
     ## Constants
-    self.STATE_CALIBRATE = -1
-    self.STATE_INTRO = 0
-    self.STATE_SETUP = 1
-    self.STATE_PLAY = 2
-    self.STATE_PAUSE = 3
-    self.STATE_GAMEOVER = 4
-    self.STATE_GAMEOVER_FIXATION = 6
 
     self.roll_avg = []
     self.metascore = 0
     self.metaticks = 0
 
-    #After Action Review state
-    self.STATE_AAR = 5
     self.LOG_VERSION = 3.1
 
     #token names for latency logging
@@ -198,7 +189,7 @@ class World( object ):
 
     ## Gameplay variables
 
-    self.state = self.STATE_INTRO
+    self.state = states.Intro
 
     #universal frame timer
     self.timer = 0
@@ -686,12 +677,12 @@ class World( object ):
   #pauses game
   def input_pause( self ):
     if self.pause_enabled:
-      if self.state == self.STATE_PLAY:
-        self.state = self.STATE_PAUSE
+      if self.state == states.Play:
+        self.state = states.Pause
         logger.game_event(self, "PAUSED")
         pygame.mixer.music.pause()
-      elif self.state == self.STATE_PAUSE:
-        self.state = self.STATE_PLAY
+      elif self.state == states.Pause:
+        self.state = states.Play
         logger.game_event(self, "UNPAUSED")
         pygame.mixer.music.unpause()
       self.sounds["pause"].play()
@@ -773,14 +764,14 @@ class World( object ):
 
   def input_continue( self ):
     if self.continues != 0 and self.gameover_anim_tick > self.gameover_tick_max:
-      self.state = self.STATE_SETUP
+      self.state = states.Setup
 
   def input_solve( self ):
     if self.solve_button and self.are_counter < 0 and self.lc_counter < 0:
       self.solve()
 
   def input_end_AAR( self ):
-    self.state = self.STATE_PLAY
+    self.state = states.Play
     self.AAR_timer = 0
     logger.game_event(self, "AAR", "END", "SELF")
 
@@ -820,7 +811,7 @@ class World( object ):
   #main game logic refresh, handles animations and logic updates
   def process_game_logic( self ):
     #lc counter and are counter start at zero and automatically count backward
-    if self.state == self.STATE_PLAY:
+    if self.state == states.Play:
       for i in range( 0, self.ticks_per_frame ):
         self.lc_counter -= 1
         self.are_counter -= 1
@@ -878,13 +869,13 @@ class World( object ):
           self.line_cleared = False
         """
 
-    elif self.state == self.STATE_SETUP:
+    elif self.state == states.Setup:
        self.setup()
        self.state += 1
 
-    elif self.state == self.STATE_AAR:
+    elif self.state == states.Aar:
       if self.AAR_timer == 0:
-        self.state = self.STATE_PLAY
+        self.state = states.Play
         logger.game_event(self, "AAR", "END")
       self.AAR_timer -= 1
 
@@ -1017,7 +1008,7 @@ class World( object ):
     #then repeat/dummy check, and reroll *once*
     if not self.curr_zoid or z_id == len(self.zoids):
       return self.zoidrand.randint( 0, len(self.zoids)-1 )
-    elif self.zoids[z_id] == self.curr_zoid.type and self.state != self.STATE_SETUP:
+    elif self.zoids[z_id] == self.curr_zoid.type and self.state != states.Setup:
       return self.zoidrand.randint( 0, len(self.zoids)-1 )
 
     return z_id
@@ -1168,7 +1159,7 @@ class World( object ):
     if self.AAR_conflicts == self.AAR_max_conflicts:
       logger.game_event(self, "AAR", "BEGIN")
       self.AAR_conflicts = 0
-      self.state = self.STATE_AAR
+      self.state = states.Aar
       self.AAR_timer = self.AAR_dur
       if self.AAR_dur_scaling:
         self.AAR_timer = self.interval[0]
@@ -1181,7 +1172,7 @@ class World( object ):
     if self.solved:
       self.agree = self.controller_agree()
       logger.game_event(self,  "CONTROLLER", "AGREE?", self.agree)
-    if self.AAR and self.state != self.STATE_GAMEOVER:
+    if self.AAR and self.state != states.Gameover:
       self.check_AAR()
     self.place_zoid()
     self.clear_lines()
@@ -1208,7 +1199,7 @@ class World( object ):
     logger.game_event(self,  "GAME", "END", self.game_number )
     logger.gameresults(self, complete = True)
     self.continues -= 1
-    self.state = self.STATE_GAMEOVER
+    self.state = states.Gameover
     if self.episode_number == self.max_eps - 1:
       self.sounds['pause'].play()
     else:
@@ -1399,11 +1390,11 @@ class World( object ):
     if event_log == "RECALIBRATE" or evt_recal == True:
 
       logger.game_event(self, "RECALIBRATION", "START")
-      self.state = self.STATE_CALIBRATE
+      self.state = states.Calibrate
       self.recalibrate()
 
     else:
-      self.state = self.STATE_GAMEOVER
+      self.state = states.Gameover
       self.input_continue()
 
   def recalibrate( self ) :
@@ -1414,7 +1405,7 @@ class World( object ):
     if self.args.eyetracker and eyetrackerSupport:
       logger.game_event(self, "RECALIBRATION", "COMPLETE", self.calibrator.calibrationResults)
 
-    self.state = self.STATE_GAMEOVER
+    self.state = states.Gameover
     self.input_continue()
 
 
@@ -1475,18 +1466,18 @@ class World( object ):
 
   #Twisted event loop refresh logic
   def refresh( self ):
-    if self.state != self.STATE_CALIBRATE and self.state != self.STATE_GAMEOVER_FIXATION:
+    if self.state != states.Calibrate and self.state != states.GameoverFixation:
       inputhandler.start(self)
       self.process_eyetracker()
       self.process_game_logic()
       drawer.drawTheWorld(self)
-    if self.state == self.STATE_PLAY:
+    if self.state == states.Play:
       logger.world(self)
 
 
   #Twisted event loop setup
   def start( self, lc, results=None ):
-    self.state = self.STATE_INTRO
+    self.state = states.Intro
     if self.args.eyetracker and eyetrackerSupport:
       logger.game_event(self, "CALIBRATION", "Complete", str(self.calibrator.calibrationResults))
     self.lc = LoopingCall( self.refresh )
@@ -1497,7 +1488,7 @@ class World( object ):
 
   #Twisted event loop teardown procedures
   def quit( self, lc ):
-    if self.game_number > 0 and not self.state == self.STATE_GAMEOVER:
+    if self.game_number > 0 and not self.state == states.Gameover:
       logger.gameresults(self, complete=False)
     self.criterion_score()
     logger.close_files(self)
@@ -1524,7 +1515,7 @@ class World( object ):
   def run( self ):
     #coop.coiterate(self.process_pygame_events()).addErrback(error_handler)
     if self.args.eyetracker and eyetrackerSupport:
-      self.state = self.STATE_CALIBRATE
+      self.state = states.Calibrate
       reactor.listenUDP( 5555, self.client )
       logger.game_event(self, "CALIBRATION", "Start")
       self.calibrator.start( self.start , points = self.calibration_points, auto = int(self.calibration_auto))
