@@ -691,14 +691,6 @@ class World( object ):
     for event in pygame.event.get():
       if event.type == pygame.QUIT:
         done = True
-      elif event.type == pygame.KEYUP or event.type == pygame.KEYDOWN:
-        dir = "PRESS" if event.type == pygame.KEYDOWN else "RELEASE"
-        logger.game_event(self,  "KEYPRESS", dir, pygame.key.name(event.key))
-      elif event.type == pygame.JOYBUTTONUP or event.type == pygame.JOYBUTTONDOWN:
-        #print("Stuff 1: ",			 event, ";", event.button)
-        dir = "PRESS" if event.type == pygame.JOYBUTTONDOWN else "RELEASE"
-        logger.game_event(self,  "KEYPRESS", dir, self.buttons[event.button] )
-
 
       #Universal controls
 
@@ -764,6 +756,13 @@ class World( object ):
 
       #Gameplay state controls
       elif self.state == self.STATE_PLAY:
+        if event.type == pygame.KEYUP or event.type == pygame.KEYDOWN:
+          dir = "PRESS" if event.type == pygame.KEYDOWN else "RELEASE"
+          logger.game_event(self,  "KEYPRESS", dir, pygame.key.name(event.key))
+        elif event.type == pygame.JOYBUTTONUP or event.type == pygame.JOYBUTTONDOWN:
+          dir = "PRESS" if event.type == pygame.JOYBUTTONDOWN else "RELEASE"
+          logger.game_event(self,  "KEYPRESS", dir, self.buttons[event.button] )
+
         if event.type == pygame.KEYDOWN:
           if event.key == pygame.K_LEFT or event.key == pygame.K_a:
             self.input_trans_left()
@@ -1048,8 +1047,6 @@ class World( object ):
       self.i_x_avg = int( sum(xs) / len( World.gaze_buffer ) )
       self.i_y_avg = int( sum(ys) / len( World.gaze_buffer ) )
 
-
-
       #handle eye-based events
       if self.eye_mask:
         prev = self.mask_toggle
@@ -1071,11 +1068,8 @@ class World( object ):
       self.i_y_conf = 0 if int(self.i_y_avg)<=0 else sum(map((lambda a, b: pow(a + b, 2)), ys, [-self.i_y_avg] * len(ys))) / int(self.i_y_avg)#len(ys)
 
 
-
     #for second eye when both are captured
     if self.args.eyetracker and eyetrackerSupport and len( World.gaze_buffer2 ) > 1:
-
-
       xs2 = []
       ys2 = []
       for i in World.gaze_buffer2:
@@ -1103,7 +1097,6 @@ class World( object ):
         logger.game_event(self, "UNPAUSED")
         pygame.mixer.music.unpause()
       self.sounds["pause"].play()
-
 
 
   #moves zoid left
@@ -1136,7 +1129,6 @@ class World( object ):
   def input_stop_drop( self ):
     self.add_latency("DN")
     self.interval_toggle = 0
-
 
   def input_clockwise( self ):
     self.add_latency("RR", kp = True)
