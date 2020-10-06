@@ -464,13 +464,12 @@ class World( object ):
         pygame.draw.circle( self.spotsurf, self.spot_color + tuple([0]), center, self.spot_radius, 0)
 
 
-
     # Text labels
     midtopy = self.worldsurf_rect.height / 2
     lineheight = 50
     self.high_lab_left = ( self.score_offset, midtopy - 2*lineheight )
-    self.zoids_lab_left = ( self.score_offset, midtopy - lineheight )
-    self.score_lab_left = ( self.score_offset, midtopy )
+    self.score_lab_left = ( self.score_offset, midtopy - lineheight)
+    self.tetrises_lab_left = ( self.score_offset, midtopy )
     self.lines_lab_left = ( self.score_offset, midtopy + lineheight )
     self.level_lab_left = ( self.score_offset, midtopy + 2*lineheight )
     self.newscore_lab_left = ( self.score_offset, midtopy + 3*lineheight )
@@ -478,8 +477,8 @@ class World( object ):
 
     self.label_offset = int(280.0 / 1440.0 * self.worldsurf_rect.width)
     self.high_left = ( self.score_offset + self.label_offset, self.high_lab_left[1] )
-    self.zoids_left = ( self.score_offset + self.label_offset, self.zoids_lab_left[1] )
     self.score_left = ( self.score_offset + self.label_offset, self.score_lab_left[1] )
+    self.tetrises_left = ( self.score_offset + self.label_offset, self.tetrises_lab_left[1] )
     self.lines_left = ( self.score_offset + self.label_offset, self.lines_lab_left[1] )
     self.level_left = ( self.score_offset + self.label_offset, self.level_lab_left[1] )
     self.newscore_left = ( self.score_offset + self.label_offset, self.newscore_lab_left[1] )
@@ -916,7 +915,6 @@ class World( object ):
 
   #Stamps the current zoid onto the board representation.
   def place_zoid( self ):
-    self.zoids_placed += 1
     do_place = True
     if self.n_back:
       if len(self.zoid_buff) <= self.nback_n:
@@ -1324,7 +1322,6 @@ class World( object ):
     #reset score
     self.level = self.starting_level
     self.lines_cleared = 0
-    self.zoids_placed = 0
     self.score = 0
     self.newscore = 0
     self.metascore = 0

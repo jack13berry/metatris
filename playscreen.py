@@ -163,13 +163,13 @@ def draw_gridlines( self ):
 
 
 def draw_scores( self ):
-  gui.textSurface(self, "Tetrises:", self.scores_font, ( 210, 210, 210 ), self.zoids_lab_left, self.worldsurf, "midleft" )
   gui.textSurface(self, "Score:", self.scores_font, ( 210, 210, 210 ), self.score_lab_left, self.worldsurf, "midleft" )
+  gui.textSurface(self, "Tetrises:", self.scores_font, ( 210, 210, 210 ), self.tetrises_lab_left, self.worldsurf, "midleft" )
   gui.textSurface(self, "Lines:", self.scores_font, ( 210, 210, 210 ), self.lines_lab_left, self.worldsurf, "midleft" )
   gui.textSurface(self, "Level:", self.scores_font, ( 210, 210, 210 ), self.level_lab_left, self.worldsurf, "midleft" )
 
-  gui.textSurface(self, str( self.zoids_placed ), self.scores_font, ( 210, 210, 210 ), self.zoids_left, self.worldsurf, "midright" )
   gui.textSurface(self, str( self.score ), self.scores_font, ( 210, 210, 210 ), self.score_left, self.worldsurf, "midright" )
+  gui.textSurface(self, str( self.tetrises_game ), self.scores_font, ( 210, 210, 210 ), self.tetrises_left, self.worldsurf, "midright" )
   gui.textSurface(self, str( self.lines_cleared ), self.scores_font, ( 210, 210, 210 ), self.lines_left, self.worldsurf, "midright" )
   gui.textSurface(self, str( self.level ), self.scores_font, ( 210, 210, 210 ), self.level_left, self.worldsurf, "midright" )
   draw_newscore(self)
