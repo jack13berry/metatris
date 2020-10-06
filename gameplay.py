@@ -335,8 +335,9 @@ class World( object ):
     # Initialize image graphics
 
     self.logo = pygame.image.load( "media" + sep + "logo.png" )
-    self.rpi_tag = pygame.image.load( "media" + sep + "std-rpilogo.gif" )
-    self.cwl_tag = pygame.image.load( "media" + sep + "cogworks.gif" )
+    self.logo = pygame.transform.scale(self.logo, (400, 300))
+    self.rpi_seal = pygame.image.load( "media" + sep + "rpi-seal.png" )
+    self.cw_logo = pygame.image.load( "media" + sep + "cog-works-logo.png" )
 
     gameicon = pygame.image.load( "media" + sep + "game-changer.ico" )
     pygame.display.set_icon(gameicon)

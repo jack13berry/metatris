@@ -6,10 +6,6 @@ def handle( world ):
     if event.type == pygame.QUIT:
       return
 
-    #escape clause
-    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-      world.lc.stop()
-
     #screenshot clause
     elif event.type == pygame.KEYDOWN and event.key == pygame.K_i:
       world.do_screenshot()
@@ -43,6 +39,10 @@ def introStateHandler(world, event):
   elif event.type == pygame.JOYBUTTONDOWN:
     if event.button == world.JOY_START :
       world.state += 1
+
+  if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+    world.lc.stop()
+
 
 def aarStateHandler(world, event):
   if event.type == pygame.KEYUP:
@@ -79,7 +79,9 @@ def playStateHandler(world, event):
     logger.game_event(world,  "KEYPRESS", dir, world.buttons[event.button] )
 
   if event.type == pygame.KEYDOWN:
-    if event.key == pygame.K_LEFT or event.key == pygame.K_a:
+    if event.key == pygame.K_ESCAPE:
+      world.state = states.Intro
+    elif event.key == pygame.K_LEFT or event.key == pygame.K_a:
       world.input_trans_left()
       world.das_held = -1
     elif event.key == pygame.K_RIGHT or event.key == pygame.K_d:
