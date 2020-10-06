@@ -1,12 +1,10 @@
 import pygame
 import states, logger
 
-def start( world ):
+def handle( world ):
   for event in pygame.event.get():
     if event.type == pygame.QUIT:
       return
-
-    #Universal controls
 
     #escape clause
     if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -252,7 +250,6 @@ def playStateHandler(world, event):
           world.das_held = 1
         logger.game_event(world,  "KEYPRESS", "PRESS", pressed)
         #print("pressed", pressed)
-
 
   elif event.type == pygame.JOYBUTTONDOWN:
     #player 1

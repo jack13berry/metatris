@@ -1355,18 +1355,19 @@ class World( object ):
 
     self.game_start_time = get_time()
 
-    self.gameover_params = {'size' : self.gameover_fixcross_size,
-            'width' : self.gameover_fixcross_width,
-            'frames' : self.gameover_fixcross_frames,
-            'tolerance' : self.gameover_fixcross_tolerance,
-            'frames_tolerance' : self.gameover_fixcross_frames_tolerance,
-            'hit_color' : self.gameover_fixcross_color,
-            'timeout' : self.gameover_fixcross_timeout,
-            'miss_color' : self.border_color,
-            'bg_color' : self.message_box_color,
-            'val_accuracy' : self.validation_accuracy,
-            'automated' : self.automated_revalidation}
-
+    self.gameover_params = {
+      'size' : self.gameover_fixcross_size,
+      'width' : self.gameover_fixcross_width,
+      'frames' : self.gameover_fixcross_frames,
+      'tolerance' : self.gameover_fixcross_tolerance,
+      'frames_tolerance' : self.gameover_fixcross_frames_tolerance,
+      'hit_color' : self.gameover_fixcross_color,
+      'timeout' : self.gameover_fixcross_timeout,
+      'miss_color' : self.border_color,
+      'bg_color' : self.message_box_color,
+      'val_accuracy' : self.validation_accuracy,
+      'automated' : self.automated_revalidation
+    }
 
     #restart the normal music
     pygame.mixer.music.load( "media" + sep + "%s.wav" % self.song )
@@ -1467,10 +1468,11 @@ class World( object ):
   #Twisted event loop refresh logic
   def refresh( self ):
     if self.state != states.Calibrate and self.state != states.GameoverFixation:
-      inputhandler.start(self)
+      inputhandler.handle(self)
       self.process_eyetracker()
       self.process_game_logic()
       drawer.drawTheWorld(self)
+
     if self.state == states.Play:
       logger.world(self)
 
@@ -1480,11 +1482,12 @@ class World( object ):
     self.state = states.Intro
     if self.args.eyetracker and eyetrackerSupport:
       logger.game_event(self, "CALIBRATION", "Complete", str(self.calibrator.calibrationResults))
+
     self.lc = LoopingCall( self.refresh )
     #pygame.mixer.music.play( -1 )
     cleanupD = self.lc.start( 1.0 / self.fps )
     cleanupD.addCallbacks( self.quit )
-  ###
+
 
   #Twisted event loop teardown procedures
   def quit( self, lc ):
@@ -1521,6 +1524,7 @@ class World( object ):
       self.calibrator.start( self.start , points = self.calibration_points, auto = int(self.calibration_auto))
     else:
       self.start( None )
+
     reactor.run()
   ###
 
