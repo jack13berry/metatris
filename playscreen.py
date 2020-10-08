@@ -138,15 +138,11 @@ def draw_AAR(self):
 
 #draw borders around game regions
 def draw_borders( self ):
-  if self.args.eyetracker and self.eye_conf_borders:
-    avg_conf = int((self.i_x_conf + self.i_y_conf) / 2.0)
-    color = (min(250,150+(avg_conf/3)),max(150,250-(avg_conf/3)),50)
-  else:
-    color = self.border_color
+  color = self.border_color
 
-  metagreen = max(0, int( (100-self.newscore)*(2.55) ))
-  metared = min(400 - metagreen, 255)
-  metacolor = ( metared, metagreen, 90 )
+  metagreen = max(0, int( (100-self.newscore)*(2.00) ))
+  metared = min(300 - metagreen, 200)
+  metacolor = ( metared, metagreen, 20 )
   pygame.draw.rect( self.worldsurf, metacolor, self.gamesurf_border_rect, self.border_thickness )
   if self.look_ahead > 0:
     pygame.draw.rect( self.worldsurf, metacolor, self.nextsurf_border_rect, self.border_thickness )
@@ -201,7 +197,7 @@ def draw_newscore( self ):
   if yellow_height>0:
     pygame.draw.rect( self.worldsurf, (255, 255, 0), (bar_x,bar_y-red_height-orange_height-yellow_height,bar_width,yellow_height), bar_thickness)
   if green_height>0:
-    pygame.draw.rect( self.worldsurf, (0, 255, 0), (bar_x,bar_y-red_height-orange_height-yellow_height-green_height,bar_width,green_height), bar_thickness)
+    pygame.draw.rect( self.worldsurf, (20, 162, 20), (bar_x,bar_y-red_height-orange_height-yellow_height-green_height,bar_width,green_height), bar_thickness)
 
   #gui.textSurface(self, "New:", self.scores_font, ( 210, 210, 210 ), self.newscore_lab_left, self.worldsurf, "midleft" )
   # print ("Score: '%s' / '%s'" % (self.newscore, self.metascore))

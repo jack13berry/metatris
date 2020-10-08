@@ -145,7 +145,6 @@ def load( self, name = "default" ):
   self.set_var('next_mask', False ,'bool')
   self.set_var('board_mask', False, 'bool')
 
-  self.set_var('eye_mask', False, 'bool')
 
   #modern game features
   self.set_var('ghost_zoid', False ,'bool')
@@ -173,7 +172,6 @@ def load( self, name = "default" ):
   #draw fixations?
   self.set_var('draw_samps', False, 'bool')
   self.set_var('draw_avg', False, 'bool')
-  self.set_var('draw_fixation', False, 'bool')
   self.set_var('draw_err', False, 'bool')
   self.set_var('gaze_window', 30, 'int')
 
@@ -188,7 +186,7 @@ def load( self, name = "default" ):
   self.set_var('grace_refresh', False, 'bool') #UNIMPLEMENTED
   ###
 
-  self.set_var('bg_color', (0,0,0), 'color')
+  self.set_var('bg_color', (39,39,39), 'color')
   self.set_var('border_color', (250,250,250), 'color')
 
   self.set_var('kept_bgc', ( 50, 50, 50 ), 'color')
@@ -226,8 +224,6 @@ def load( self, name = "default" ):
 
 
   self.set_var('joystick_type', "NES_RETRO-USB", 'string')
-
-  self.set_var('eye_conf_borders', False, 'bool')
 
   self.set_var('solve_button', False, 'bool')
   self.set_var('auto_solve', False, 'bool')
@@ -267,20 +263,5 @@ def load( self, name = "default" ):
   self.set_var('gray_next', True, 'bool')
   self.set_var('gray_kept', False, 'bool')
 
-
-  # Game Over Fixation Cross
-  self.set_var('gameover_fixcross', False, 'bool')
-  self.set_var('gameover_fixcross_size', 15, 'int')
-  self.set_var('gameover_fixcross_width', 3, 'int')
-  self.set_var('gameover_fixcross_frames', 30, 'int')
-  self.set_var('gameover_fixcross_tolerance', 50, 'int')
-  self.set_var('gameover_fixcross_frames_tolerance', 2, 'int')
-  self.set_var('gameover_fixcross_color', (0,115,10), 'color')
-  self.set_var('gameover_fixcross_timeout', 600, 'int')
-
-  self.set_var('calibration_points', 5, 'int')
-  self.set_var('calibration_auto', True, 'bool')
-  self.set_var('validation_accuracy', 0.8, 'float')
-  self.set_var('automated_revalidation', True, 'bool')
 
   return True

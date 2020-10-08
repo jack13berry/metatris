@@ -25,22 +25,6 @@ from simulator import TetrisSimulator
 
 import states, logger, cnf, drawer, inputhandler
 
-try:
-  #from pyfixation import VelocityFP
-  #print("Pyfixation success.")
-  from pyviewx.client import iViewXClient, Dispatcher
-  # print("Pyview client success")
-  from pyviewx.pygame import Calibrator
-  # print("Pyview pygame support success.")
-  from pyviewx.pygame import Validator
-  # print("Pyview validator support success.")
-  import numpy as np
-  # print("numpy success")
-  eyetrackerSupport = True
-except ImportError:
-  # print("Warning: Eyetracker not supported on this machine.")
-  eyetrackerSupport = False
-
 
 sep = os.path.sep
 get_time = time.time if platform.system() == 'Windows' else time.process_time
@@ -56,11 +40,6 @@ zoid_col_offset = {
 }
 
 class World( object ):
-
-  if eyetrackerSupport:
-    gaze_buffer = []
-    gaze_buffer2 = []
-    d = Dispatcher()
 
   #initializes the game object with most needed resources at startup
   def __init__( self, args ):
@@ -176,7 +155,6 @@ class World( object ):
 
 
     ## Derivative variable setting after settling game definitions
-
     self.ticks_per_frame = int(round(self.tps / self.fps))
 
     self.zoids = []
@@ -188,7 +166,6 @@ class World( object ):
       self.zoids += Zoid.set_tiny
 
     ## Gameplay variables
-
     self.state = states.Intro
 
     #universal frame timer
@@ -197,7 +174,6 @@ class World( object ):
     #pygame.key.set_repeat( self.das_delay, self.das_repeat )
     self.das_timer = 0
     self.das_held = 0
-
 
     # Scoring and leveling
     self.level = self.starting_level
@@ -281,7 +257,6 @@ class World( object ):
     # for grace period
     self.grace_timer = 0
 
-
     #for After-Action Review
     self.AAR_timer = 0
     self.AAR_conflicts = 0
@@ -289,42 +264,14 @@ class World( object ):
     #controller agreement
     self.agree = None
 
-    if self.args.eyetracker and eyetrackerSupport:
-      self.i_x_avg = 0
-      self.i_y_avg = 0
-      self.i_x_conf = None
-      self.i_y_conf = None
-      self.prev_x_avg = 0
-      self.prev_y_avg = 0
-
-      self.i_x_avg2 = 0
-      self.i_y_avg2 = 0
-      self.i_x_conf2 = None
-      self.i_y_conf2 = None
-      self.prev_x_avg2 = 0
-      self.prev_y_avg2 = 0
-      if self.gameover_fixcross == True:
-        self.implement_gameover_fixcross = True
-        self.gameover_fixation = False
-        self.gameover_fixcross_frames_count = 0
-        self.gameover_fixcross_frames_miss = 0
-
-
-
-      else:
-        self.implement_gameover_fixcross = False
-    else:
-      ##set to true only for debugging.
-      self.implement_gameover_fixcross = False
-
-
     # Gets screen information
     self.screeninfo = pygame.display.Info()
+
 
     # Remove modes that are double the width of another mode
     # which indicates a dual monitor resolution
     modes = pygame.display.list_modes()
-    print(modes)
+    # print(modes)
     for mode in modes:
       tmp = mode[0] / 2
       for m in modes:
@@ -450,20 +397,6 @@ class World( object ):
       self.keptsurf_border_rect.left = self.keptsurf_rect.left - self.border_thickness / 2
       self.keptsurf_border_rect.top = self.keptsurf_rect.top - self.border_thickness / 2
 
-    if self.args.eyetracker and eyetrackerSupport:
-      self.spotsurf = pygame.Surface( (self.worldsurf_rect.width * 2, self.worldsurf_rect.height * 2), flags = pygame.SRCALPHA)
-      self.spotsurf_rect = self.spotsurf.get_rect()
-      self.spotsurf_rect.center = (self.worldsurf_rect.width, self.worldsurf_rect.height)
-      self.spotsurf.fill( self.spot_color + tuple([self.spot_alpha]) )
-      center = (self.spotsurf_rect.width / 2, self.spotsurf_rect.height / 2)
-      if self.spot_gradient:
-        for i in range(0, self.spot_radius):
-          j = self.spot_radius - i
-          alpha = int(float(j) / float(self.spot_radius) * float(self.spot_alpha))
-          pygame.draw.circle( self.spotsurf, self.spot_color + tuple([alpha]), center, j, 0)
-      else:
-        pygame.draw.circle( self.spotsurf, self.spot_color + tuple([0]), center, self.spot_radius, 0)
-
 
     # Text labels
     midtopy = self.worldsurf_rect.height / 2
@@ -498,21 +431,6 @@ class World( object ):
 
     ## Sound
     self.setupSounds()
-
-    ## Eyetracking
-
-    # sampling and fixations
-    self.fix = None
-    self.samp = None
-    if self.args.eyetracker and eyetrackerSupport:
-      self.client = iViewXClient( self.args.eyetracker, 4444 )
-      self.client.addDispatcher( self.d )
-      #self.fp = VelocityFP()
-      self.calibrator = Calibrator( self.client, self.screen, reactor = reactor ) #escape = True?
-
-    self.eye_x = None
-    self.eye_y = None
-
 
     ## Board statistics
     self.print_stats = self.args.boardstats
@@ -631,6 +549,7 @@ class World( object ):
 
     return rots, trans
 
+
   #initializes a board based on arguments
   def initialize_board( self ):
     f = open("boards" + sep + self.boardname + ".board")
@@ -653,8 +572,6 @@ class World( object ):
       self.board = fileboard
       self.new_board = None
 
-
-  ###
 
   #initializes the feedback messages for printing to the screen.
   def initialize_feedback( self ):
@@ -694,11 +611,13 @@ class World( object ):
     if self.timer >= 0:
       self.curr_zoid.left()
 
+
   #moves zoid right
   def input_trans_right( self ):
     self.add_latency("TR", kp = True)
     if self.timer >= 0:
       self.curr_zoid.right()
+
 
   def input_trans_stop( self, direction ):
     if direction == self.das_held or not self.das_reversible:
@@ -709,23 +628,28 @@ class World( object ):
     elif direction == 1:
       self.add_latency("TR")
 
+
   #initiates a user drop
   def input_start_drop( self ):
     self.add_latency("DN", kp = True, drop = True)
     self.interval_toggle = 1
+
 
   #terminates a user drop
   def input_stop_drop( self ):
     self.add_latency("DN")
     self.interval_toggle = 0
 
+
   def input_clockwise( self ):
     self.add_latency("RR", kp = True)
     self.curr_zoid.rotate( 1 )
 
+
   def input_counterclockwise( self ):
     self.add_latency("RL", kp = True)
     self.curr_zoid.rotate( -1 )
+
 
   #rotates zoid clockwise, or counterclockwise if shift is held (for single-button rotation)
   def input_rotate_single( self ):
@@ -736,19 +660,23 @@ class World( object ):
       self.add_latency("RR", kp = True)
       self.curr_zoid.rotate( 1 )
 
+
   def input_swap( self ):
     if self.keep_zoid and self.lc_counter < 0 and self.are_counter < 0:
       self.swap_kept_zoid()
+
 
   def input_undo( self ):
     if self.lc_counter < 0 and self.are_counter < 0 and self.undo:
       self.curr_zoid.init_pos()
       logger.game_event(self, "ZOID","UNDO")
 
+
   def input_place( self ):
     if self.lc_counter < 0 and self.are_counter < 0:
       if not self.gravity:
         self.curr_zoid.place()
+
 
   def input_slam( self ):
     if self.lc_counter < 0 and self.are_counter < 0:
@@ -800,13 +728,6 @@ class World( object ):
     if kp:
       self.latencies.append(lat)
 
-
-
-
-
-  ####
-  #  Game Logic
-  ####
 
   #main game logic refresh, handles animations and logic updates
   def process_game_logic( self ):
@@ -879,7 +800,6 @@ class World( object ):
         logger.game_event(self, "AAR", "END")
       self.AAR_timer -= 1
 
-  ###
 
   # For debugging purposes; produces random player behavior
   def random_behavior( self ):
@@ -889,7 +809,7 @@ class World( object ):
       self.curr_zoid.rotate( random.randint( -1, 1 ) )
     if self.timer % 25 == 0:
       self.curr_zoid.translate( random.randint( -1, 1 ) )
-  ###
+
 
   #Checks if the top 5 lines are occupied (engage in danger mode warning music)
   def check_top( self , board ):
@@ -912,7 +832,7 @@ class World( object ):
       pygame.mixer.music.load( "media" + sep + "%s.wav" % self.song )
       pygame.mixer.music.play( -1 )
       logger.game_event(self,  "DANGER", "END" )
-  ###
+
 
   #Stamps the current zoid onto the board representation.
   def place_zoid( self ):
@@ -959,7 +879,7 @@ class World( object ):
       self.sounds['thud'].play( 0 )
 
     logger.game_event(self,  "PLACED", self.curr_zoid.type, [self.curr_zoid.rot, self.curr_zoid.get_col(), self.curr_zoid.get_row()])
-  ###
+
 
   def solve( self , move = True):
     self.curr_zoid
@@ -969,6 +889,7 @@ class World( object ):
     if move:
       self.skip_timer()
     self.solved = True
+
 
   def swap_kept_zoid( self ):
     if not self.needs_new_zoid and not self.swapped:
@@ -1011,7 +932,7 @@ class World( object ):
       return self.zoidrand.randint( 0, len(self.zoids)-1 )
 
     return z_id
-  ###
+
 
   #get a new zoid for the piece queue
   def get_next_zoid( self ):
@@ -1021,8 +942,6 @@ class World( object ):
     else:
       zoid = self.get_random_zoid()
     return zoid
-
-  ###
 
 
   #Rotate next-zoid into curr-zoid and get a new zoid.
@@ -1041,7 +960,7 @@ class World( object ):
       self.game_over()
 
     logger.game_event(self,  "ZOID", "NEW", self.curr_zoid.type )
-  ###
+
 
   #Perform line clearing duties and award points
   def clear_lines( self ):
@@ -1105,6 +1024,7 @@ class World( object ):
     if self.score > self.high_score:
       self.high_score = self.score
 
+
   #check to see if player leveled up from line clears
   def check_lvlup( self ):
     prev = self.level
@@ -1117,6 +1037,7 @@ class World( object ):
 
     if self.level < len( self.intervals ):
       self.interval[0] = self.intervals[self.level]
+
 
   def update_evts( self ):
     if self.u_drops + self.s_drops != 0:
@@ -1131,6 +1052,7 @@ class World( object ):
       self.avg_latency = 0
 
     self.min_rots, self.min_trans = self.min_path(self.curr_zoid.type, self.curr_zoid.get_col(), self.curr_zoid.rot)
+
 
   def reset_evts( self ):
     self.evt_sequence = []
@@ -1150,6 +1072,7 @@ class World( object ):
     self.u_drops = 0
     self.s_drops = 0
 
+
   #check to see if an after-action review is needed
   def check_AAR( self ):
     AAR_agree = self.controller_agree()
@@ -1163,8 +1086,10 @@ class World( object ):
       if self.AAR_dur_scaling:
         self.AAR_timer = self.interval[0]
 
+
   def controller_agree( self ):
     return self.solved_rot == self.curr_zoid.rot and self.solved_col == self.curr_zoid.col and self.solved_row == self.curr_zoid.row
+
 
   #end a trial
   def end_trial( self ):
@@ -1212,6 +1137,7 @@ class World( object ):
       if self.timer >= self.interval[self.interval_toggle]:
         self.timer = 0
         self.curr_zoid.down( self.interval_toggle )
+
 
   #def das_tick
   def das_tick( self ):
@@ -1353,20 +1279,6 @@ class World( object ):
 
     self.game_start_time = get_time()
 
-    self.gameover_params = {
-      'size' : self.gameover_fixcross_size,
-      'width' : self.gameover_fixcross_width,
-      'frames' : self.gameover_fixcross_frames,
-      'tolerance' : self.gameover_fixcross_tolerance,
-      'frames_tolerance' : self.gameover_fixcross_frames_tolerance,
-      'hit_color' : self.gameover_fixcross_color,
-      'timeout' : self.gameover_fixcross_timeout,
-      'miss_color' : self.border_color,
-      'bg_color' : self.message_box_color,
-      'val_accuracy' : self.validation_accuracy,
-      'automated' : self.automated_revalidation
-    }
-
     #restart the normal music
     pygame.mixer.music.load( "media" + sep + "%s.wav" % self.song )
     pygame.mixer.music.play( -1 )
@@ -1374,127 +1286,32 @@ class World( object ):
 
     logger.game_event(self,  "GAME", "BEGIN", self.game_number )
 
-  def fixcross ( self, lc ,log = None, results = None ):
-    evt_recal = False
-    if self.args.eyetracker and eyetrackerSupport:
-      event_log = self.validator.log
-      validation_results = str(self.validator.validationResults)
-      if len(event_log) > 1:
-        if "RECALIBRATE" in event_log:
-          evt_recal = True
-        event_log = str(event_log)
-
-      logger.game_event(self, "VALIDATION", event_log, validation_results)
-
-    if event_log == "RECALIBRATE" or evt_recal == True:
-
-      logger.game_event(self, "RECALIBRATION", "START")
-      self.state = states.Calibrate
-      self.recalibrate()
-
-    else:
-      self.state = states.Gameover
-      self.input_continue()
-
-  def recalibrate( self ) :
-    self.calibrator._reset()
-    self.calibrator.start(self.runrecalibrate, recalibrate = True, points = self.calibration_points, auto = int(self.calibration_auto ))
-
-  def runrecalibrate( self, lc, results = None ):
-    if self.args.eyetracker and eyetrackerSupport:
-      logger.game_event(self, "RECALIBRATION", "COMPLETE", self.calibrator.calibrationResults)
-
-    self.state = states.Gameover
-    self.input_continue()
-
-
-  def process_eyetracker(self):
-    if not (self.args.eyetracker and eyetrackerSupport):
-      return
-
-    if len( World.gaze_buffer ) > 1:
-      #get avg position
-      xs = []
-      ys = []
-      for i in World.gaze_buffer:
-        xs += [i[0]]
-        ys += [i[1]]
-
-      self.prev_x_avg = self.i_x_avg
-      self.prev_y_avg = self.i_y_avg
-      self.i_x_avg = int( sum(xs) / len( World.gaze_buffer ) )
-      self.i_y_avg = int( sum(ys) / len( World.gaze_buffer ) )
-
-      #handle eye-based events
-      if self.eye_mask:
-        prev = self.mask_toggle
-        if self.i_x_avg > int((self.gamesurf_rect.width + self.gamesurf_rect.left + self.nextsurf_rect.left) / 2) and self.i_y_avg < int((self.nextsurf_rect.top + self.nextsurf_rect.height + self.score_lab_left[1]) / 2):
-          self.mask_toggle = True
-        else:
-          self.mask_toggle = False
-        if self.mask_toggle != prev:
-          logger.game_event(self, "MASK_TOGGLE", self.mask_toggle)
-
-
-      #HOOK FOR MISDIRECTION / LOOKAWAY EVENTS
-      # when in board, normal. when leave board, subtly alter accumulation.
-      ## will need crossover detection for event onset
-      ## will need board mutator function
-      ## could use some helper "in-bounds" or collision functions.
-
-      self.i_x_conf = 0 if int(self.i_x_avg)<=0 else sum(map((lambda a, b: pow(a + b, 2)), xs, [-self.i_x_avg] * len(xs))) / int(self.i_x_avg)#len(xs)
-      self.i_y_conf = 0 if int(self.i_y_avg)<=0 else sum(map((lambda a, b: pow(a + b, 2)), ys, [-self.i_y_avg] * len(ys))) / int(self.i_y_avg)#len(ys)
-
-
-    #for second eye when both are captured
-    if len( World.gaze_buffer2 ) > 1:
-      xs2 = []
-      ys2 = []
-      for i in World.gaze_buffer2:
-        xs2 += [i[0]]
-        ys2 += [i[1]]
-
-      self.prev_x_avg2 = self.i_x_avg2
-      self.prev_y_avg2 = self.i_y_avg2
-      self.i_x_avg2 = int( sum(xs2) / len( World.gaze_buffer2 ) )
-      self.i_y_avg2 = int( sum(ys2) / len( World.gaze_buffer2 ) )
-
-      self.i_x_conf2 = 0 if int(self.i_x_avg2)<=0 else sum(map((lambda a, b: abs(a + b)), xs2, [-self.i_x_avg2] * len(xs2))) / int(self.i_x_avg2)
-      self.i_y_conf2 = 0 if int(self.i_y_avg2)<=0 else sum(map((lambda a, b: abs(a + b)), ys2, [-self.i_y_avg2] * len(ys2))) / int(self.i_y_avg2)
-
 
   #Twisted event loop refresh logic
   def refresh( self ):
-    if self.state != states.Calibrate and self.state != states.GameoverFixation:
-      inputhandler.handle(self)
-      self.process_eyetracker()
-      self.process_game_logic()
-      drawer.drawTheWorld(self)
+    inputhandler.handle(self)
+    self.process_game_logic()
+    drawer.drawTheWorld(self)
 
     if self.state == states.Play:
       logger.world(self)
 
 
-  #Twisted event loop setup
   def start( self, lc, results=None ):
     self.state = states.Intro
-    if self.args.eyetracker and eyetrackerSupport:
-      logger.game_event(self, "CALIBRATION", "Complete", str(self.calibrator.calibrationResults))
-
     self.lc = LoopingCall( self.refresh )
     #pygame.mixer.music.play( -1 )
     cleanupD = self.lc.start( 1.0 / self.fps )
     cleanupD.addCallbacks( self.quit )
 
 
-  #Twisted event loop teardown procedures
   def quit( self, lc ):
     if self.game_number > 0 and not self.state == states.Gameover:
       logger.gameresults(self, complete=False)
     self.criterion_score()
     logger.close_files(self)
     reactor.stop()
-  ###
+
 
   def criterion_score( self ):
     x = self.game_scores
@@ -1506,76 +1323,14 @@ class World( object ):
       print("High score: " + str(x[-1]) + "\n")
       print("Meta score: " + "{:0.3f}".format(self.metascore) + "\n")
 
+
   def error_handler(error):
       #NOTE: the following won't end the program here:
       #quit(), sys.exit(), raise ..., return error
       #...because 'deferred' will just catch it and ignore it
       os.abort()
 
-  #Begin the reactor
+
   def run( self ):
-    #coop.coiterate(self.process_pygame_events()).addErrback(error_handler)
-    if self.args.eyetracker and eyetrackerSupport:
-      self.state = states.Calibrate
-      reactor.listenUDP( 5555, self.client )
-      logger.game_event(self, "CALIBRATION", "Start")
-      self.calibrator.start( self.start , points = self.calibration_points, auto = int(self.calibration_auto))
-    else:
-      self.start( None )
-
+    self.start( None )
     reactor.run()
-  ###
-
-
-  """
-  inResponse =
-  [timestamp, eyetype (l, r, b), sx = (lx, rx), sy = (ly, rx), dx = (diam l and r), dy = (diam, l and r),,
-   eye3d X (l, r), eye3d Y (l, r), eye3d Z (l, r)]
-
-  [smi_ts, smi_eyes,
-   smi_samp_x_l, smi_samp_x_r,
-   smi_samp_y_l, smi_samp_y_r,
-   smi_diam_x_l, smi_diam_x_r,
-   smi_diam_y_l, smi_diam_y_r,
-   smi_eye_x_l, smi_eye_x_r,
-   smi_eye_y_l, smi_eye_y_r,
-   smi_eye_z_l, smi_eye_z_r]
-  """
-  #Eyetracker information support
-  if eyetrackerSupport:
-    @d.listen( 'ET_SPL' )
-    def iViewXEvent( self, inResponse ):
-      self.inResponse = inResponse
-      if not self.unifile.closed:
-        logger.eye_sample(self)
-      global x, y, x2, y2
-      if self.state < 0:
-        return
-
-      try:
-        t = int( inResponse[0] )
-        x = float( inResponse[2] )
-        y = float( inResponse[4] )
-        x2 = float( inResponse[3] )
-        y2 = float( inResponse[5] )
-
-        ex = np.mean( ( float( inResponse[10] ), float( inResponse[11] ) ) )
-        ey = np.mean( ( float( inResponse[12] ), float( inResponse[13] ) ) )
-        ez = np.mean( ( float( inResponse[14] ), float( inResponse[15] ) ) )
-        dia = int( inResponse[6] ) > 0 and int( inResponse[7] ) > 0 and int( inResponse[8] ) > 0 and int( inResponse[9] ) > 0
-
-        #if good sample, add
-        if x != 0 and y != 0:
-          World.gaze_buffer.insert( 0, ( x, y ) )
-          if len( World.gaze_buffer ) > self.gaze_window:
-            World.gaze_buffer.pop()
-
-        if x2 != 0 and y2 != 0:
-          World.gaze_buffer2.insert( 0, ( x2, y2 ) )
-          if len( World.gaze_buffer2 ) > self.gaze_window:
-            World.gaze_buffer2.pop()
-        self.fix, self.samp = None, None
-        #self.fix, self.samp = self.fp.processData( t, dia, x, y, ex, ey, ez )
-      except(IndexError):
-        print("IndexError caught-- AOI error on eyetracking machine?")
-        logger.game_event(self, "ERROR", "AOI INDEX")

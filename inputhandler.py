@@ -10,21 +10,6 @@ def handle( world ):
     elif event.type == pygame.KEYDOWN and event.key == pygame.K_i:
       world.do_screenshot()
 
-    #eyetracker keys (number line)
-    elif world.args.eyetracker and event.type == pygame.KEYDOWN:
-      if event.key == pygame.K_5:
-        world.eye_conf_borders = not world.eye_conf_borders
-      elif event.key == pygame.K_6:
-        world.spotlight = not world.spotlight
-      elif event.key == pygame.K_7:
-        world.draw_samps = not world.draw_samps
-      elif event.key == pygame.K_8:
-        world.draw_avg = not world.draw_avg
-      elif event.key == pygame.K_9:
-        world.draw_err = not world.draw_err
-      elif event.key == pygame.K_0:
-        world.draw_fixation = not world.draw_fixation
-
     stateHandler = stateHandlers.get(world.state, False)
     if stateHandler:
       stateHandler(world, event)
@@ -317,36 +302,25 @@ def pauseStateHandler(world, event):
   if event.type == pygame.KEYDOWN:
     if event.key == pygame.K_p:
       world.input_pause()
+    elif event.key == pygame.K_ESCAPE:
+      world.state = states.Intro
+
   if event.type == pygame.JOYBUTTONDOWN:
     if event.button == world.JOY_START:
       world.input_pause()
 
 
 def gameoverStateHandler(world, event):
-  if world.implement_gameover_fixcross != True or world.episode_number == world.max_eps - 1:
+  if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+    world.state = states.Intro
+
+  if world.episode_number != world.max_eps - 1:
     if event.type == pygame.KEYDOWN:
       if event.key == pygame.K_SPACE:
         world.input_continue()
     if event.type == pygame.JOYBUTTONDOWN:
       if event.button == world.JOY_START:
         world.input_continue()
-  elif world.implement_gameover_fixcross == True and world.episode_number != world.max_eps - 1:
-    if event.type == pygame.KEYDOWN:
-      if event.key == pygame.K_SPACE:
-        logger.game_event(world, "GAMEOVER_FIXCROSS", "START")
-        world.state = states.GameoverFixation
-        #world.gameover_params['bg_color'] = world.mask_color
-        world.validator = Validator( world.client, world.screen, reactor = reactor, escape = True, params = world.gameover_params)
-        world.validator.start(world.fixcross)
-        # world.input_continue()
-    if event.type == pygame.JOYBUTTONDOWN:
-      if event.button == world.JOY_START:
-        logger.game_event(world, "GAMEOVER_FIXCROSS", "START")
-        world.state = states.GameoverFixation
-        #world.gameover_params['bg_color'] = world.mask_color
-        world.validator = Validator( world.client, world.screen, reactor = reactor, escape = True, params = world.gameover_params)
-        world.validator.start(world.fixcross)
-        # world.input_continue()
 
 
 stateHandlers = {

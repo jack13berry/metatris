@@ -7,7 +7,6 @@ get_time = time.time if platform.system() == 'Windows' else time.process_time
 #   states
 #   ep summs
 #   game summs
-#   eyes
 
 # initialize log directory
 def init( self ):
@@ -56,19 +55,6 @@ def init( self ):
   #event slots
   event_header = ["evt_id","evt_data1","evt_data2"]
 
-  #eye and up
-  eye_header = [
-    "smi_ts","smi_eyes",
-    "smi_samp_x_l","smi_samp_x_r",
-    "smi_samp_y_l","smi_samp_y_r",
-    "smi_diam_x_l","smi_diam_x_r",
-    "smi_diam_y_l","smi_diam_y_r",
-    "smi_eye_x_l","smi_eye_x_r",
-    "smi_eye_y_l","smi_eye_y_r",
-    "smi_eye_z_l","smi_eye_z_r",
-    "fix_x","fix_y"
-  ]
-
   uni_header = ["ts","event_type"]
 
   #episode and up
@@ -84,9 +70,6 @@ def init( self ):
   ]
 
   self.fixed_header = uni_header + game_header + event_header + ep_header + state_header + board_header
-  if self.args.eyetracker:
-    self.fixed_header += eye_header
-
 
 
 def close_files( self ):
@@ -112,10 +95,6 @@ def close_files( self ):
   """
   self.logfile.close()
   os.rename( self.logfile_path + ".incomplete", self.logfile_path)
-
-  if self.args.eyetracker:
-    self.eyefile.close()
-    os.rename( self.eyefile_path + ".incomplete", self.eyefile_path)
   """
 
 def universal_header( self ):
@@ -126,7 +105,7 @@ def universal_header( self ):
   if self.game_log:
     self.gamefile.write( head )
 
-def universal( self, event_type, loglist, complete = False, evt_id = False, evt_data1 = False, evt_data2 = False, eyes = False, features = False):
+def universal( self, event_type, loglist, complete = False, evt_id = False, evt_data1 = False, evt_data2 = False, features = False):
   data = []
   def logit(val, key):
     data.append(val if key in loglist else "")
@@ -200,31 +179,6 @@ def universal( self, event_type, loglist, complete = False, evt_id = False, evt_
   logit("'%s'" % json.dumps( self.board ), "board_rep")
   logit("'%s'" % json.dumps( zoid_in_board(self) ), "zoid_rep")
 
-
-
-  #["smi_ts","smi_eyes",
-  #  "smi_samp_x_l","smi_samp_x_r","smi_samp_y_l","smi_samp_y_r",
-  #  "smi_diam_x_l","smi_diam_x_r","smi_diam_y_l","smi_diam_y_r",
-  #  "smi_eye_x_l","smi_eye_x_r","smi_eye_y_l","smi_eye_y_r","smi_eye_z_l","smi_eye_z_r",
-  #  "fix_x","fix_y"]
-
-  #logit("CHRIS", "CHRIS")
-  #Successfully adds a column after zoid_rep
-  #data.append("CHRIS")
-
-  if self.args.eyetracker:
-    if eyes:
-      for i in self.inResponse:
-        data.append(i)
-      if self.fix:
-        data.append(self.fix[0])
-        data.append(self.fix[1])
-      else:
-        data.append(None)
-        data.append(None)
-    else:
-      for i in range(0, 18):
-        data.append("")
 
   if features or (event_type == "GAME_EVENT" and evt_id == "KEYPRESS" and evt_data1 == "PRESS" and self.episode_number > 0):
     factor1  = 0.663025211
@@ -337,36 +291,6 @@ def universal( self, event_type, loglist, complete = False, evt_id = False, evt_
     if event_type == "GAME_SUMM":
       self.gamefile.write(out)
 
-def eye_sample( self ):
-  if self.fixed_log:
-    loglist = ["SID","ECID","session","game_type","game_number","episode_number"]
-    universal(self, "EYE_SAMP",loglist,eyes=True)
-  else:
-    data = [
-      ":ts", get_time() - self.starttime,
-      ":event_type", "EYE_SAMP",
-      ":smi_ts", self.inResponse[0],
-      ":smi_eyes", self.inResponse[1],
-      ":smi_samp_x_l", self.inResponse[2],
-      ":smi_samp_x_r", self.inResponse[3],
-      ":smi_samp_y_l", self.inResponse[4],
-      ":smi_samp_y_r", self.inResponse[5],
-      ":smi_diam_x_l", self.inResponse[6],
-      ":smi_diam_x_r", self.inResponse[7],
-      ":smi_diam_y_l", self.inResponse[8],
-      ":smi_diam_y_r", self.inResponse[9],
-      ":smi_eye_x_l", self.inResponse[10],
-      ":smi_eye_x_r", self.inResponse[11],
-      ":smi_eye_y_l", self.inResponse[12],
-      ":smi_eye_y_r", self.inResponse[13],
-      ":smi_eye_z_l", self.inResponse[14],
-      ":smi_eye_z_r",  self.inResponse[15]
-    ]
-    if self.fix:
-      data += [":fix_x", self.fix[0], ":fix_y", self.fix[1]]
-    else:
-      data += [":fix_x", None, ":fix_y", None]
-    self.unifile.write( "\t".join( map(str, data) ) + "\n" )
 
 def episode( self ):
   self.update_stats_move( self.curr_zoid.get_col(), self.curr_zoid.rot, self.curr_zoid.get_row())
@@ -383,7 +307,7 @@ def episode( self ):
           "initial_lat","drop_lat","avg_lat",
           "tetrises_game","tetrises_level",
           "agree","newscore","metascore","rollavg"]
-    universal(self, "EP_SUMM",loglist,features = True)
+    universal(self, "EP_SUMM", loglist, features = True)
   else:
     data = [":ts", get_time() - self.starttime,
         ":event_type", "EP_SUMM",
@@ -561,8 +485,6 @@ def history( self ):
   hwrite("random_seeds")
   hwrite("seed_order")
   hwrite2("Log-Version" ,self.LOG_VERSION)
-  hwrite2("Fixed-length logging" ,self.fixed_log)
-  hwrite2("Eyetracker" ,self.args.eyetracker)
   hwrite("distance_from_screen")
 
   self.histfile.write("\nManipulations:\n")
@@ -618,18 +540,6 @@ def history( self ):
   hwrite("scoring")
   hwrite("drop_bonus")
   hwrite("seven_bag_switch")
-  hwrite("gameover_fixcross")
-  hwrite("gameover_fixcross_size")
-  hwrite("gameover_fixcross_width")
-  hwrite("gameover_fixcross_frames")
-  hwrite("gameover_fixcross_tolerance")
-  hwrite("gameover_fixcross_frames_tolerance")
-  hwrite("gameover_fixcross_color")
-  hwrite("gameover_fixcross_timeout")
-  hwrite("calibration_points")
-  hwrite("calibration_auto")
-  hwrite("validation_accuracy")
-  hwrite("automated_revalidation")
 
   self.histfile.write("\nLayout:\n")
   hwrite2("Screen X",self.screeninfo.current_w)
@@ -644,11 +554,13 @@ def history( self ):
   hwrite2("nextsurf_rect.left",self.nextsurf_rect.left)
   hwrite2("nextsurf_rect.width",self.nextsurf_rect.width)
   hwrite2("nextsurf_rect.height",self.nextsurf_rect.height)
+
   if self.keep_zoid:
     hwrite2("keptsurf_rect.top",self.keptsurf_rect.top)
     hwrite2("keptsurf_rect.left",self.keptsurf_rect.left)
     hwrite2("keptsurf_rect.width",self.keptsurf_rect.width)
     hwrite2("keptsurf_rect.height",self.keptsurf_rect.height)
+
   hwrite("side")
   hwrite("score_lab_left")
   hwrite("lines_lab_left")

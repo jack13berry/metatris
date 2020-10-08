@@ -5,39 +5,6 @@ import introscreen, playscreen
 
 get_time = time.time if platform.system() == 'Windows' else time.process_time
 
-#when eyetracking is present, draw the fixations
-def draw_fix( self ):
-  if self.fix and self.draw_fixation:
-    pygame.draw.circle( self.worldsurf, self.NES_colors[self.level % len( self.NES_colors )][0], ( int( self.fix[0] ), int( self.fix[1] ) ), 23, 0 )
-    pygame.draw.circle( self.worldsurf, (255,255,255), ( int( self.fix[0] ), int( self.fix[1] ) ), 23, 3 )
-  if len( World.gaze_buffer ) > 1:
-    if self.draw_samps:
-      #draw right eye first, then left
-      pygame.draw.lines( self.worldsurf, ( 0, 255, 255 ), False, World.gaze_buffer2, 1 )
-      pygame.draw.lines( self.worldsurf, ( 255, 255, 255 ), False, World.gaze_buffer, 1 )
-    if self.draw_avg or self.draw_err:
-      if self.draw_err:
-        avg_conf = int((self.i_x_conf + self.i_y_conf) * .5)
-        avg_col = max(0, 255 - avg_conf)
-        if self.i_x_conf >= 2 and self.i_y_conf >= 2:
-          conf_rect = pygame.Rect(int(self.i_x_avg - .5*(self.i_x_conf)), int(self.i_y_avg - .5 * (self.i_y_conf)), int(self.i_x_conf), int(self.i_y_conf))
-          pygame.draw.ellipse( self.worldsurf, (avg_col, avg_col, avg_col), conf_rect, 0)
-        else:
-          pygame.draw.circle( self.worldsurf, (255,255,255), (self.i_x_avg, self.i_y_avg), 1, 0)
-      if self.draw_avg:
-        pygame.draw.circle( self.worldsurf, (255,255,255), ( self.i_x_avg2, self.i_y_avg2 ), 10, 0 )
-        pygame.draw.circle( self.worldsurf, self.NES_colors[self.level % len( self.NES_colors )][0], ( self.i_x_avg, self.i_y_avg ), 10, 3 )
-
-        pygame.draw.circle( self.worldsurf, (200,200,200), ( (self.i_x_avg2 + self.i_x_avg) / 2, (self.i_y_avg2 + self.i_y_avg) / 2 ), 5, 0 )
-
-        pygame.draw.circle( self.worldsurf, (255,255,255), ( self.i_x_avg, self.i_y_avg ), 10, 0 )
-        pygame.draw.circle( self.worldsurf, self.NES_colors[self.level % len( self.NES_colors )][1], ( self.i_x_avg, self.i_y_avg ), 10, 3 )
-
-  if self.spotlight:
-    if self.i_x_avg and self.i_y_avg:
-      self.spotsurf_rect.center = (self.i_x_avg, self.i_y_avg)
-    self.worldsurf.blit( self.spotsurf, self.spotsurf_rect )
-
 #pre-renders reusable block surfaces
 def generate_block( self, size, lvl, type ):
   if self.color_mode == "STANDARD":
@@ -120,9 +87,6 @@ def drawTheWorld( self ):
     playscreen.drawGameOver(self)
   elif self.state == states.Aar:
     playscreen.draw_AAR(self)
-
-  if self.args.eyetracker and eyetrackerSupport and (self.draw_fixation or self.draw_samps or self.draw_avg or self.draw_err or self.spotlight):
-    draw_fix(self)
 
   self.screen.blit( self.worldsurf, self.worldsurf_rect )
   pygame.display.flip()

@@ -3,22 +3,18 @@
 import sys, os
 sys.path.insert(0, '.' + os.path.sep + 'extlib')
 
-try:
-  import pyviewx
-  eyetrackerSupport = True
-except ImportError:
-  eyetrackerSupport = False
-
 import argparse
 import pygame
 import time
 
 from gameplay import World
 
+
 pygame.display.init()
 pygame.font.init()
 pygame.mixer.init()
 pygame.mouse.set_visible( False )
+
 
 def between_zero_and_one( string ):
   value = float( string )
@@ -26,6 +22,7 @@ def between_zero_and_one( string ):
     msg = "%r is not between 0.0 and 1.0 " % string
     raise argparse.ArgumentTypeError( msg )
   return value
+
 
 def date_time_filename():
   namestring = ""
@@ -38,7 +35,6 @@ def date_time_filename():
   namestring += str( date.tm_sec )
   #namestring += ".tsv"
   return namestring
-###
 
 
 def main():
@@ -103,11 +99,6 @@ def main():
     type = int,
     help = "Sets or removes gravity; 0 = Rational mode, 1 = Default time pressure")
 
-  parser.add_argument( '-sd', '--screen_dist',
-    action = "store", dest = "distance_from_screen",
-    type = float,
-    help = "Set distance (in inches) from screen for fixed-placement eyetrackers. Defaults to standard distance of 22 in.")
-
   parser.add_argument( '-id', '--SID',
     action = "store", dest = "SID",
     type = str,
@@ -128,23 +119,7 @@ def main():
     action = "store_true", dest = "boardstats",
     help = "Show board optimality metrics" )
 
-
-  if eyetrackerSupport:
-    parser.add_argument( '-e', '--eyetracker',
-      action = "store", dest = "eyetracker",
-      help = 'IP address of iViewX server.' )
-
-    parser.add_argument( '-f', '--fixation',
-      action = "store_true", dest = "showfixation",
-      help = 'Draw fixation overlay.' )
-
   args = parser.parse_args()
-
-  if not hasattr( args, 'eyetracker' ):
-    setattr( args, 'eyetracker', None )
-
-  if not hasattr( args, 'fixation' ):
-    setattr( args, 'fixation', None )
 
   w = World( args )
   w.run()
