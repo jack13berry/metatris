@@ -5,15 +5,7 @@ from cx_Freeze import setup, Executable
 from msioptions import msi_options
 
 exe_options = {
-  'includes': [
-    'attr',
-    'constantly',
-    'incremental',
-    'twisted',
-    'zope',
-    'simulator',
-    'zoid'
-  ],
+  'includes': [ ],
   'include_files': [
     'boards',
     'configs',

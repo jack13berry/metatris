@@ -77,7 +77,6 @@ def load( self, name = "default" ):
 
   self.set_var('fullscreen', False, 'bool')
 
-
   # Frames per second, updates per frame
   self.set_var('fps', 30 ,'int')
   self.set_var('tps', 60 ,'int')
@@ -170,7 +169,6 @@ def load( self, name = "default" ):
   self.set_var('gridlines_color', (50,50,50), 'color')
 
   #draw fixations?
-  self.set_var('draw_samps', False, 'bool')
   self.set_var('draw_avg', False, 'bool')
   self.set_var('draw_err', False, 'bool')
   self.set_var('gaze_window', 30, 'int')

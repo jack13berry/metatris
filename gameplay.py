@@ -1,8 +1,5 @@
 # Based on the work by John K. Lindstedt
 
-from twisted.internet import reactor
-from twisted.internet.task import LoopingCall
-
 import os
 import sys
 import copy
@@ -13,8 +10,8 @@ import json
 import datetime
 import platform
 import random
-import tkinter
-import tkinter.simpledialog
+# import tkinter
+# import tkinter.simpledialog
 
 import pygame, numpy
 
@@ -753,6 +750,7 @@ class World( object ):
           for r in self.lines_to_clear:
             self.board[r][c] = 0
             self.board[r][-(c+1)] = 0
+
         #otherwise, enter delay period until equilibrium
         elif self.lc_counter < 1:
           if self.lc_counter == 0:
@@ -1297,20 +1295,21 @@ class World( object ):
       logger.world(self)
 
 
-  def start( self, lc, results=None ):
-    self.state = states.Intro
-    self.lc = LoopingCall( self.refresh )
-    #pygame.mixer.music.play( -1 )
-    cleanupD = self.lc.start( 1.0 / self.fps )
-    cleanupD.addCallbacks( self.quit )
+  # def start( self, lc, results=None ):
+  #   self.state = states.Intro
+  #   # self.lc = LoopingCall( self.refresh )
+  #   # pygame.mixer.music.play( -1 )
+  #   cleanupD = self.lc.start( 1.0 / self.fps )
+  #   cleanupD.addCallbacks( self.quit )
 
 
-  def quit( self, lc ):
+  def quit( self ):
     if self.game_number > 0 and not self.state == states.Gameover:
       logger.gameresults(self, complete=False)
     self.criterion_score()
     logger.close_files(self)
-    reactor.stop()
+    # reactor.stop()
+    self.running = False
 
 
   def criterion_score( self ):
@@ -1332,5 +1331,11 @@ class World( object ):
 
 
   def run( self ):
-    self.start( None )
-    reactor.run()
+    # self.start( None )
+    # reactor.run()
+    self.running = True
+    self.state = states.Intro
+    while self.running:
+      self.refresh()
+
+    self.quit()

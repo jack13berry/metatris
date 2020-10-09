@@ -26,7 +26,8 @@ def introStateHandler(world, event):
       world.state += 1
 
   if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-    world.lc.stop()
+    # world.lc.stop()
+    world.running = False
 
 
 def aarStateHandler(world, event):
