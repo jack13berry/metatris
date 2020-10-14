@@ -2,53 +2,188 @@ import pygame, platform, time, numpy
 
 import states, gui
 import introscreen, playscreen
+from zoid import Zoid
 
 get_time = time.time if platform.system() == 'Windows' else time.process_time
 
+
+def setupOSWindow(world, w=0, h=0):
+  if world.fullscreen:
+    world.screen = pygame.display.set_mode( ( 0, 0 ), pygame.FULLSCREEN )
+  else:
+    if w == 0 and h == 0:
+      w = 800
+      h = 600
+    world.screen = pygame.display.set_mode( (w, h), pygame.RESIZABLE )
+    pygame.display.set_caption("Game Changer")
+
+  world.worldsurf = world.screen.copy()
+  world.worldsurf_rect = world.worldsurf.get_rect()
+
+  world.side = int( world.worldsurf_rect.height / (world.game_ht + 4.0) )
+  world.border = int( world.side / 6.0 )
+  world.border_thickness = int(round(world.side/4))
+
+
+def setupColors(world):
+  world.NES_colors = Zoid.NES_colors
+  world.STANDARD_colors = Zoid.STANDARD_colors
+
+  world.block_color_type = Zoid.all_color_types
+  world.end_text_color = ( 210, 210, 210 )
+  world.message_box_color = ( 20, 20, 20 )
+  world.mask_color = ( 100, 100, 100 )
+  world.ghost_alpha = 100
+
+  world.next_alpha = 255
+  if world.next_dim:
+    world.next_alpha = world.next_dim_alpha
+
+
+def setupLayout(world):
+  world.gamesurf = pygame.Surface( ( world.game_wd * world.side, world.game_ht * world.side ) )
+  world.gamesurf_rect = world.gamesurf.get_rect()
+  world.gamesurf_rect.center = world.worldsurf_rect.center
+
+  world.gamesurf_border_rect = world.gamesurf_rect.copy()
+  world.gamesurf_border_rect.width += world.border_thickness
+  world.gamesurf_border_rect.height += world.border_thickness
+  world.gamesurf_border_rect.left = world.gamesurf_rect.left - world.border_thickness / 2
+  world.gamesurf_border_rect.top = world.gamesurf_rect.top - world.border_thickness / 2
+
+  world.gamesurf_msg_rect = world.gamesurf_rect.copy()
+  world.gamesurf_msg_rect.height = world.gamesurf_rect.height / 2
+  world.gamesurf_msg_rect.center = world.gamesurf_rect.center
+
+  if world.score_align == "right":
+    world.score_offset = world.gamesurf_rect.right + 3 * world.side
+  elif world.score_align == "left":
+    world.score_offset = 2 * world.side
+
+  world.next_offset = world.gamesurf_rect.right + 3 * world.side
+
+  world.next_size = 5 if world.pentix_zoids else 4
+
+  world.nextsurf = pygame.Surface( ( (world.next_size + .5) * world.side, (world.next_size + .5) * world.side ) )
+  world.nextsurf_rect = world.nextsurf.get_rect()
+  world.nextsurf_rect.top = world.gamesurf_rect.top
+  world.nextsurf_rect.left = world.next_offset
+
+  r = world.nextsurf_rect
+  world.nextPieceBox = [r.left, r.top, r.width, r.height]
+
+  world.nextsurf_border_rect = r.copy()
+  world.nextsurf_border_rect.width += world.border_thickness
+  world.nextsurf_border_rect.height += world.border_thickness
+  world.nextsurf_border_rect.left = r.left - world.border_thickness / 2
+  world.nextsurf_border_rect.top = r.top - world.border_thickness / 2
+
+  if world.far_next:
+    r.left = world.worldsurf_rect.width - world.nextsurf_border_rect.width - world.border_thickness / 2
+    world.nextsurf_border_rect.left = world.worldsurf_rect.width - world.nextsurf_border_rect.width - world.border_thickness
+
+  if world.keep_zoid:
+    world.keptsurf = world.nextsurf.copy()
+    world.keptsurf_rect = world.keptsurf.get_rect()
+    world.keptsurf_rect.top = world.gamesurf_rect.top
+    world.keptsurf_rect.left = world.gamesurf_rect.left - world.keptsurf_rect.width - (4 * world.border_thickness)
+
+    world.keptsurf_border_rect = world.keptsurf_rect.copy()
+    world.keptsurf_border_rect.width += world.border_thickness
+    world.keptsurf_border_rect.height += world.border_thickness
+    world.keptsurf_border_rect.left = world.keptsurf_rect.left - world.border_thickness / 2
+    world.keptsurf_border_rect.top = world.keptsurf_rect.top - world.border_thickness / 2
+
+  # Text labels
+  midtopy = world.worldsurf_rect.height / 2
+  lineheight = 50
+  world.high_lab_left = ( world.score_offset, midtopy - 2*lineheight )
+  world.score_lab_left = ( world.score_offset, midtopy - lineheight)
+  world.tetrises_lab_left = ( world.score_offset, midtopy )
+  world.lines_lab_left = ( world.score_offset, midtopy + lineheight )
+  world.level_lab_left = ( world.score_offset, midtopy + 2*lineheight )
+  world.newscore_lab_left = ( world.score_offset, midtopy + 3*lineheight )
+  world.metascore_lab_left = ( world.score_offset, midtopy + 4*lineheight )
+
+  world.label_offset = int(280.0 / 1440.0 * world.worldsurf_rect.width)
+  world.high_left = ( world.score_offset + world.label_offset, world.high_lab_left[1] )
+  world.score_left = ( world.score_offset + world.label_offset, world.score_lab_left[1] )
+  world.tetrises_left = ( world.score_offset + world.label_offset, world.tetrises_lab_left[1] )
+  world.lines_left = ( world.score_offset + world.label_offset, world.lines_lab_left[1] )
+  world.level_left = ( world.score_offset + world.label_offset, world.level_lab_left[1] )
+  world.newscore_left = ( world.score_offset + world.label_offset, world.newscore_lab_left[1] )
+  world.metascore_left = ( world.score_offset + world.label_offset, world.metascore_lab_left[1] )
+
+  # Animation
+  world.gameover_anim_tick = 0
+  world.gameover_tick_max = world.game_ht * 2
+  world.gameover_board = [[0] * world.game_wd] * world.game_ht
+
+  world.tetris_flash_tick = 0 #currently dependent on framerate
+  world.tetris_flash_colors = [world.bg_color, ( 100, 100, 100 )]
+
+  world.title_blink_timer = 0
+
+  world.blocks = []
+  #generate blocks for all levels
+  for l in range( 0, 10 ):
+    blocks = []
+    #and all block-types...
+    if world.color_mode == "STANDARD":
+      for b in range( 0, len(world.STANDARD_colors)):
+        blocks.append( generate_block( world, world.side, l, b ) )
+    else:
+      for b in range( 0, 3 ):
+        blocks.append( generate_block( world, world.side, l, b ) )
+    world.blocks.append( blocks )
+
+  world.gray_block = generate_block( world, world.side, 0, 0 )
+
+
 #pre-renders reusable block surfaces
-def generate_block( self, size, lvl, type ):
-  if self.color_mode == "STANDARD":
+def generate_block( world, size, lvl, type ):
+  if world.color_mode == "STANDARD":
     bg = pygame.Surface( ( size, size ) )
-    c = self.STANDARD_colors[type]
+    c = world.STANDARD_colors[type]
     lvl_offset = lvl * 15
     bg_off = -40 + lvl_offset
     fg_off = 40 - lvl_offset
     bgc = tuple([min(max(a + b,0),255) for a, b in zip(c, [bg_off]*3)])
     fgc = tuple([min(max(a + b,0),255) for a, b in zip(c, [fg_off]*3)])
     bg.fill( bgc )
-    fg = pygame.Surface( ( size - self.border * 2, size - self.border * 2 ) )
+    fg = pygame.Surface( ( size - world.border * 2, size - world.border * 2 ) )
     fg.fill( fgc )
     fgr = fg.get_rect()
-    fgr.topleft = ( self.border, self.border )
+    fgr.topleft = ( world.border, world.border )
     bg.blit( fg, fgr )
   else:
     if type == 0:
-      bgc = self.NES_colors[lvl][0]
+      bgc = world.NES_colors[lvl][0]
       fgc = ( 255, 255, 255 )
     elif type == 1:
-      #if self.color_mode == "other":
-        #bgc = self.NES_colors[lvl][0]
-        #fgc = self.NES_colors[lvl][0]
-      if self.color_mode == "REMIX":
-        bgc = self.NES_colors[lvl][1]
-        fgc = self.NES_colors[lvl][0]
+      #if world.color_mode == "other":
+        #bgc = world.NES_colors[lvl][0]
+        #fgc = world.NES_colors[lvl][0]
+      if world.color_mode == "REMIX":
+        bgc = world.NES_colors[lvl][1]
+        fgc = world.NES_colors[lvl][0]
     elif type == 2:
-      #if self.color_mode == "other":
-        #bgc = self.NES_colors[lvl][1]
-        #fgc = self.NES_colors[lvl][1]
-      if self.color_mode == "REMIX":
-        bgc = self.NES_colors[lvl][0]
-        fgc = self.NES_colors[lvl][1]
+      #if world.color_mode == "other":
+        #bgc = world.NES_colors[lvl][1]
+        #fgc = world.NES_colors[lvl][1]
+      if world.color_mode == "REMIX":
+        bgc = world.NES_colors[lvl][0]
+        fgc = world.NES_colors[lvl][1]
     bg = pygame.Surface( ( size, size ) )
     bg.fill( bgc )
-    fg = pygame.Surface( ( size - self.border * 2, size - self.border * 2 ) )
+    fg = pygame.Surface( ( size - world.border * 2, size - world.border * 2 ) )
     fg.fill( fgc )
     fgr = fg.get_rect()
-    fgr.topleft = ( self.border, self.border )
+    fgr.topleft = ( world.border, world.border )
     bg.blit( fg, fgr )
     """
-    if self.color_mode == "other":
-      sheen = self.border - 1
+    if world.color_mode == "other":
+      sheen = world.border - 1
       s1 = pygame.Surface( ( sheen, sheen ) )
       s1.fill( ( 255, 255, 255 ) )
       s1r = s1.get_rect()
@@ -59,34 +194,34 @@ def generate_block( self, size, lvl, type ):
       bg.blit( s2, ( s2r.left + 1 + sheen, s2r.top + 1 + sheen ) )
       bg.blit( s1, ( s1r.left + 1 + sheen, s1r.top + 1 + 2 * sheen ) )
     """
-    if self.color_mode == "REMIX":
-      sheen = self.border
+    if world.color_mode == "REMIX":
+      sheen = world.border
       s = pygame.Surface( ( sheen,sheen ) )
       s.fill( ( 255, 255, 255 ) )
       sr = s.get_rect()
       sr.topleft = fgr.topleft
       bg.blit( s, sr.topleft )
-  pygame.draw.rect( bg, self.bg_color, bg.get_rect(), 1 )
+  pygame.draw.rect( bg, world.bg_color, bg.get_rect(), 1 )
   return bg
 
 
 #main draw updater
-def drawTheWorld( self ):
-  if self.state == states.Intro:
-    introscreen.draw(self)
-  elif self.state == states.Play:
-    self.bg_color = self.tetris_flash_colors[self.tetris_flash_tick % 2]
-    if self.tetris_flash_tick > 0:
-      self.tetris_flash_tick -= 1
-    self.gamesurf.fill( self.bg_color )
-    playscreen.draw(self)
-  elif self.state == states.Pause:
-    self.worldsurf.fill( ( 0, 0, 0 ) )
-    playscreen.drawPaused(self)
-  elif self.state == states.Gameover:
-    playscreen.drawGameOver(self)
-  elif self.state == states.Aar:
-    playscreen.draw_AAR(self)
+def drawTheWorld( world ):
+  if world.state == states.Intro:
+    introscreen.draw(world)
+  elif world.state == states.Play:
+    world.bg_color = world.tetris_flash_colors[world.tetris_flash_tick % 2]
+    if world.tetris_flash_tick > 0:
+      world.tetris_flash_tick -= 1
+    world.gamesurf.fill( world.bg_color )
+    playscreen.draw(world)
+  elif world.state == states.Pause:
+    world.worldsurf.fill( ( 0, 0, 0 ) )
+    playscreen.drawPaused(world)
+  elif world.state == states.Gameover:
+    playscreen.drawGameOver(world)
+  elif world.state == states.Aar:
+    playscreen.draw_AAR(world)
 
-  self.screen.blit( self.worldsurf, self.worldsurf_rect )
+  world.screen.blit( world.worldsurf, world.worldsurf_rect )
   pygame.display.flip()

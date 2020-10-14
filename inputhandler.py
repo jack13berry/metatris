@@ -1,19 +1,6 @@
 import pygame
 import states, logger
 
-def handle( world ):
-  for event in pygame.event.get():
-    if event.type == pygame.QUIT:
-      return
-
-    #screenshot clause
-    elif event.type == pygame.KEYDOWN and event.key == pygame.K_i:
-      world.do_screenshot()
-
-    stateHandler = stateHandlers.get(world.state, False)
-    if stateHandler:
-      stateHandler(world, event)
-
 
 def introStateHandler(world, event):
   if event.type == pygame.KEYDOWN:
@@ -324,7 +311,7 @@ def gameoverStateHandler(world, event):
         world.input_continue()
 
 
-stateHandlers = {
+HANDLERS = {
   states.Intro: introStateHandler,
   states.Aar:   aarStateHandler,
   states.Play:  playStateHandler,

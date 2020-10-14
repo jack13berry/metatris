@@ -10,8 +10,6 @@ import json
 import datetime
 import platform
 import random
-# import tkinter
-# import tkinter.simpledialog
 
 import pygame, numpy
 
@@ -280,26 +278,15 @@ class World( object ):
 
     self.logo = pygame.image.load( "media" + sep + "logo.png" )
     self.logo = pygame.transform.scale(self.logo, (400, 300))
-    self.rpi_seal = pygame.image.load( "media" + sep + "rpi-seal.png" )
-    self.cw_logo = pygame.image.load( "media" + sep + "cog-works-logo.png" )
+    self.gclogo = pygame.image.load( "media" + sep + "gclogo.png" )
+    self.gclogo = pygame.transform.scale(self.gclogo, (368, 72))
 
     gameicon = pygame.image.load( "media" + sep + "game-changer.ico" )
     pygame.display.set_icon(gameicon)
 
-    if self.fullscreen:
-      self.screen = pygame.display.set_mode( ( 0, 0 ), pygame.FULLSCREEN )
-    else:
-      #self.screen = pygame.display.set_mode( modes[1], 0 )
-      self.screen = pygame.display.set_mode( (800,600), 0 )
-      pygame.display.set_caption("Game Changer")
 
-
-    self.worldsurf = self.screen.copy()
-    self.worldsurf_rect = self.worldsurf.get_rect()
-
-    self.side = int( self.worldsurf_rect.height / (self.game_ht + 4.0) )
-    self.border = int( self.side / 6.0 )
-    self.border_thickness = int(round(self.side/4))
+    drawer.setupOSWindow(self)
+    drawer.setupColors(self)
 
     # Fonts (intro: 36; scores: 48; end: 68; pause: 102)
     # ratios divided by default HEIGHT: .04, .053, .075, .113
@@ -308,123 +295,7 @@ class World( object ):
     self.end_font = pygame.font.Font( "freesansbold.ttf", int(.055 * self.worldsurf_rect.height) )
     self.pause_font = pygame.font.Font( "freesansbold.ttf", int(.083 * self.worldsurf_rect.height) )
 
-
-    # Colors
-    self.NES_colors = Zoid.NES_colors
-    self.STANDARD_colors = Zoid.STANDARD_colors
-
-    self.block_color_type = Zoid.all_color_types
-    self.blocks = []
-    #generate blocks for all levels
-    for l in range( 0, 10 ):
-      blocks = []
-      #and all block-types...
-      if self.color_mode == "STANDARD":
-        for b in range( 0, len(self.STANDARD_colors)):
-          blocks.append( drawer.generate_block( self, self.side, l, b ) )
-      else:
-        for b in range( 0, 3 ):
-          blocks.append( drawer.generate_block( self, self.side, l, b ) )
-      self.blocks.append( blocks )
-
-    self.gray_block = drawer.generate_block( self, self.side, 0, 0 )
-
-    self.end_text_color = ( 210, 210, 210 )
-    self.message_box_color = ( 20, 20, 20 )
-    self.mask_color = ( 100, 100, 100 )
-
-    self.ghost_alpha = 100
-
-    self.next_alpha = 255
-    if self.next_dim:
-      self.next_alpha = self.next_dim_alpha
-
-
-
-    # Surface definitions
-
-    self.gamesurf = pygame.Surface( ( self.game_wd * self.side, self.game_ht * self.side ) )
-    self.gamesurf_rect = self.gamesurf.get_rect()
-    self.gamesurf_rect.center = self.worldsurf_rect.center
-
-    self.gamesurf_msg_rect = self.gamesurf_rect.copy()
-    self.gamesurf_msg_rect.height = self.gamesurf_rect.height / 2
-    self.gamesurf_msg_rect.center = self.gamesurf_rect.center
-
-    if self.score_align == "right":
-      self.score_offset = self.gamesurf_rect.right + 3 * self.side
-    elif self.score_align == "left":
-      self.score_offset = 2 * self.side
-
-    self.next_offset = self.gamesurf_rect.right + 3 * self.side
-
-
-    self.next_size = 5 if self.pentix_zoids else 4
-
-    self.nextsurf = pygame.Surface( ( (self.next_size + .5) * self.side, (self.next_size + .5) * self.side ) )
-    self.nextsurf_rect = self.nextsurf.get_rect()
-    self.nextsurf_rect.top = self.gamesurf_rect.top
-    self.nextsurf_rect.left = self.next_offset
-
-    self.gamesurf_border_rect = self.gamesurf_rect.copy()
-    self.gamesurf_border_rect.width += self.border_thickness
-    self.gamesurf_border_rect.height += self.border_thickness
-    self.gamesurf_border_rect.left = self.gamesurf_rect.left - self.border_thickness / 2
-    self.gamesurf_border_rect.top = self.gamesurf_rect.top - self.border_thickness / 2
-
-    self.nextsurf_border_rect = self.nextsurf_rect.copy()
-    self.nextsurf_border_rect.width += self.border_thickness
-    self.nextsurf_border_rect.height += self.border_thickness
-    self.nextsurf_border_rect.left = self.nextsurf_rect.left - self.border_thickness / 2
-    self.nextsurf_border_rect.top = self.nextsurf_rect.top - self.border_thickness / 2
-
-    if self.far_next:
-      self.nextsurf_rect.left = self.worldsurf_rect.width - self.nextsurf_border_rect.width - self.border_thickness / 2
-      self.nextsurf_border_rect.left = self.worldsurf_rect.width - self.nextsurf_border_rect.width - self.border_thickness
-
-    if self.keep_zoid:
-      self.keptsurf = self.nextsurf.copy()
-      self.keptsurf_rect = self.keptsurf.get_rect()
-      self.keptsurf_rect.top = self.gamesurf_rect.top
-      self.keptsurf_rect.left = self.gamesurf_rect.left - self.keptsurf_rect.width - (4 * self.border_thickness)
-
-      self.keptsurf_border_rect = self.keptsurf_rect.copy()
-      self.keptsurf_border_rect.width += self.border_thickness
-      self.keptsurf_border_rect.height += self.border_thickness
-      self.keptsurf_border_rect.left = self.keptsurf_rect.left - self.border_thickness / 2
-      self.keptsurf_border_rect.top = self.keptsurf_rect.top - self.border_thickness / 2
-
-
-    # Text labels
-    midtopy = self.worldsurf_rect.height / 2
-    lineheight = 50
-    self.high_lab_left = ( self.score_offset, midtopy - 2*lineheight )
-    self.score_lab_left = ( self.score_offset, midtopy - lineheight)
-    self.tetrises_lab_left = ( self.score_offset, midtopy )
-    self.lines_lab_left = ( self.score_offset, midtopy + lineheight )
-    self.level_lab_left = ( self.score_offset, midtopy + 2*lineheight )
-    self.newscore_lab_left = ( self.score_offset, midtopy + 3*lineheight )
-    self.metascore_lab_left = ( self.score_offset, midtopy + 4*lineheight )
-
-    self.label_offset = int(280.0 / 1440.0 * self.worldsurf_rect.width)
-    self.high_left = ( self.score_offset + self.label_offset, self.high_lab_left[1] )
-    self.score_left = ( self.score_offset + self.label_offset, self.score_lab_left[1] )
-    self.tetrises_left = ( self.score_offset + self.label_offset, self.tetrises_lab_left[1] )
-    self.lines_left = ( self.score_offset + self.label_offset, self.lines_lab_left[1] )
-    self.level_left = ( self.score_offset + self.label_offset, self.level_lab_left[1] )
-    self.newscore_left = ( self.score_offset + self.label_offset, self.newscore_lab_left[1] )
-    self.metascore_left = ( self.score_offset + self.label_offset, self.metascore_lab_left[1] )
-
-
-    # Animation
-    self.gameover_anim_tick = 0
-    self.gameover_tick_max = self.game_ht * 2
-    self.gameover_board = [[0] * self.game_wd] * self.game_ht
-
-    self.tetris_flash_tick = 0 #currently dependent on framerate
-    self.tetris_flash_colors = [self.bg_color, ( 100, 100, 100 )]
-
-    self.title_blink_timer = 0
+    drawer.setupLayout(self)
 
     ## Sound
     self.setupSounds()
@@ -1285,24 +1156,6 @@ class World( object ):
     logger.game_event(self,  "GAME", "BEGIN", self.game_number )
 
 
-  #Twisted event loop refresh logic
-  def refresh( self ):
-    inputhandler.handle(self)
-    self.process_game_logic()
-    drawer.drawTheWorld(self)
-
-    if self.state == states.Play:
-      logger.world(self)
-
-
-  # def start( self, lc, results=None ):
-  #   self.state = states.Intro
-  #   # self.lc = LoopingCall( self.refresh )
-  #   # pygame.mixer.music.play( -1 )
-  #   cleanupD = self.lc.start( 1.0 / self.fps )
-  #   cleanupD.addCallbacks( self.quit )
-
-
   def quit( self ):
     if self.game_number > 0 and not self.state == states.Gameover:
       logger.gameresults(self, complete=False)
@@ -1329,13 +1182,39 @@ class World( object ):
       #...because 'deferred' will just catch it and ignore it
       os.abort()
 
-
   def run( self ):
     # self.start( None )
     # reactor.run()
     self.running = True
     self.state = states.Intro
+    resizeEvent = False
     while self.running:
-      self.refresh()
+      for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+          return self.quit()
+
+        elif event.type == pygame.VIDEORESIZE:
+            resizeEvent = event
+
+        #screenshot clause
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_i:
+          self.do_screenshot()
+
+        else:
+          stateHandler = inputhandler.HANDLERS.get(self.state, False)
+          if stateHandler:
+            stateHandler(self, event)
+
+      if resizeEvent:
+        print("RSZ TO:", resizeEvent.w, resizeEvent.h)
+        drawer.setupOSWindow(self, resizeEvent.w, resizeEvent.h)
+        drawer.setupLayout(self)
+        resizeEvent = False
+
+      self.process_game_logic()
+      drawer.drawTheWorld(self)
+
+      if self.state == states.Play:
+        logger.world(self)
 
     self.quit()

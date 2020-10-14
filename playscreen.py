@@ -136,18 +136,27 @@ def draw_AAR(self):
   #gui.textSurface(self, "PAUSED", self.pause_font, ( 210, 210, 210 ), self.worldsurf_rect.center, self.worldsurf )
 
 
-#draw borders around game regions
+def borderOutside(surface, color, weight, x, y, w, h):
+  pygame.draw.rect( surface, color, [(x-weight, y-weight), (w+weight, weight)])
+  pygame.draw.rect( surface, color, [(x+w, y-weight), (weight, h+weight)])
+  pygame.draw.rect( surface, color, [(x, y+h), (w+weight, weight)])
+  pygame.draw.rect( surface, color, [(x-weight, y), (weight, h+weight)])
+
+def borderOutsideOfRect(surface, color, weight, rect):
+  borderOutside(surface, color, weight, rect.left, rect.top, rect.width, rect.height)
+
 def draw_borders( self ):
   color = self.border_color
 
   metagreen = max(0, int( (100-self.newscore)*(2.00) ))
   metared = min(300 - metagreen, 200)
   metacolor = ( metared, metagreen, 20 )
-  pygame.draw.rect( self.worldsurf, metacolor, self.gamesurf_border_rect, self.border_thickness )
+
+  borderOutsideOfRect(self.worldsurf, metacolor, self.border_thickness, self.gamesurf_border_rect)
   if self.look_ahead > 0:
-    pygame.draw.rect( self.worldsurf, metacolor, self.nextsurf_border_rect, self.border_thickness )
+    borderOutsideOfRect( self.worldsurf, metacolor, self.border_thickness, self.nextsurf_border_rect)
   if self.keep_zoid:
-    pygame.draw.rect( self.worldsurf, color, self.keptsurf_border_rect, self.border_thickness )
+    borderOutsideOfRect( self.worldsurf, color, self.border_thickness, self.keptsurf_border_rect)
 
 def draw_gridlines( self ):
   if self.gridlines_x:
