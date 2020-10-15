@@ -1,7 +1,7 @@
 import pygame
 
 #draw text to the screen
-def textSurface( self, text, font, color, loc, surf, justify = "center" ):
+def textSurface( text, font, color, loc, surf, justify = "center" ):
   t = font.render( text, True, color )
   tr = t.get_rect()
   setattr( tr, justify, loc )
@@ -49,7 +49,11 @@ def blocks( self, obj, surf, rect, x = 0, y = 0, resetX = False, alpha = 255, gr
 
 #draw the underlying game board the current zoid interacts with
 def board( self, alpha = 255):
-  echo = (self.board_echo_placed and self.are_counter > 0) or (self.board_echo_lc and self.lc_counter > 0)
+  echo = (
+    (self.board_echo_placed and self.are_counter > 0) or
+    (self.board_echo_lc and self.lc_counter > 0)
+  )
+
   if self.visible_board or echo:
     if not self.board_mask or not self.mask_toggle:
       if self.dimtris and not echo:

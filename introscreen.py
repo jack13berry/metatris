@@ -19,9 +19,9 @@ def draw( self ):
 
   if self.title_blink_timer <= self.fps:
     if pygame.joystick.get_count() > 0:
-      gui.textSurface(self, "press START to begin", self.scores_font, ( 200, 200, 200 ), ( self.worldsurf_rect.centerx, self.worldsurf_rect.height - self.worldsurf_rect.height / 5 ), self.worldsurf )
+      gui.textSurface("press START to begin", self.scores_font, ( 200, 200, 200 ), ( self.worldsurf_rect.centerx, self.worldsurf_rect.height - self.worldsurf_rect.height / 5 ), self.worldsurf )
     else:
-      gui.textSurface(self, "press SPACE BAR to begin", self.scores_font, ( 200, 200, 200 ), ( self.worldsurf_rect.centerx, self.worldsurf_rect.height - self.worldsurf_rect.height / 5 ), self.worldsurf )
+      gui.textSurface("press SPACE BAR to begin", self.scores_font, ( 200, 200, 200 ), ( self.worldsurf_rect.centerx, self.worldsurf_rect.height - self.worldsurf_rect.height / 5 ), self.worldsurf )
 
   if self.title_blink_timer > self.fps * 2:
       self.title_blink_timer = 0

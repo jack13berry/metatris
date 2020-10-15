@@ -45,12 +45,6 @@ def setupLayout(world):
   world.gamesurf_rect = world.gamesurf.get_rect()
   world.gamesurf_rect.center = world.worldsurf_rect.center
 
-  world.gamesurf_border_rect = world.gamesurf_rect.copy()
-  world.gamesurf_border_rect.width += world.border_thickness
-  world.gamesurf_border_rect.height += world.border_thickness
-  world.gamesurf_border_rect.left = world.gamesurf_rect.left - world.border_thickness / 2
-  world.gamesurf_border_rect.top = world.gamesurf_rect.top - world.border_thickness / 2
-
   world.gamesurf_msg_rect = world.gamesurf_rect.copy()
   world.gamesurf_msg_rect.height = world.gamesurf_rect.height / 2
   world.gamesurf_msg_rect.center = world.gamesurf_rect.center
@@ -64,19 +58,32 @@ def setupLayout(world):
 
   world.next_size = 5 if world.pentix_zoids else 4
 
-  world.nextsurf = pygame.Surface( ( (world.next_size + .5) * world.side, (world.next_size + .5) * world.side ) )
+  rightColumnWidth = int( (world.next_size + .5) * world.side )
+  nextBoxHeight = int( (world.next_size + .5) * world.side )
+
+  world.nextsurf = pygame.Surface((rightColumnWidth, nextBoxHeight))
   world.nextsurf_rect = world.nextsurf.get_rect()
   world.nextsurf_rect.top = world.gamesurf_rect.top
   world.nextsurf_rect.left = world.next_offset
 
   r = world.nextsurf_rect
-  world.nextPieceBox = [r.left, r.top, r.width, r.height]
+  world.metaScorePos = (r.left+(rightColumnWidth/2), r.top + r.height + 15)
 
-  world.nextsurf_border_rect = r.copy()
-  world.nextsurf_border_rect.width += world.border_thickness
-  world.nextsurf_border_rect.height += world.border_thickness
-  world.nextsurf_border_rect.left = r.left - world.border_thickness / 2
-  world.nextsurf_border_rect.top = r.top - world.border_thickness / 2
+  metabarHeight = world.gamesurf_rect.height - r.height - 3 * world.side
+  metaw = rightColumnWidth+world.border_thickness*2
+  metah = metabarHeight + world.border_thickness
+
+  world.metabarSfc = pygame.Surface( (metaw, metah) )
+  world.metabarBox = world.metabarSfc.get_rect()
+  world.metabarBox.top = r.top + r.height + 3 * world.side
+  world.metabarBox.left = r.left - world.border_thickness
+
+  world.scorebar = pygame.transform.scale(world.scorebarsrc, (metaw-20, metah-30))
+  world.scorebarRect = world.scorebar.get_rect()
+  world.scorebarRect.top += 30
+  world.scorebarRect.left += 10
+  world.metabarWidth = metaw
+  world.metabarHeight = metah
 
   if world.far_next:
     r.left = world.worldsurf_rect.width - world.nextsurf_border_rect.width - world.border_thickness / 2
@@ -87,12 +94,6 @@ def setupLayout(world):
     world.keptsurf_rect = world.keptsurf.get_rect()
     world.keptsurf_rect.top = world.gamesurf_rect.top
     world.keptsurf_rect.left = world.gamesurf_rect.left - world.keptsurf_rect.width - (4 * world.border_thickness)
-
-    world.keptsurf_border_rect = world.keptsurf_rect.copy()
-    world.keptsurf_border_rect.width += world.border_thickness
-    world.keptsurf_border_rect.height += world.border_thickness
-    world.keptsurf_border_rect.left = world.keptsurf_rect.left - world.border_thickness / 2
-    world.keptsurf_border_rect.top = world.keptsurf_rect.top - world.border_thickness / 2
 
   # Text labels
   midtopy = world.worldsurf_rect.height / 2
@@ -216,7 +217,7 @@ def drawTheWorld( world ):
     world.gamesurf.fill( world.bg_color )
     playscreen.draw(world)
   elif world.state == states.Pause:
-    world.worldsurf.fill( ( 0, 0, 0 ) )
+    world.worldsurf.fill( world.bg_color )
     playscreen.drawPaused(world)
   elif world.state == states.Gameover:
     playscreen.drawGameOver(world)

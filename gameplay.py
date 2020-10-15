@@ -281,6 +281,8 @@ class World( object ):
     self.gclogo = pygame.image.load( "media" + sep + "gclogo.png" )
     self.gclogo = pygame.transform.scale(self.gclogo, (368, 72))
 
+    self.scorebarsrc = pygame.image.load( "media" + sep + "scorebar.png" )
+
     gameicon = pygame.image.load( "media" + sep + "game-changer.ico" )
     pygame.display.set_icon(gameicon)
 
@@ -290,10 +292,14 @@ class World( object ):
 
     # Fonts (intro: 36; scores: 48; end: 68; pause: 102)
     # ratios divided by default HEIGHT: .04, .053, .075, .113
-    self.intro_font = pygame.font.Font( "freesansbold.ttf", int(.04 * self.worldsurf_rect.height) )
-    self.scores_font = pygame.font.Font( "freesansbold.ttf", int(.033 * self.worldsurf_rect.height) )
-    self.end_font = pygame.font.Font( "freesansbold.ttf", int(.055 * self.worldsurf_rect.height) )
-    self.pause_font = pygame.font.Font( "freesansbold.ttf", int(.083 * self.worldsurf_rect.height) )
+    fontPath = sep.join(["media", "fonts", "Montserrat", "Montserrat-Medium.ttf"])
+    fontBPath = sep.join(["media", "fonts", "Montserrat", "Montserrat-Black.ttf"])
+    self.intro_font = pygame.font.Font( fontPath, int(.04 * self.worldsurf_rect.height) )
+    self.instantScoreFont = pygame.font.Font( fontPath, int(.040 * self.worldsurf_rect.height) )
+    self.inBoardScoreFont = pygame.font.Font( fontBPath, int(.10 * self.worldsurf_rect.height) )
+    self.scores_font = pygame.font.Font( fontPath, int(.033 * self.worldsurf_rect.height) )
+    self.end_font = pygame.font.Font( fontPath, int(.055 * self.worldsurf_rect.height) )
+    self.pause_font = pygame.font.Font( fontPath, int(.083 * self.worldsurf_rect.height) )
 
     drawer.setupLayout(self)
 
@@ -1206,7 +1212,6 @@ class World( object ):
             stateHandler(self, event)
 
       if resizeEvent:
-        print("RSZ TO:", resizeEvent.w, resizeEvent.h)
         drawer.setupOSWindow(self, resizeEvent.w, resizeEvent.h)
         drawer.setupLayout(self)
         resizeEvent = False

@@ -1,69 +1,71 @@
 import pygame
 
 import gui
+from zoid import Zoid
 
-def draw( self ):
-  self.worldsurf.fill( self.bg_color )
-  draw_gridlines(self)
+def draw( world ):
+  world.gamesurf.fill( world.bg_color )
+  world.worldsurf.fill( world.bg_color )
+  draw_gridlines(world)
+  draw_scores(world)
+  draw_borders(world)
 
-  gui.board(self)
-  if not self.needs_new_zoid:
-    draw_curr_zoid(self)
+  gui.board(world)
 
-  #self.nextsurf.fill( ( 100, 100, 100 ) )
-  self.nextsurf.fill( self.bg_color )
-  draw_next_zoid(self)
+  if not world.needs_new_zoid:
+    draw_curr_zoid(world)
 
-  if self.keep_zoid:
-    self.keptsurf.fill( self.kept_bgc )
-    draw_kept_zoid(self)
+  world.nextsurf.fill( world.bg_color )
+  draw_next_zoid(world)
 
-  gui.textSurface(self, "Game %d" % self.game_number, self.intro_font, ( 196, 196, 196 ), ( 120, 60 ), self.worldsurf )
+  if world.keep_zoid:
+    world.keptsurf.fill( world.kept_bgc )
+    draw_kept_zoid(world)
 
-  draw_scores(self)
-  draw_borders(self)
+  gui.textSurface("Game %d" % world.game_number, world.intro_font, ( 196, 196, 196 ), ( 120, 60 ), world.worldsurf )
 
 
-def drawPaused( self ):
-  if self.show_high_score:
-    gui.textSurface(self, "High:", self.scores_font, ( 210, 210, 210 ), self.high_lab_left, self.worldsurf, "midleft" )
-    gui.textSurface(self, str( self.high_score ), self.scores_font, ( 210, 210, 210 ), self.high_left, self.worldsurf, "midright" )
+def drawPaused( world ):
+  world.worldsurf.fill( world.bg_color )
+  if world.show_high_score:
+    gui.textSurface("High:", world.scores_font, ( 210, 210, 210 ), world.high_lab_left, world.worldsurf, "midleft" )
+    gui.textSurface(str( world.high_score ), world.scores_font, ( 210, 210, 210 ), world.high_left, world.worldsurf, "midright" )
 
-  gui.textSurface(self, "Game %d" % self.game_number, self.intro_font, ( 196, 196, 196 ), ( 120, 60 ), self.worldsurf )
+  gui.textSurface("Game %d" % world.game_number, world.intro_font, ( 196, 196, 196 ), ( 120, 60 ), world.worldsurf )
 
-  draw_scores(self)
-  draw_borders(self)
-  gui.textSurface(self, "PAUSED", self.pause_font, ( 210, 210, 210 ), self.worldsurf_rect.center, self.worldsurf )
+  draw_scores(world)
+  draw_borders(world)
+  gui.textSurface("PAUSED", world.pause_font, ( 210, 210, 210 ), world.worldsurf_rect.center, world.worldsurf )
 
 
 #draw gameover animation and message
-def drawGameOver( self ):
-  tick = self.gameover_anim_tick
+def drawGameOver( world ):
+  tick = world.gameover_anim_tick
   #paint one more of the game world
   if tick == 0:
-    draw(self)
+    draw(world)
 
   #animate
-  elif tick > 0 and tick <= self.gameover_tick_max:
+  elif tick > 0 and tick <= world.gameover_tick_max:
     ix = 0
     iy = 0
     for i in range( 0, int(tick / 2) ):
-      for j in self.gameover_board[i]:
-        gui.square(self, self.gamesurf, ix, iy, color_id = self.zoidrand.randint( 1, 7 ) )
-        ix += self.side
+      for j in world.gameover_board[i]:
+        gui.square(world, world.gamesurf, ix, iy, color_id = world.zoidrand.randint( 1, 7 ) )
+        ix += world.side
       ix = 0
-      iy += self.side
+      iy += world.side
 
-    if not self.inverted:
-      self.worldsurf.blit( self.gamesurf, self.gamesurf_rect )
-    elif self.inverted:
-      self.worldsurf.blit( pygame.transform.flip(self.gamesurf, False, True), self.gamesurf_rect)
+    if not world.inverted:
+      world.worldsurf.blit( world.gamesurf, world.gamesurf_rect )
+    elif world.inverted:
+      world.worldsurf.blit( pygame.transform.flip(world.gamesurf, False, True), world.gamesurf_rect)
 
   #give gameover message
-  elif tick > self.gameover_tick_max:
-    gui.textSurfaceBox(self)
+  elif tick > world.gameover_tick_max:
+    gui.textSurfaceBox(world)
     msg0 = "GAME OVER"
-    msg1 = "Continue? ["+str(self.continues)+"]"
+    msg1 = "Continue? ["+str(world.continues)+"]"
 
     if pygame.joystick.get_count() > 0:
       msg2 = "Press START"
@@ -72,11 +74,11 @@ def drawGameOver( self ):
       msg2 = "Press Spacebar"
       msg3 = "Esc to Exit"
     offset = 36
-    colors =  self.NES_colors[self.level%len(self.NES_colors)]
+    colors =  world.NES_colors[world.level%len(world.NES_colors)]
     col = colors[1]
 
-    game_complete = self.episode_number == self.max_eps - 1
-    if self.continues == 0:
+    game_complete = world.episode_number == world.max_eps - 1
+    if world.continues == 0:
       msg1 = ""
       msg2 = ""
       msg3 = ""
@@ -85,55 +87,53 @@ def drawGameOver( self ):
 
     if game_complete:
       msg0 = "COMPLETED!"
-    elif self.continues < 0:
+    elif world.continues < 0:
       msg1 = "Continue?"
-    gui.textSurface(self, msg0, self.end_font, col, ( self.gamesurf_rect.centerx, self.gamesurf_rect.centery - offset ), self.worldsurf )
-    gui.textSurface(self, msg1, self.scores_font, self.end_text_color, ( self.gamesurf_rect.centerx, self.gamesurf_rect.centery + offset ), self.worldsurf )
-    if int((tick - self.gameover_tick_max) / (self.fps * 2))% 3 < 2:
-      gui.textSurface(self, msg2, self.scores_font, self.end_text_color, ( self.gamesurf_rect.centerx, self.gamesurf_rect.centery + (2 * offset) ), self.worldsurf )
-      gui.textSurface(self, msg3, self.scores_font, self.end_text_color, ( self.gamesurf_rect.centerx, self.gamesurf_rect.centery + (3 * offset) ), self.worldsurf )
+    gui.textSurface(msg0, world.end_font, col, ( world.gamesurf_rect.centerx, world.gamesurf_rect.centery - offset ), world.worldsurf )
+    gui.textSurface(msg1, world.scores_font, world.end_text_color, ( world.gamesurf_rect.centerx, world.gamesurf_rect.centery + offset ), world.worldsurf )
+    if int((tick - world.gameover_tick_max) / (world.fps * 2))% 3 < 2:
+      gui.textSurface(msg2, world.scores_font, world.end_text_color, ( world.gamesurf_rect.centerx, world.gamesurf_rect.centery + (2 * offset) ), world.worldsurf )
+      gui.textSurface(msg3, world.scores_font, world.end_text_color, ( world.gamesurf_rect.centerx, world.gamesurf_rect.centery + (3 * offset) ), world.worldsurf )
 
-  self.gameover_anim_tick += self.ticks_per_frame
-  draw_scores(self)
-  draw_borders(self)
+  world.gameover_anim_tick += world.ticks_per_frame
 
 
-def draw_AAR_zoids( self ):
-  if self.AAR_curr_zoid_hl:
-    gui.blocks(self, self.curr_zoid.get_shape(), self.gamesurf, self.gamesurf_rect, self.curr_zoid.col * self.side, ( self.game_ht - self.curr_zoid.row ) * self.side, alpha = self.AAR_dim * 2, gray = self.gray_zoid)
-  if self.solved:
-    gui.blocks(self, self.curr_zoid.get_shape(rot = self.solved_rot), self.gamesurf, self.gamesurf_rect, self.solved_col * self.side, ( self.game_ht - self.solved_row) * self.side, alpha = 255, gray = self.gray_zoid)
+def draw_AAR_zoids( world ):
+  if world.AAR_curr_zoid_hl:
+    gui.blocks(world, world.curr_zoid.get_shape(), world.gamesurf, world.gamesurf_rect, world.curr_zoid.col * world.side, ( world.game_ht - world.curr_zoid.row ) * world.side, alpha = world.AAR_dim * 2, gray = world.gray_zoid)
+  if world.solved:
+    gui.blocks(world, world.curr_zoid.get_shape(rot = world.solved_rot), world.gamesurf, world.gamesurf_rect, world.solved_col * world.side, ( world.game_ht - world.solved_row) * world.side, alpha = 255, gray = world.gray_zoid)
 
 
-def draw_AAR(self):
-  self.worldsurf.fill( self.bg_color )
+def draw_AAR(world):
+  world.worldsurf.fill( world.bg_color )
 
-  self.gamesurf.fill( self.bg_color )
+  world.gamesurf.fill( world.bg_color )
 
-  draw_gridlines(self)
+  draw_gridlines(world)
 
-  #self.nextsurf.fill( ( 100, 100, 100 ) )
-  self.nextsurf.fill( self.bg_color )
-  draw_next_zoid(self)
+  #world.nextsurf.fill( ( 100, 100, 100 ) )
+  world.nextsurf.fill( world.bg_color )
+  draw_next_zoid(world)
 
-  if self.keep_zoid:
-    self.keptsurf.fill( self.kept_bgc )
-    draw_kept_zoid(self)
+  if world.keep_zoid:
+    world.keptsurf.fill( world.kept_bgc )
+    draw_kept_zoid(world)
 
-  if self.show_high_score:
-    gui.textSurface(self, "High:", self.scores_font, ( 210, 210, 210 ), self.high_lab_left, self.worldsurf, "midleft" )
-    gui.textSurface(self, str( self.high_score ), self.scores_font, ( 210, 210, 210 ), self.high_left, self.worldsurf, "midright" )
+  if world.show_high_score:
+    gui.textSurface("High:", world.scores_font, ( 210, 210, 210 ), world.high_lab_left, world.worldsurf, "midleft" )
+    gui.textSurface(str( world.high_score ), world.scores_font, ( 210, 210, 210 ), world.high_left, world.worldsurf, "midright" )
 
-  # gui.textSurface(self, "Game %d" % self.game_number, self.intro_font, ( 196, 196, 196 ), ( self.gamesurf_rect.centerx, self.gamesurf_rect.top / 2 ), self.worldsurf )
-  gui.textSurface(self, "Game %d" % self.game_number, self.intro_font, ( 196, 196, 196 ), ( 120, 60 ), self.worldsurf )
-  draw_scores(self)
+  # gui.textSurface("Game %d" % world.game_number, world.intro_font, ( 196, 196, 196 ), ( world.gamesurf_rect.centerx, world.gamesurf_rect.top / 2 ), world.worldsurf )
+  gui.textSurface("Game %d" % world.game_number, world.intro_font, ( 196, 196, 196 ), ( 120, 60 ), world.worldsurf )
+  draw_scores(world)
 
-  draw_AAR_zoids(self)
+  draw_AAR_zoids(world)
 
-  draw_borders(self)
+  draw_borders(world)
 
-  gui.board(self, alpha = self.AAR_dim)
-  #gui.textSurface(self, "PAUSED", self.pause_font, ( 210, 210, 210 ), self.worldsurf_rect.center, self.worldsurf )
+  gui.board(world, alpha = world.AAR_dim)
+  #gui.textSurface("PAUSED", world.pause_font, ( 210, 210, 210 ), world.worldsurf_rect.center, world.worldsurf )
 
 
 def borderOutside(surface, color, weight, x, y, w, h):
@@ -142,118 +142,111 @@ def borderOutside(surface, color, weight, x, y, w, h):
   pygame.draw.rect( surface, color, [(x, y+h), (w+weight, weight)])
   pygame.draw.rect( surface, color, [(x-weight, y), (weight, h+weight)])
 
+
 def borderOutsideOfRect(surface, color, weight, rect):
   borderOutside(surface, color, weight, rect.left, rect.top, rect.width, rect.height)
 
-def draw_borders( self ):
-  color = self.border_color
 
-  metagreen = max(0, int( (100-self.newscore)*(2.00) ))
-  metared = min(300 - metagreen, 200)
-  metacolor = ( metared, metagreen, 20 )
-
-  borderOutsideOfRect(self.worldsurf, metacolor, self.border_thickness, self.gamesurf_border_rect)
-  if self.look_ahead > 0:
-    borderOutsideOfRect( self.worldsurf, metacolor, self.border_thickness, self.nextsurf_border_rect)
-  if self.keep_zoid:
-    borderOutsideOfRect( self.worldsurf, color, self.border_thickness, self.keptsurf_border_rect)
-
-def draw_gridlines( self ):
-  if self.gridlines_x:
-    for i in range( 1 , self.game_wd ):
-      pygame.draw.line( self.gamesurf, self.gridlines_color, (i * self.side - 1, 0), (i*self.side - 1, self.gamesurf_rect.height) , 2)
-  if self.gridlines_y:
-    for i in range( 1 , self.game_ht ):
-      pygame.draw.line( self.gamesurf, self.gridlines_color, (0, i * self.side - 1), (self.gamesurf_rect.width, i*self.side - 1) , 2)
+def draw_borders( world ):
+  borderOutsideOfRect(world.worldsurf, world.newscoreColor, world.border_thickness, world.gamesurf_rect)
+  if world.look_ahead > 0:
+    borderOutsideOfRect( world.worldsurf, world.newscoreColor, world.border_thickness, world.nextsurf_rect)
+  if world.keep_zoid:
+    borderOutsideOfRect( world.worldsurf, world.border_color, world.border_thickness, world.keptsurf_rect)
 
 
-def draw_scores( self ):
-  gui.textSurface(self, "Score:", self.scores_font, ( 210, 210, 210 ), self.score_lab_left, self.worldsurf, "midleft" )
-  gui.textSurface(self, "Tetrises:", self.scores_font, ( 210, 210, 210 ), self.tetrises_lab_left, self.worldsurf, "midleft" )
-  gui.textSurface(self, "Lines:", self.scores_font, ( 210, 210, 210 ), self.lines_lab_left, self.worldsurf, "midleft" )
-  gui.textSurface(self, "Level:", self.scores_font, ( 210, 210, 210 ), self.level_lab_left, self.worldsurf, "midleft" )
-
-  gui.textSurface(self, str( self.score ), self.scores_font, ( 210, 210, 210 ), self.score_left, self.worldsurf, "midright" )
-  gui.textSurface(self, str( self.tetrises_game ), self.scores_font, ( 210, 210, 210 ), self.tetrises_left, self.worldsurf, "midright" )
-  gui.textSurface(self, str( self.lines_cleared ), self.scores_font, ( 210, 210, 210 ), self.lines_left, self.worldsurf, "midright" )
-  gui.textSurface(self, str( self.level ), self.scores_font, ( 210, 210, 210 ), self.level_left, self.worldsurf, "midright" )
-  draw_newscore(self)
+def draw_gridlines( world ):
+  if world.gridlines_x:
+    for i in range( 1 , world.game_wd ):
+      pygame.draw.line( world.gamesurf, world.gridlines_color, (i * world.side - 1, 0), (i*world.side - 1, world.gamesurf_rect.height) , 2)
+  if world.gridlines_y:
+    for i in range( 1 , world.game_ht ):
+      pygame.draw.line( world.gamesurf, world.gridlines_color, (0, i * world.side - 1), (world.gamesurf_rect.width, i*world.side - 1) , 2)
 
 
-def draw_newscore( self ):
-  #Notes
-  #Need to do the math to figure out how many pixels out of...100?? I make the bar
-  #Also need the lower pixels to be red and then it goes orange, yellow, green as you go up the bar with a score closer to 0
-  #Score of 100 would be a few pixels tall red line
-  #Score of 0 would be a fully tall line with green at top
-  red_score     = 90
-  orange_score  = 80
-  yellow_score  = 50
-  bar_width     = 60
-  bar_thickness = 0
-  bar_x         = 650
-  bar_y         = 545
-  bar_height    = max(min(100-self.newscore,100),1)*3
-  green_height  = max(min(yellow_score-self.newscore,yellow_score),0)*3
-  yellow_height = max(min(orange_score-self.newscore,orange_score-yellow_score),0)*3
-  orange_height = max(min(red_score-self.newscore,red_score-orange_score),0)*3
-  red_height    = max(min(100-self.newscore,100-red_score),1)*3
-  pygame.draw.rect( self.worldsurf, (255, 0, 0), (bar_x,bar_y-red_height,bar_width,red_height), bar_thickness)
-  bar_top = bar_y-red_height-orange_height-yellow_height-green_height
-  #pygame.draw.rect( self.worldsurf, (0, 0, 255), (bar_x+20,bar_y-bar_height,bar_width,bar_height), bar_thickness)
-  if orange_height>0:
-    pygame.draw.rect( self.worldsurf, (255, 128, 0), (bar_x,bar_y-red_height-orange_height,bar_width,orange_height), bar_thickness)
-  if yellow_height>0:
-    pygame.draw.rect( self.worldsurf, (255, 255, 0), (bar_x,bar_y-red_height-orange_height-yellow_height,bar_width,yellow_height), bar_thickness)
-  if green_height>0:
-    pygame.draw.rect( self.worldsurf, (20, 162, 20), (bar_x,bar_y-red_height-orange_height-yellow_height-green_height,bar_width,green_height), bar_thickness)
+def draw_scores( world ):
+  gui.textSurface("Score:", world.scores_font, ( 210, 210, 210 ), world.score_lab_left, world.worldsurf, "midleft" )
+  gui.textSurface("Tetrises:", world.scores_font, ( 210, 210, 210 ), world.tetrises_lab_left, world.worldsurf, "midleft" )
+  gui.textSurface("Lines:", world.scores_font, ( 210, 210, 210 ), world.lines_lab_left, world.worldsurf, "midleft" )
+  gui.textSurface("Level:", world.scores_font, ( 210, 210, 210 ), world.level_lab_left, world.worldsurf, "midleft" )
 
-  #gui.textSurface(self, "New:", self.scores_font, ( 210, 210, 210 ), self.newscore_lab_left, self.worldsurf, "midleft" )
-  # print ("Score: '%s' / '%s'" % (self.newscore, self.metascore))
-  gui.textSurface(self, "{:0.2f}".format(self.newscore), self.scores_font, ( 210, 210, 210 ), (bar_x+bar_width+40,bar_top), self.worldsurf, "midright" )
-  gui.textSurface(self, "Meta:", self.scores_font, ( 210, 210, 210 ), (600,185), self.worldsurf, "midleft" )
-  gui.textSurface(self, "{:0.3f}".format(self.metascore), self.scores_font, ( 210, 210, 210 ), (720,185), self.worldsurf, "midright" )
-  gui.textSurface(self, "{:0.3f}".format(self.newscore), self.scores_font, (77, 77, 77), (400, 30), self.worldsurf)
+  gui.textSurface(str( world.score ), world.scores_font, ( 210, 210, 210 ), world.score_left, world.worldsurf, "midright" )
+  gui.textSurface(str( world.tetrises_game ), world.scores_font, ( 210, 210, 210 ), world.tetrises_left, world.worldsurf, "midright" )
+  gui.textSurface(str( world.lines_cleared ), world.scores_font, ( 210, 210, 210 ), world.lines_left, world.worldsurf, "midright" )
+  gui.textSurface(str( world.level ), world.scores_font, ( 210, 210, 210 ), world.level_left, world.worldsurf, "midright" )
 
+  newscore = world.newscore
+  if newscore <= 100:
+    newscoreText = "{:0.2f}".format(world.newscore)
+    s = int(newscore)
+    world.newscoreColor = ( 5 + 5 * min(50, s), 255 - 5 * max(0, s-50), 0)
+    lineColor = (255,255,255)
+  else:
+    newscore = 100
+    world.newscoreColor = (255,0,0)
+    newscoreText = "100+"
+    lineColor = (255,0,0)
+
+  world.newscoreText = newscoreText
+  world.metabarSfc.fill( world.bg_color )
+  world.metabarSfc.blit( world.scorebar, world.scorebarRect )
+  cent = (world.metabarHeight-30) / 100
+  spc = world.metabarHeight - (100-newscore)*cent # score percentage
+  textTop = spc-4
+
+  pygame.draw.rect( world.metabarSfc, world.bg_color, [(0, 0), (world.metabarWidth, spc)])
+  pygame.draw.rect( world.metabarSfc, lineColor, [(0, spc-2), (world.metabarWidth, 2)])
+
+  gui.textSurface(newscoreText, world.instantScoreFont, ( 255, 255, 255 ),
+    (int(world.metabarWidth/2), textTop), world.metabarSfc, "midbottom"
+  )
+  world.worldsurf.blit( world.metabarSfc, world.metabarBox )
+
+  gui.textSurface("Meta: {:0.3f}".format(world.metascore), world.scores_font,
+    ( 210, 210, 210 ), world.metaScorePos, world.worldsurf, "midtop" )
+
+  gui.textSurface(world.newscoreText, world.inBoardScoreFont, ( 35, 35, 35 ),
+    (world.gamesurf_rect.width//2, 10), world.gamesurf, "midtop"
+  )
 
 #draw the current zoid at its current location on the board
-def draw_curr_zoid( self ):
-  if (not self.visible_zoid) or self.board_mask or self.mask_toggle:
+def draw_curr_zoid( world ):
+  if (not world.visible_zoid) or world.board_mask or world.mask_toggle:
     return
 
-  gui.blocks(self, self.curr_zoid.get_shape(), self.gamesurf, self.gamesurf_rect, self.curr_zoid.col * self.side, ( self.game_ht - self.curr_zoid.row ) * self.side, gray = self.gray_zoid)
-  if self.ghost_zoid:
-    gui.blocks(self, self.curr_zoid.get_shape(), self.gamesurf, self.gamesurf_rect, self.curr_zoid.col * self.side, ( self.game_ht - self.curr_zoid.to_bottom()) * self.side, alpha = self.ghost_alpha, gray = self.gray_zoid )
+  gui.blocks(world, world.curr_zoid.get_shape(), world.gamesurf, world.gamesurf_rect, world.curr_zoid.col * world.side, ( world.game_ht - world.curr_zoid.row ) * world.side, gray = world.gray_zoid)
+  if world.ghost_zoid:
+    gui.blocks(world, world.curr_zoid.get_shape(), world.gamesurf, world.gamesurf_rect, world.curr_zoid.col * world.side, ( world.game_ht - world.curr_zoid.to_bottom()) * world.side, alpha = world.ghost_alpha, gray = world.gray_zoid )
 
-  if self.hint_toggle and self.solved:
-    if not self.hint_context:
-      gui.blocks(self, self.curr_zoid.get_shape(rot = self.solved_rot), self.gamesurf, self.gamesurf_rect, self.solved_col * self.side, ( self.game_ht - self.solved_row) * self.side, alpha = self.ghost_alpha, gray = self.gray_zoid )
+  if world.hint_toggle and world.solved:
+    if not world.hint_context:
+      gui.blocks(world, world.curr_zoid.get_shape(rot = world.solved_rot), world.gamesurf, world.gamesurf_rect, world.solved_col * world.side, ( world.game_ht - world.solved_row) * world.side, alpha = world.ghost_alpha, gray = world.gray_zoid )
 
-  if self.hint_context and self.solved:
-    hint_col_agree = abs(self.solved_col - self.curr_zoid.col) <= self.hint_context_col_tol
-    hint_agree = self.solved_rot == self.curr_zoid.rot and hint_col_agree
+  if world.hint_context and world.solved:
+    hint_col_agree = abs(world.solved_col - world.curr_zoid.col) <= world.hint_context_col_tol
+    hint_agree = world.solved_rot == world.curr_zoid.rot and hint_col_agree
     if hint_agree:
-      gui.blocks(self, self.curr_zoid.get_shape(rot = self.solved_rot), self.gamesurf, self.gamesurf_rect, self.solved_col * self.side, ( self.game_ht - self.solved_row) * self.side, alpha = self.ghost_alpha, gray = self.gray_zoid )
+      gui.blocks(world, world.curr_zoid.get_shape(rot = world.solved_rot), world.gamesurf, world.gamesurf_rect, world.solved_col * world.side, ( world.game_ht - world.solved_row) * world.side, alpha = world.ghost_alpha, gray = world.gray_zoid )
 
 
 #draw the next zoid inside the next box
-def draw_next_zoid( self ):
-  if self.look_ahead > 0:
-    if not self.next_mask or self.mask_toggle:
-      next_rep = self.next_zoid.get_next_rep()
-      vert = (self.next_size - float(len(next_rep))) / 2.0
-      horiz = (self.next_size - float(len(next_rep[0]))) / 2.0
-      gui.blocks(self, next_rep, self.nextsurf, self.nextsurf_rect, int( self.side * (horiz + .25) ), int( self.side * (vert + .25) ), alpha = self.next_alpha, gray = self.gray_next)
+def draw_next_zoid( world ):
+  if world.look_ahead > 0:
+    if not world.next_mask or world.mask_toggle:
+      next_rep = world.next_zoid.get_next_rep()
+      vert = (world.next_size - float(len(next_rep))) / 2.0
+      horiz = (world.next_size - float(len(next_rep[0]))) / 2.0
+      gui.blocks(world, next_rep, world.nextsurf, world.nextsurf_rect, int( world.side * (horiz + .25) ), int( world.side * (vert + .25) ), alpha = world.next_alpha, gray = world.gray_next)
     else:
-      self.nextsurf.fill( self.mask_color )
-      self.worldsurf.blit( self.nextsurf , self.nextsurf_rect )
+      world.nextsurf.fill( world.mask_color )
+      world.worldsurf.blit( world.nextsurf , world.nextsurf_rect )
 
 
-def draw_kept_zoid( self ):
-  if self.kept_zoid != None:
-    kept_rep = self.kept_zoid.get_next_rep()
-    vert = (self.next_size - float(len(kept_rep))) / 2.0
-    horiz = (self.next_size - float(len(kept_rep[0]))) / 2.0
-    gui.blocks(self,  kept_rep, self.keptsurf, self.keptsurf_rect, int( self.side * (horiz + .25) ), int( self.side * (vert + .25) ), gray = self.gray_kept)
+def draw_kept_zoid( world ):
+  if world.kept_zoid != None:
+    kept_rep = world.kept_zoid.get_next_rep()
+    vert = (world.next_size - float(len(kept_rep))) / 2.0
+    horiz = (world.next_size - float(len(kept_rep[0]))) / 2.0
+    gui.blocks(world,  kept_rep, world.keptsurf, world.keptsurf_rect, int( world.side * (horiz + .25) ), int( world.side * (vert + .25) ), gray = world.gray_kept)
   else:
-    gui.blocks(self, Zoid.next_reps['none'], self.keptsurf, self.keptsurf_rect, 0, 0, gray = self.gray_kept)
+    gui.blocks(world, Zoid.next_reps['none'], world.keptsurf, world.keptsurf_rect, 0, 0, gray = world.gray_kept)
