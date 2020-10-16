@@ -214,10 +214,8 @@ def drawTheWorld( world ):
     world.bg_color = world.tetris_flash_colors[world.tetris_flash_tick % 2]
     if world.tetris_flash_tick > 0:
       world.tetris_flash_tick -= 1
-    world.gamesurf.fill( world.bg_color )
     playscreen.draw(world)
   elif world.state == states.Pause:
-    world.worldsurf.fill( world.bg_color )
     playscreen.drawPaused(world)
   elif world.state == states.Gameover:
     playscreen.drawGameOver(world)
