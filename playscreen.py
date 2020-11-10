@@ -6,6 +6,7 @@ from zoid import Zoid
 def draw( world ):
   world.gamesurf.fill( world.bg_color )
   world.worldsurf.fill( world.bg_color )
+
   draw_gridlines(world)
   draw_scores(world)
   draw_borders(world)
@@ -195,7 +196,8 @@ def draw_scores( world ):
     ( 210, 210, 210 ), world.metaScorePos, world.worldsurf, "midtop" )
 
   gui.textSurface(world.newscoreText, world.inBoardScoreFont, ( 35, 35, 35 ),
-    (world.gamesurf_rect.width//2, 10), world.gamesurf, "midtop"
+    (world.gamesurf_rect.width//2, 10), world.gamesurf, "midtop",
+    upsideDown = world.inverted
   )
 
 #draw the current zoid at its current location on the board

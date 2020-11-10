@@ -13,16 +13,13 @@ import random
 
 import pygame, numpy
 
-
 from zoid import Zoid
 
 from simulator import TetrisSimulator
 
-import states, logger, cnf, drawer, inputhandler
-
+import states, logger, cnf, drawer, inputhandler, timing
 
 sep = os.path.sep
-get_time = time.time if platform.system() == 'Windows' else time.process_time
 
 zoid_col_offset = {
   "O":[4],
@@ -38,6 +35,11 @@ class World( object ):
 
   #initializes the game object with most needed resources at startup
   def __init__( self, args ):
+    # Time Now
+    self.moment = time.perf_counter()
+
+    self.focused = "intro.play"
+
     ## Constants
 
     self.roll_avg = []
@@ -62,21 +64,24 @@ class World( object ):
     ]
 
     # Get time
-    self.starttime = get_time()
+    self.startTime = self.moment
 
     # Collect argument values
     self.args = args
 
     self.session = self.args.logfile
 
-    # Collect config values
-    self.config_names = self.args.config_names
-    if self.config_names == "default":
-      self.config_names = ["default"]
+    self.config = {}
+    self.rawConfDicts = {}
+    for configName in ["default", "user"]:
+      cnf.read(self, configName)
 
-    #junk configuration fetch for use in setting up log files and others.
-    self.config_ix = -1
-    cnf.load(self, self.config_names[0])
+    cnf.setAll(self)
+
+    timingSetup = timing.NesNtsc
+    self.levelTimes = timingSetup.levels
+    self.dasWaitTime = timingSetup.dasWaitTime
+    self.dasRepeatTime = timingSetup.dasRepeatTime
 
     ## Input init
 
@@ -163,13 +168,6 @@ class World( object ):
     ## Gameplay variables
     self.state = states.Intro
 
-    #universal frame timer
-    self.timer = 0
-
-    #pygame.key.set_repeat( self.das_delay, self.das_repeat )
-    self.das_timer = 0
-    self.das_held = 0
-
     # Scoring and leveling
     self.level = self.starting_level
     self.lines_cleared = 0
@@ -187,7 +185,7 @@ class World( object ):
 
     self.game_scores = []
 
-    self.game_start_time = get_time()
+    self.gameStartTime = self.moment
 
     # Starting board
     self.initialize_board()
@@ -226,9 +224,7 @@ class World( object ):
     self.lc_counter = 0
     self.lines_to_clear = []
 
-    # current interval (gravity)
-    self.interval = [self.intervals[self.level], self.drop_interval] #[levelintvl, dropintvl]
-    self.interval_toggle = 0
+    self.isDropping = False
 
     # for mask mode
     self.mask_toggle = False
@@ -248,9 +244,6 @@ class World( object ):
 
     self.hint_toggle = self.hint_zoid
     self.hints = 0
-
-    # for grace period
-    self.grace_timer = 0
 
     #for After-Action Review
     self.AAR_timer = 0
@@ -310,8 +303,11 @@ class World( object ):
     self.print_stats = self.args.boardstats
     #self.boardstats = TetrisBoardStats( self.board, self.curr_zoid.type, self.next_zoid.type )
 
-    self.sim = TetrisSimulator(board = self.board, curr = self.curr_zoid.type, next = self.next_zoid.type, controller = self.get_controller(),
-          overhangs = self.sim_overhangs, force_legal = self.sim_force_legal)
+    self.sim = TetrisSimulator(
+      board = self.board,               curr = self.curr_zoid.type,
+      next = self.next_zoid.type,       controller = self.get_controller(),
+      overhangs = self.sim_overhangs,   force_legal = self.sim_force_legal
+    )
     self.update_stats()
 
     self.features_set = sorted(self.features.keys())
@@ -319,7 +315,7 @@ class World( object ):
 
     #behavior tracking: latencies and sequences
     self.evt_sequence = []
-    self.ep_starttime = get_time()
+    self.epStartTime = self.moment
 
     self.drop_lat = 0
     self.initial_lat = 0
@@ -365,7 +361,7 @@ class World( object ):
       self.sounds[sound].set_volume( self.sfx_vol )
 
     self.soundrand = random.Random()
-    self.soundrand.seed(get_time())
+    self.soundrand.seed(self.moment)
 
 
   def get_controller( self ):
@@ -373,43 +369,6 @@ class World( object ):
     lines = f.readlines()
     f.close()
     return json.loads(lines[0].strip())
-
-
-  def set_var( self, name, default, type ):
-    #set hard defaults first
-    vars(self)[name] = default
-
-    msg = "D"
-    #set config values, if exist
-    if name in self.config:
-      val = []
-      if type == 'float' or type == 'int':
-        val = eval(type)(self.config[name])
-      elif type == 'bool':
-        entry = self.config[name].lower()
-        val = ( entry == 'true') or (entry == 't') or (entry == 'yes') or (entry == 'y')
-      elif type == 'string':
-        val = self.config[name]
-      elif type == 'int_list' or 'color':
-        list = self.config[name].split(",")
-        for i in list:
-          val.append(int(i.strip()))
-        if type == 'color':
-          val = tuple(val)
-
-      vars(self)[name] = val
-
-      if val != default:
-        msg = "C"
-
-    #set command line overrides, if exist
-    if name in vars(self.args):
-      if vars(self.args)[name] != None:
-        vars(self)[name] = vars(self.args)[name]
-        msg = "A"
-
-    print(msg + ": " + name + " = " + str(vars(self)[name]))
-    self.configs_to_write += [name]
 
 
   def min_path (self, zoid, col, rot):
@@ -482,21 +441,20 @@ class World( object ):
   #moves zoid left
   def input_trans_left( self ):
     self.add_latency("TL", kp = True)
-    if self.timer >= 0:
-      self.curr_zoid.left()
+    self.curr_zoid.left()
 
 
   #moves zoid right
   def input_trans_right( self ):
     self.add_latency("TR", kp = True)
-    if self.timer >= 0:
-      self.curr_zoid.right()
+    self.curr_zoid.right()
 
 
-  def input_trans_stop( self, direction ):
-    if direction == self.das_held or not self.das_reversible:
-      self.das_timer = 0
-      self.das_held = 0
+  def dasKeyReleased(self, direction):
+    if direction == self.currentDasKey or not self.das_reversible:
+      self.dasLastTime = 0
+      self.dasInitTime = 0
+      self.currentDasKey = 0
     if direction == -1:
       self.add_latency("TL")
     elif direction == 1:
@@ -506,13 +464,13 @@ class World( object ):
   #initiates a user drop
   def input_start_drop( self ):
     self.add_latency("DN", kp = True, drop = True)
-    self.interval_toggle = 1
+    self.isDropping = True
 
 
   #terminates a user drop
   def input_stop_drop( self ):
     self.add_latency("DN")
-    self.interval_toggle = 0
+    self.isDropping = False
 
 
   def input_clockwise( self ):
@@ -553,47 +511,48 @@ class World( object ):
 
 
   def input_slam( self ):
-    if self.lc_counter < 0 and self.are_counter < 0:
-      if self.zoid_slam:
-        self.curr_zoid.to_bottom(move=True)
-        self.zoid_slammed = True
-        self.skip_timer()
+    if self.lc_counter < 0 and self.are_counter < 0 and self.zoid_slam:
+      self.curr_zoid.to_bottom(move=True)
+      self.zoid_slammed = True
+
 
   def input_mask_toggle( self, on ):
     if self.next_mask and self.lc_counter < 0 and self.are_counter < 0:
       self.mask_toggle = on
       logger.game_event(self, "MASK_TOGGLE", on)
 
+
   def input_continue( self ):
     if self.continues != 0 and self.gameover_anim_tick > self.gameover_tick_max:
       self.state = states.Setup
 
+
   def input_solve( self ):
     if self.solve_button and self.are_counter < 0 and self.lc_counter < 0:
       self.solve()
+
 
   def input_end_AAR( self ):
     self.state = states.Play
     self.AAR_timer = 0
     logger.game_event(self, "AAR", "END", "SELF")
 
+
   #creates a screenshot of the current game.
   def do_screenshot( self ):
     if not os.path.exists( self.logname + sep + "screenshots" ):
       os.mkdir( self.logname + sep + 'screenshots' )
     d = datetime.datetime.now().timetuple()
-    filename = self.logname + sep + "screenshots" + sep + "Gm" + str(self.game_number) + "_Ep" + str(self.episode_number) + "_%d-%d-%d_%d-%d-%d.jpeg" % ( d[0], d[1], d[2], d[3], d[4], d[5] )
+    filename = self.logname + sep + "screenshots" + sep + "Gm" + \
+      str(self.game_number) + "_Ep" + str(self.episode_number) + \
+      "_%d-%d-%d_%d-%d-%d.jpeg" % ( d[0], d[1], d[2], d[3], d[4], d[5] )
+
     pygame.image.save( self.worldsurf, filename )
     logger.game_event(self, "SCREENSHOT")
 
-  def skip_timer( self ):
-    if self.level < len(self.intervals):
-      self.timer = self.intervals[self.level]
-    else:
-      self.timer = self.intervals[-1]
 
   def add_latency( self, token, kp = False, drop = False ):
-    lat = int(1000 * (get_time() - self.ep_starttime))
+    lat = int(1000 * (self.moment - self.epStartTime))
     self.evt_sequence.append([token,lat])
     if self.initial_lat == 0:
       self.initial_lat = lat
@@ -601,89 +560,6 @@ class World( object ):
       self.drop_lat = lat
     if kp:
       self.latencies.append(lat)
-
-
-  #main game logic refresh, handles animations and logic updates
-  def process_game_logic( self ):
-    #lc counter and are counter start at zero and automatically count backward
-    if self.state == states.Play:
-      for i in range( 0, self.ticks_per_frame ):
-        self.lc_counter -= 1
-        self.are_counter -= 1
-
-        if not self.solved:
-          if self.auto_solve:
-            self.solve()
-          else:
-            self.solve(move = False)
-
-        #enable "charging" of translation repeats regardless of zoid release
-        if self.das_held != 0 and self.das_chargeable:
-          self.das_timer += 1
-
-        #if lineclear animation counter is positive, animate to clear lines in 20 frames.
-        if self.lc_counter > 0:
-          c = int( float(self.lc_delay - self.lc_counter) / float(self.lc_delay) * float(self.game_wd) / 2)
-          for r in self.lines_to_clear:
-            self.board[r][c] = 0
-            self.board[r][-(c+1)] = 0
-
-        #otherwise, enter delay period until equilibrium
-        elif self.lc_counter < 1:
-          if self.lc_counter == 0:
-            self.board = self.new_board
-            self.new_board = None
-          if self.are_counter < 1:
-            if self.are_counter == 0:
-              self.solved = False
-              self.new_zoid()
-              self.needs_new_zoid = False
-              self.episode_number += 1
-              logger.game_event(self,  "EPISODE", "BEGIN", self.episode_number )
-              self.reset_evts()
-              if self.ep_screenshots:
-                self.do_screenshot()
-            #if ARE counter is currently out of service
-            elif self.are_counter < 0:
-              #and a new zoid is needed
-              if self.needs_new_zoid:
-                self.are_counter = self.are_delay
-              self.timer += 1
-              self.down_tick()
-
-              if self.das_held != 0:
-                self.das_tick()
-
-      #else:
-        """
-        self.timer -= 1
-        delay = -1 * self.are_delay
-        if self.line_cleared:
-          delay = -1 * ( self.are_delay + self.lc_delay )
-        if self.timer < delay:
-          self.timer = 0
-          self.line_cleared = False
-        """
-
-    elif self.state == states.Setup:
-       self.setup()
-       self.state += 1
-
-    elif self.state == states.Aar:
-      if self.AAR_timer == 0:
-        self.state = states.Play
-        logger.game_event(self, "AAR", "END")
-      self.AAR_timer -= 1
-
-
-  # For debugging purposes; produces random player behavior
-  def random_behavior( self ):
-    if self.timer % 7 == 0:
-      self.curr_zoid.down( self.interval_toggle )
-    if self.timer % 35 == 0:
-      self.curr_zoid.rotate( random.randint( -1, 1 ) )
-    if self.timer % 25 == 0:
-      self.curr_zoid.translate( random.randint( -1, 1 ) )
 
 
   #Checks if the top 5 lines are occupied (engage in danger mode warning music)
@@ -756,13 +632,10 @@ class World( object ):
     logger.game_event(self,  "PLACED", self.curr_zoid.type, [self.curr_zoid.rot, self.curr_zoid.get_col(), self.curr_zoid.get_row()])
 
 
-  def solve( self , move = True):
-    self.curr_zoid
+  def solve(self, move=True):
     c = self.sim.predict(self.board, self.curr_zoid.type)
     self.sim.set_zoids(self.curr_zoid.type, self.next_zoid.type)
     self.solved_col, self.solved_rot, self.solved_row = self.curr_zoid.place_pos(c[0],c[1],c[2]+1, move = move)
-    if move:
-      self.skip_timer()
     self.solved = True
 
 
@@ -821,6 +694,12 @@ class World( object ):
 
   #Rotate next-zoid into curr-zoid and get a new zoid.
   def new_zoid( self ):
+    if self.lastNewPieceTime > 0:
+      print("NewPiece:", self.moment, self.moment-self.lastNewPieceTime)
+    else:
+      print("NewPiece:", self.moment)
+    self.lastNewPieceTime = self.moment
+
     self.curr_zoid = self.next_zoid
     self.curr_zoid.refresh_floor()
 
@@ -883,7 +762,7 @@ class World( object ):
 
       self.lines_cleared += numcleared
 
-      self.check_lvlup()
+      self.checkLevelUp()
 
       self.lc_counter = self.lc_delay
 
@@ -900,8 +779,7 @@ class World( object ):
       self.high_score = self.score
 
 
-  #check to see if player leveled up from line clears
-  def check_lvlup( self ):
+  def checkLevelUp(self):
     prev = self.level
     self.level = int( self.lines_cleared / self.lines_per_lvl ) + self.starting_level
 
@@ -909,9 +787,14 @@ class World( object ):
       self.reset_lvl_tetrises = True
       self.sounds['levelup'].play( 0 )
       logger.game_event(self,  "LEVELUP", self.level)
+      self.setTimeIntervals()
+      print("Game levels up to", self.level, "at", self.moment,
+        "with downInterval", self.pieceDownInterval)
 
-    if self.level < len( self.intervals ):
-      self.interval[0] = self.intervals[self.level]
+
+  def setTimeIntervals(self):
+    if self.level < len( self.levelTimes ):
+      self.pieceDownInterval = (self.levelTimes[self.level])
 
 
   def update_evts( self ):
@@ -931,7 +814,7 @@ class World( object ):
 
   def reset_evts( self ):
     self.evt_sequence = []
-    self.ep_starttime = get_time()
+    self.epStartTime = self.moment
 
     if self.reset_lvl_tetrises:
       self.tetrises_level = 0
@@ -958,8 +841,6 @@ class World( object ):
       self.AAR_conflicts = 0
       self.state = states.Aar
       self.AAR_timer = self.AAR_dur
-      if self.AAR_dur_scaling:
-        self.AAR_timer = self.interval[0]
 
 
   def controller_agree( self ):
@@ -967,7 +848,7 @@ class World( object ):
 
 
   #end a trial
-  def end_trial( self ):
+  def endEpisode( self ):
     if self.solved:
       self.agree = self.controller_agree()
       logger.game_event(self,  "CONTROLLER", "AGREE?", self.agree)
@@ -992,8 +873,8 @@ class World( object ):
       self.game_over()
       logger.game_event(self,  "EPISODE_LIMIT_REACHED" )
 
+    self.pieceDropLastTime = self.moment + 0.2
 
-  #game over detected, change state
   def game_over( self ):
     logger.game_event(self,  "GAME", "END", self.game_number )
     logger.gameresults(self, complete = True)
@@ -1006,23 +887,38 @@ class World( object ):
     pygame.mixer.music.stop()
 
 
-  #push piece down based on timer
-  def down_tick( self ):
-    if self.gravity or self.interval_toggle == 1:
-      if self.timer >= self.interval[self.interval_toggle]:
-        self.timer = 0
-        self.curr_zoid.down( self.interval_toggle )
+  def downTick( self ):
+    if self.gravity and self.moment >= self.pieceDownLastTime + self.pieceDownInterval:
+      self.curr_zoid.down(0)
+      self.pieceDownLastTime = self.moment
+
+    elif self.isDropping and self.moment >= self.pieceDropLastTime + 0.01:
+      self.pieceDropLastTime = self.moment
+      self.curr_zoid.down(1)
 
 
-  #def das_tick
-  def das_tick( self ):
-    if not self.das_chargeable:
-      self.das_timer += 1
-    if self.das_timer >= self.das_delay and (self.das_timer - self.das_delay) % self.das_repeat == 0:
-      if self.das_held == -1:
-        self.curr_zoid.left()
-      elif self.das_held == 1:
-        self.curr_zoid.right()
+  def dasStart(self, dir):
+    self.currentDasKey = dir
+    self.dasInitTime = self.moment
+
+
+  def dasTick(self):
+    if self.dasInitTime == 0:
+      return
+
+    if self.dasLastTime == 0:
+      if self.moment < self.dasInitTime + self.dasWaitTime:
+        return
+
+    else:
+      if self.moment < self.dasLastTime + self.dasRepeatTime:
+        return
+
+    self.dasLastTime = self.moment
+    if self.currentDasKey == -1:
+      self.curr_zoid.left()
+    elif self.currentDasKey == 1:
+      self.curr_zoid.right()
 
 
   #update the on-line board statistics
@@ -1031,23 +927,42 @@ class World( object ):
     if self.print_stats:
       print(self.features)
 
+
   def update_stats_move( self, col, rot, row):
     self.features = self.sim.report_move_features(col, rot, row, printout = self.print_stats)
     if self.print_stats:
       print(self.features)
 
-  #startup and reset procedures
+
+  def quit( self ):
+    if self.game_number > 0 and not self.state == states.Gameover:
+      logger.gameresults(self, complete=False)
+    self.criterion_score()
+    logger.close_files(self)
+    # reactor.stop()
+    self.running = False
+
+
+  def criterion_score( self ):
+    x = self.game_scores
+    x.sort()
+    if len(x) > 4:
+      x = x[-4:]
+    if len(x) > 0:
+      print("\nCriterion score: " + str(sum(x) / len(x)) + "\n")
+      print("High score: " + str(x[-1]) + "\n")
+      print("Meta score: " + "{:0.3f}".format(self.metascore) + "\n")
+
+
+  def pause(self):
+    self.state = states.Pause
+
+
+  def error_handler(error):
+    self.running = False
+
+
   def setup( self ):
-
-    #check for additional configs
-    self.config_ix += 1
-
-    ## preserve continues count from initial config
-    cur_continues = self.continues
-    self.config = {}
-    cnf.load(self, (self.config_names[self.config_ix%len(self.config_names)]))
-    self.continues = cur_continues
-    #new board
     self.initialize_board()
 
     #increment game number
@@ -1059,7 +974,7 @@ class World( object ):
       seed = self.random_seeds[self.seed_order[(self.game_number-1)%len(self.random_seeds)]]
       # print(seed)
     else:
-      seed = int(get_time() * 10000000000000.0)
+      seed = int(self.moment * 10000000000000.0)
 
     self.zoidrand = random.Random()
     self.zoidrand.seed(seed)
@@ -1101,7 +1016,7 @@ class World( object ):
 
     #episode behavior information
     self.evt_sequence = []
-    self.ep_starttime = get_time()
+    self.epStartTime = self.moment
 
     self.drop_lat = 0
     self.initial_lat = 0
@@ -1131,8 +1046,6 @@ class World( object ):
     self.prev_tetris = 0
     self.drop_score = 0
 
-    self.interval = [self.intervals[self.level], self.drop_interval]
-    self.interval_toggle = 0
 
     #update the board stats object with reset values
     self.sim.set_board( self.board )
@@ -1140,9 +1053,14 @@ class World( object ):
     self.update_stats()
 
     #reset ticks
-    self.timer = 0
-    self.das_timer = 0
-    self.das_held = 0
+    self.isDropping = False
+    self.currentDasKey = 0
+    self.dasLastTime = 0
+    self.dasInitTime = 0
+    self.pieceDownLastTime = self.moment
+    self.pieceDropLastTime = self.moment
+    self.lastNewPieceTime = 0
+    self.setTimeIntervals()
 
     self.needs_new_zoid = False
     self.are_counter = 0
@@ -1152,7 +1070,7 @@ class World( object ):
 
     self.episode_number = 0
 
-    self.game_start_time = get_time()
+    self.gameStartTime = self.moment
 
     #restart the normal music
     pygame.mixer.music.load( "media" + sep + "%s.wav" % self.song )
@@ -1160,47 +1078,82 @@ class World( object ):
     self.danger_mode = False
 
     logger.game_event(self,  "GAME", "BEGIN", self.game_number )
+    print("Game starts at", self.moment, "with wait time", self.pieceDownInterval)
 
 
-  def quit( self ):
-    if self.game_number > 0 and not self.state == states.Gameover:
-      logger.gameresults(self, complete=False)
-    self.criterion_score()
-    logger.close_files(self)
-    # reactor.stop()
-    self.running = False
+  def process_game_logic( self ):
+    #lc counter and are counter start at zero and automatically count backward
+    if self.state == states.Play:
+      self.downTick()
+      self.dasTick()
 
+      for i in range( 0, self.ticks_per_frame ):
+        self.lc_counter -= 1
+        self.are_counter -= 1
 
-  def criterion_score( self ):
-    x = self.game_scores
-    x.sort()
-    if len(x) > 4:
-      x = x[-4:]
-    if len(x) > 0:
-      print("\nCriterion score: " + str(sum(x) / len(x)) + "\n")
-      print("High score: " + str(x[-1]) + "\n")
-      print("Meta score: " + "{:0.3f}".format(self.metascore) + "\n")
+        if not self.solved:
+          if self.auto_solve:
+            self.solve()
+          else:
+            self.solve(move = False)
 
+        if self.lc_counter > 0:
+          c = int(
+            float(self.lc_delay - self.lc_counter) /
+            float(self.lc_delay) * float(self.game_wd) / 2
+          )
+          for r in self.lines_to_clear:
+            self.board[r][c] = 0
+            self.board[r][-(c+1)] = 0
 
-  def error_handler(error):
-      #NOTE: the following won't end the program here:
-      #quit(), sys.exit(), raise ..., return error
-      #...because 'deferred' will just catch it and ignore it
-      os.abort()
+        elif self.lc_counter < 1:
+          if self.lc_counter == 0:
+            self.board = self.new_board
+            self.new_board = None
+          if self.are_counter < 1:
+            if self.are_counter == 0:
+              self.solved = False
+              self.new_zoid()
+              self.needs_new_zoid = False
+              self.episode_number += 1
+              logger.game_event(self,  "EPISODE", "BEGIN", self.episode_number )
+              self.reset_evts()
+              if self.ep_screenshots:
+                self.do_screenshot()
+            elif self.are_counter < 0: #if ARE counter is currently out of service
+              if self.needs_new_zoid: #and a new zoid is needed
+                self.are_counter = self.are_delay
+
+    elif self.state == states.Setup:
+      self.setup()
+      self.state += 1
+
+    elif self.state == states.Aar:
+      if self.AAR_timer == 0:
+        self.state = states.Play
+        logger.game_event(self, "AAR", "END")
+      self.AAR_timer -= 1
+
 
   def run( self ):
-    # self.start( None )
-    # reactor.run()
     self.running = True
     self.state = states.Intro
     resizeEvent = False
+    # olturns = 0
+
+    self.textBlinkLastTime = self.moment
+
+    # clock = pygame.time.Clock()
     while self.running:
+      # clock.tick(50)
+      self.moment = time.perf_counter()
+
       for event in pygame.event.get():
         if event.type == pygame.QUIT:
           return self.quit()
 
         elif event.type == pygame.VIDEORESIZE:
-            resizeEvent = event
+          resizeEvent = event
 
         #screenshot clause
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_i:
@@ -1210,16 +1163,19 @@ class World( object ):
           stateHandler = inputhandler.HANDLERS.get(self.state, False)
           if stateHandler:
             stateHandler(self, event)
+          else:
+            print("!!ERR!! State without event handler:", self.state)
 
       if resizeEvent:
         drawer.setupOSWindow(self, resizeEvent.w, resizeEvent.h)
         drawer.setupLayout(self)
         resizeEvent = False
+        self.shouldRedraw = True
 
       self.process_game_logic()
       drawer.drawTheWorld(self)
 
       if self.state == states.Play:
-        logger.world(self)
+        logger.worldState(self)
 
     self.quit()

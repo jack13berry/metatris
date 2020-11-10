@@ -1,6 +1,4 @@
-import os, platform, time, json
-
-get_time = time.time if platform.system() == 'Windows' else time.process_time
+import os, platform, json
 
 # Log line types:
 #   events
@@ -9,40 +7,40 @@ get_time = time.time if platform.system() == 'Windows' else time.process_time
 #   game summs
 
 # initialize log directory
-def init( self ):
-  if self.args.logfile:
-    self.filename = self.SID + "_" + self.args.logfile
-    self.logname = os.path.join( self.logdir, self.filename )
+def init( world ):
+  if world.args.logfile:
+    world.filename = world.SID + "_" + world.args.logfile
+    world.logname = os.path.join( world.logdir, world.filename )
 
-    if not os.path.exists( self.logdir ):
-      os.makedirs( self.logdir )
-    if not os.path.exists( self.logname):
-      os.makedirs( self.logname)
+    if not os.path.exists( world.logdir ):
+      os.makedirs( world.logdir )
+    if not os.path.exists( world.logname):
+      os.makedirs( world.logname)
 
     #open file
-    self.histfile_path = self.logname + "/_hist_" + self.filename + ".hist"
-    self.histfile = open( self.histfile_path, "w")
+    world.histfile_path = world.logname + "/_hist_" + world.filename + ".hist"
+    world.histfile = open( world.histfile_path, "w")
 
-    self.configfile_path = self.logname + "/_config_" + self.filename + ".config"
-    self.configfile = open( self.configfile_path, "w")
+    world.configfile_path = world.logname + "/_config_" + world.filename + ".config"
+    world.configfile = open( world.configfile_path, "w")
 
-    self.unifile_path = self.logname + "/complete_" + self.filename + ".tsv"
-    self.unifile = open( self.unifile_path + ".incomplete", "w")
-    #self.uni_header()
+    world.unifile_path = world.logname + "/complete_" + world.filename + ".tsv"
+    world.unifile = open( world.unifile_path + ".incomplete", "w")
+    #world.uni_header()
 
-    self.scorefile_path = self.logname + "/score_" + self.filename + ".tsv"
-    self.scorefile = open( self.scorefile_path + ".incomplete", "w")
+    world.scorefile_path = world.logname + "/score_" + world.filename + ".tsv"
+    world.scorefile = open( world.scorefile_path + ".incomplete", "w")
 
-    if self.ep_log:
-      self.epfile_path = self.logname + "/episodes_" + self.filename + ".tsv"
-      self.epfile = open(   self.epfile_path + ".incomplete", "w" )
+    if world.ep_log:
+      world.epfile_path = world.logname + "/episodes_" + world.filename + ".tsv"
+      world.epfile = open(   world.epfile_path + ".incomplete", "w" )
 
-    if self.game_log:
-      self.gamefile_path = self.logname + "/games_" + self.filename + ".tsv"
-      self.gamefile = open (self.gamefile_path + ".incomplete", "w")
+    if world.game_log:
+      world.gamefile_path = world.logname + "/games_" + world.filename + ".tsv"
+      world.gamefile = open (world.gamefile_path + ".incomplete", "w")
 
   else:
-    self.logfile = sys.stdout
+    world.logfile = sys.stdout
 
   #immediate only
   state_header = ["delaying","dropping","zoid_rot","zoid_col","zoid_row"]
@@ -69,66 +67,66 @@ def init( self ):
     "agree"
   ]
 
-  self.fixed_header = uni_header + game_header + event_header + ep_header + state_header + board_header
+  world.fixed_header = uni_header + game_header + event_header + ep_header + state_header + board_header
 
 
-def close_files( self ):
-  game_event(self, "seed_sequence", data1 = self.seeds_used )
-  self.unifile.close()
-  os.rename( self.unifile_path + ".incomplete", self.unifile_path)
-  self.scorefile.close()
-  os.rename( self.scorefile_path + ".incomplete", self.scorefile_path)
+def close_files( world ):
+  game_event(world, "seed_sequence", data1 = world.seeds_used )
+  world.unifile.close()
+  os.rename( world.unifile_path + ".incomplete", world.unifile_path)
+  world.scorefile.close()
+  os.rename( world.scorefile_path + ".incomplete", world.scorefile_path)
 
-  if self.ep_log:
-    self.epfile.close()
-    os.rename( self.epfile_path + ".incomplete", self.epfile_path)
+  if world.ep_log:
+    world.epfile.close()
+    os.rename( world.epfile_path + ".incomplete", world.epfile_path)
 
-  if self.game_log:
-    self.gamefile.close()
-    os.rename( self.gamefile_path + ".incomplete", self.gamefile_path)
+  if world.game_log:
+    world.gamefile.close()
+    os.rename( world.gamefile_path + ".incomplete", world.gamefile_path)
 
-  self.configfile.write("\n#fixed values to recreate session's seed sequence\n")
-  self.configfile.write("random_seeds = " + ",".join(self.seeds_used) + "\n")
-  self.configfile.write("permute_seeds = False\n")
-  self.configfile.write("fixed_seeds = True\n")
-  self.configfile.close()
+  world.configfile.write("\n#fixed values to recreate session's seed sequence\n")
+  world.configfile.write("random_seeds = " + ",".join(world.seeds_used) + "\n")
+  world.configfile.write("permute_seeds = False\n")
+  world.configfile.write("fixed_seeds = True\n")
+  world.configfile.close()
   """
-  self.logfile.close()
-  os.rename( self.logfile_path + ".incomplete", self.logfile_path)
+  world.logfile.close()
+  os.rename( world.logfile_path + ".incomplete", world.logfile_path)
   """
 
-def universal_header( self ):
-  head = "\t".join( map(str, self.fixed_header) ) + "\n"
-  self.unifile.write( head )
-  if self.ep_log:
-    self.epfile.write( head )
-  if self.game_log:
-    self.gamefile.write( head )
+def universal_header( world ):
+  head = "\t".join( map(str, world.fixed_header) ) + "\n"
+  world.unifile.write( head )
+  if world.ep_log:
+    world.epfile.write( head )
+  if world.game_log:
+    world.gamefile.write( head )
 
-def universal( self, event_type, loglist, complete = False, evt_id = False, evt_data1 = False, evt_data2 = False, features = False):
+def universal( world, event_type, loglist, complete = False, evt_id = False, evt_data1 = False, evt_data2 = False, features = False):
   data = []
   def logit(val, key):
     data.append(val if key in loglist else "")
 
   #["ts","event_type"]
-  data.append(get_time() - self.starttime)
+  data.append(world.moment - world.startTime)
   data.append(event_type)
 
   #["SID","session","game_number","game_type","episode_number","level","score","lines_cleared"
   #                "completed","game_duration","avg_ep_duration","zoid_sequence"]
-  logit(self.SID, "SID")
-  logit(self.ECID, "ECID")
-  logit(self.session, "session")
-  logit(self.game_type, "game_type")
-  logit(self.game_number, "game_number")
-  logit(self.episode_number, "episode_number")
-  logit(self.level, "level")
-  logit(self.score, "score")
-  logit(self.lines_cleared, "lines_cleared")
+  logit(world.SID, "SID")
+  logit(world.ECID, "ECID")
+  logit(world.session, "session")
+  logit(world.game_type, "game_type")
+  logit(world.game_number, "game_number")
+  logit(world.episode_number, "episode_number")
+  logit(world.level, "level")
+  logit(world.score, "score")
+  logit(world.lines_cleared, "lines_cleared")
   logit(complete, "completed")
-  logit(get_time() - self.game_start_time, "game_duration")
-  logit((get_time() - self.game_start_time) / (self.episode_number + 1), "avg_ep_duration")
-  logit("'%s'" % json.dumps( self.zoid_buff ), "zoid_sequence")
+  logit(world.moment - world.gameStartTime, "game_duration")
+  logit((world.moment - world.gameStartTime) / (world.episode_number + 1), "avg_ep_duration")
+  logit("'%s'" % json.dumps( world.zoid_buff ), "zoid_sequence")
 
   #["evt_id","evt_data1","evt_data2"]
   data.append(evt_id if evt_id else "")
@@ -142,45 +140,45 @@ def universal( self, event_type, loglist, complete = False, evt_id = False, evt_
   #   "u_drops","s_drops","prop_u_drops",
   #   "initial_lat","drop_lat","avg_lat",
   #   "tetrises_game","tetrises_level"]
-  logit(self.curr_zoid.type, "curr_zoid")
-  logit(self.next_zoid.type, "next_zoid")
-  logit(self.danger_mode, "danger_mode")
-  logit(json.dumps(self.evt_sequence), "evt_sequence")
-  logit(self.rots, "rots")
-  logit(self.trans, "trans")
-  logit(self.rots + self.trans, "path_length")
-  logit(self.min_rots, "min_rots")
-  logit(self.min_trans, "min_trans")
-  logit(self.min_rots + self.min_trans, "min_path")
-  logit(self.rots - self.min_rots, "min_rots_diff")
-  logit(self.trans - self.min_trans, "min_trans_diff")
-  logit((self.rots - self.min_rots) + (self.trans - self.min_trans), "min_path_diff")
-  logit(self.u_drops, "u_drops")
-  logit(self.s_drops, "s_drops")
-  logit(self.prop_drop, "prop_u_drops")
-  logit(self.initial_lat, "initial_lat")
-  logit(self.drop_lat, "drop_lat")
-  logit(self.avg_latency, "avg_lat")
-  logit(self.tetrises_game, "tetrises_game")
-  logit(self.tetrises_level, "tetrises_level")
-  logit(self.agree, "agree")
+  logit(world.curr_zoid.type, "curr_zoid")
+  logit(world.next_zoid.type, "next_zoid")
+  logit(world.danger_mode, "danger_mode")
+  logit(json.dumps(world.evt_sequence), "evt_sequence")
+  logit(world.rots, "rots")
+  logit(world.trans, "trans")
+  logit(world.rots + world.trans, "path_length")
+  logit(world.min_rots, "min_rots")
+  logit(world.min_trans, "min_trans")
+  logit(world.min_rots + world.min_trans, "min_path")
+  logit(world.rots - world.min_rots, "min_rots_diff")
+  logit(world.trans - world.min_trans, "min_trans_diff")
+  logit((world.rots - world.min_rots) + (world.trans - world.min_trans), "min_path_diff")
+  logit(world.u_drops, "u_drops")
+  logit(world.s_drops, "s_drops")
+  logit(world.prop_drop, "prop_u_drops")
+  logit(world.initial_lat, "initial_lat")
+  logit(world.drop_lat, "drop_lat")
+  logit(world.avg_latency, "avg_lat")
+  logit(world.tetrises_game, "tetrises_game")
+  logit(world.tetrises_level, "tetrises_level")
+  logit(world.agree, "agree")
 
   #["delaying","dropping","zoid_rot","zoid_col","zoid_row"]
-  logit(self.needs_new_zoid, "delaying")
-  logit(self.interval_toggle, "dropping")
-  logit(self.curr_zoid.rot, "zoid_rot")
-  logit(self.curr_zoid.get_col(), "zoid_col")
-  logit(self.curr_zoid.get_row(), "zoid_row")
+  logit(world.needs_new_zoid, "delaying")
+  logit(1 if world.isDropping else 0, "dropping")
+  logit(world.curr_zoid.rot, "zoid_rot")
+  logit(world.curr_zoid.get_col(), "zoid_col")
+  logit(world.curr_zoid.get_row(), "zoid_row")
   #logit(12345.0, "my_chris")
 
 
 
   #["board_rep","zoid_rep"]
-  logit("'%s'" % json.dumps( self.board ), "board_rep")
-  logit("'%s'" % json.dumps( zoid_in_board(self) ), "zoid_rep")
+  logit("'%s'" % json.dumps( world.board ), "board_rep")
+  logit("'%s'" % json.dumps( zoid_in_board(world) ), "zoid_rep")
 
 
-  if features or (event_type == "GAME_EVENT" and evt_id == "KEYPRESS" and evt_data1 == "PRESS" and self.episode_number > 0):
+  if features or (event_type == "GAME_EVENT" and evt_id == "KEYPRESS" and evt_data1 == "PRESS" and world.episode_number > 0):
     factor1  = 0.663025211
     factor2  = 0.213249645
     factor3  = 0.035625071
@@ -194,107 +192,107 @@ def universal( self, event_type, loglist, complete = False, evt_id = False, evt_
     factor11 = 0.000694257
     factor12 = 0.000534684
 
-    z_answer =  self.features["pattern_div"]*(0.064355*factor1 + 0.003902*factor2 + 0.002922*factor6 + 0.002172*factor10 + 0.000086528*factor11 + 0.000236992*factor12)
-    z_answer += self.features["mean_ht"]*(0.193209*factor1 + 0.009624*factor2 + 0.000498*factor6 + 0.000686*factor8 + 0.00027*factor9 + 0.000147968*factor11 + 0.000074263*factor12)
-    z_answer += self.features["max_ht"]*(0.149666*factor1 + 0.011828*factor2 + 0.004558*factor6 + 0.000899*factor8 + 0.000083232*factor11 + 0.000081648*factor12)
-    z_answer += self.features["weighted_cells"]*(0.179315*factor1 + 0.010358*factor2 + 0.001098*factor8 + 0.000543*factor9 + 0.000207088*factor12)
-    z_answer += self.features["min_ht"]*(0.207176*factor1 + 0.003856*factor2 + 0.00081*factor6 + 0.00103*factor10)
-    z_answer += self.features["row_trans"]*(0.154613*factor1 + 0.012476*factor2 + 0.006403*factor6 + 0.000112*factor10 + 0.000329672*factor11)
-    z_answer += self.features["pits"]*(0.222091*factor1 + 0.000163*factor9)
-    z_answer += self.features["pit_rows"]*(0.224396*factor1)
-    z_answer += self.features["landing_height"]*(0.153465*factor1 + 0.009769*factor2 + 0.000506*factor6 + 0.001861*factor7 + 0.000789*factor8 + 0.000363*factor9 + 0.000170528*factor11)
-    z_answer += self.features["col_trans"]*(0.21254*factor1 + 0.000677047*factor12)
-    z_answer += self.features["pit_depth"]*(0.211193*factor1 + 0.000346*factor10 + 0.000091592*factor11)
-    z_answer += self.features["lumped_pits"]*(0.21209*factor1 + 0.000499023*factor12)
-    z_answer += self.features["cd_9"]*(0.042487*factor2 + 0.000971*factor6 + 0.002238*factor8 + 0.002022*factor9)
-    z_answer += self.features["wells"]*(0.121581*factor2 + 0.000481*factor6 + 0.000146*factor10 + 0.000329672*factor11)
-    z_answer += self.features["deep_wells"]*(0.120814*factor2 + 0.000625*factor6 + 0.000107648*factor11)
-    z_answer += self.features["max_well"]*(0.122608*factor2 + 0.000524*factor6)
-    z_answer += self.features["cuml_wells"]*(0.119032*factor2 + 0.000464*factor6)
-    z_answer += self.features["jaggedness"]*(0.044479*factor2 + 0.019288*factor6 + 0.000362*factor7 + 0.000263*factor9 + 0.000146*factor10 + 0.000658952*factor11)
-    z_answer += self.features["max_diffs"]*(0.031886*factor2 + 0.013543*factor6 + 0.001201*factor8 + 0.001194*factor9)
-    z_answer += self.features["cd_1"]*(0.038496*factor2 + 0.001007*factor6 + 0.002238*factor8 + 0.001337*factor9 + 0.000147968*factor11)
-    #######z_answer += self.features["resp_lat"]*0.0152810854045063
-    z_answer += self.features["matches"]*(0.002177*factor2 + 0.001273*factor4 + 0.016701*factor7)
-    z_answer += self.features["cd_7"]*(0.000424*factor9)
-    z_answer += self.features["cd_8"]*(0.000341*factor8)
-    z_answer += self.features["cd_2"]*(0.000152352*factor11)
-    z_answer += self.features["d_max_ht"]*(0.001488*factor2 + 0.012226*factor7)
-    z_answer += self.features["d_pits"]*(0.001488*factor2 + 0.001277*factor7)
+    z_answer =  world.features["pattern_div"]*(0.064355*factor1 + 0.003902*factor2 + 0.002922*factor6 + 0.002172*factor10 + 0.000086528*factor11 + 0.000236992*factor12)
+    z_answer += world.features["mean_ht"]*(0.193209*factor1 + 0.009624*factor2 + 0.000498*factor6 + 0.000686*factor8 + 0.00027*factor9 + 0.000147968*factor11 + 0.000074263*factor12)
+    z_answer += world.features["max_ht"]*(0.149666*factor1 + 0.011828*factor2 + 0.004558*factor6 + 0.000899*factor8 + 0.000083232*factor11 + 0.000081648*factor12)
+    z_answer += world.features["weighted_cells"]*(0.179315*factor1 + 0.010358*factor2 + 0.001098*factor8 + 0.000543*factor9 + 0.000207088*factor12)
+    z_answer += world.features["min_ht"]*(0.207176*factor1 + 0.003856*factor2 + 0.00081*factor6 + 0.00103*factor10)
+    z_answer += world.features["row_trans"]*(0.154613*factor1 + 0.012476*factor2 + 0.006403*factor6 + 0.000112*factor10 + 0.000329672*factor11)
+    z_answer += world.features["pits"]*(0.222091*factor1 + 0.000163*factor9)
+    z_answer += world.features["pit_rows"]*(0.224396*factor1)
+    z_answer += world.features["landing_height"]*(0.153465*factor1 + 0.009769*factor2 + 0.000506*factor6 + 0.001861*factor7 + 0.000789*factor8 + 0.000363*factor9 + 0.000170528*factor11)
+    z_answer += world.features["col_trans"]*(0.21254*factor1 + 0.000677047*factor12)
+    z_answer += world.features["pit_depth"]*(0.211193*factor1 + 0.000346*factor10 + 0.000091592*factor11)
+    z_answer += world.features["lumped_pits"]*(0.21209*factor1 + 0.000499023*factor12)
+    z_answer += world.features["cd_9"]*(0.042487*factor2 + 0.000971*factor6 + 0.002238*factor8 + 0.002022*factor9)
+    z_answer += world.features["wells"]*(0.121581*factor2 + 0.000481*factor6 + 0.000146*factor10 + 0.000329672*factor11)
+    z_answer += world.features["deep_wells"]*(0.120814*factor2 + 0.000625*factor6 + 0.000107648*factor11)
+    z_answer += world.features["max_well"]*(0.122608*factor2 + 0.000524*factor6)
+    z_answer += world.features["cuml_wells"]*(0.119032*factor2 + 0.000464*factor6)
+    z_answer += world.features["jaggedness"]*(0.044479*factor2 + 0.019288*factor6 + 0.000362*factor7 + 0.000263*factor9 + 0.000146*factor10 + 0.000658952*factor11)
+    z_answer += world.features["max_diffs"]*(0.031886*factor2 + 0.013543*factor6 + 0.001201*factor8 + 0.001194*factor9)
+    z_answer += world.features["cd_1"]*(0.038496*factor2 + 0.001007*factor6 + 0.002238*factor8 + 0.001337*factor9 + 0.000147968*factor11)
+    #######z_answer += world.features["resp_lat"]*0.0152810854045063
+    z_answer += world.features["matches"]*(0.002177*factor2 + 0.001273*factor4 + 0.016701*factor7)
+    z_answer += world.features["cd_7"]*(0.000424*factor9)
+    z_answer += world.features["cd_8"]*(0.000341*factor8)
+    z_answer += world.features["cd_2"]*(0.000152352*factor11)
+    z_answer += world.features["d_max_ht"]*(0.001488*factor2 + 0.012226*factor7)
+    z_answer += world.features["d_pits"]*(0.001488*factor2 + 0.001277*factor7)
 
-    z_answer += self.prop_drop*(0.018262*factor1 + 0.003221*factor3 + 0.011608*factor4 + 0.001713*factor5 + 0.002048*factor7)
-    z_answer += self.rots*(0.050161*factor3 + 0.00063*factor4 + 0.000619*factor5)
-    z_answer += (self.rots - self.min_rots)*(0.049324*factor3 + 0.000584*factor4 + 0.000557*factor5)
-    #print("{:3d}".format(self.rots) + " " + "{:3d}".format(self.min_rots))
-    if self.drop_lat<.001:
-      z_answer += int(1000 * (get_time() - self.ep_starttime))*(0.005354*factor3 + 0.021913*factor4 + 0.002672*factor5)
-      #print("{:0.1f}".format(get_time()))
-      #print("   " + "{:0.3f}".format(self.ep_starttime) + "  " + "{:0.1f}".format(int(1000 * (get_time() - self.ep_starttime))*0.0124717621894591))
+    z_answer += world.prop_drop*(0.018262*factor1 + 0.003221*factor3 + 0.011608*factor4 + 0.001713*factor5 + 0.002048*factor7)
+    z_answer += world.rots*(0.050161*factor3 + 0.00063*factor4 + 0.000619*factor5)
+    z_answer += (world.rots - world.min_rots)*(0.049324*factor3 + 0.000584*factor4 + 0.000557*factor5)
+    #print("{:3d}".format(world.rots) + " " + "{:3d}".format(world.min_rots))
+    if world.drop_lat<.001:
+      z_answer += int(1000 * (world.moment - world.epStartTime))*(0.005354*factor3 + 0.021913*factor4 + 0.002672*factor5)
+      #print("{:0.1f}".format(world.moment))
+      #print("   " + "{:0.3f}".format(world.epStartTime) + "  " + "{:0.1f}".format(int(1000 * (world.moment - world.epStartTime))*0.0124717621894591))
     else:
-      z_answer += self.drop_lat*(0.005354*factor3 + 0.021913*factor4 + 0.002672*factor5)
+      z_answer += world.drop_lat*(0.005354*factor3 + 0.021913*factor4 + 0.002672*factor5)
 
-    z_answer += (self.trans - self.min_trans)*(0.001156*factor3 + 0.035219*factor5 + 0.000446*factor7)
-    z_answer += self.avg_latency*(0.001608*factor3 + 0.026717*factor4 + 0.000335*factor7)
-    z_answer += self.trans*(0.000618*factor3 + 0.037343*factor5)
-    z_answer += self.initial_lat*(0.013463*factor4 + 0.000403*factor7)
+    z_answer += (world.trans - world.min_trans)*(0.001156*factor3 + 0.035219*factor5 + 0.000446*factor7)
+    z_answer += world.avg_latency*(0.001608*factor3 + 0.026717*factor4 + 0.000335*factor7)
+    z_answer += world.trans*(0.000618*factor3 + 0.037343*factor5)
+    z_answer += world.initial_lat*(0.013463*factor4 + 0.000403*factor7)
 
-    self.features["z_answer"] = z_answer
-    self.newscore = z_answer
+    world.features["z_answer"] = z_answer
+    world.newscore = z_answer
 
-    self.metascore = (self.metascore*self.metaticks + z_answer)/(self.metaticks+1)
-    self.metaticks = self.metaticks+1
-    self.features["z_metascore"] = self.metascore
+    world.metascore = (world.metascore*world.metaticks + z_answer)/(world.metaticks+1)
+    world.metaticks = world.metaticks+1
+    world.features["z_metascore"] = world.metascore
 
-    #self.scorefile.write(repr(z_answer)+"\n")
+    #world.scorefile.write(repr(z_answer)+"\n")
 
-    self.roll_avg.append(self.features["z_answer"])
-    while len(self.roll_avg) > 3:
-      self.roll_avg.pop(0)
+    world.roll_avg.append(world.features["z_answer"])
+    while len(world.roll_avg) > 3:
+      world.roll_avg.pop(0)
 
-    if len(self.roll_avg) == 3:
+    if len(world.roll_avg) == 3:
       roll_sum = 0
       #print('Chris 1')
-      for roll_val in self.roll_avg:
+      for roll_val in world.roll_avg:
         #print('   Test1: ' + str(roll_val) + ' - Test2: ' + str(roll_sum))
         roll_sum += roll_val
-      self.features["z_rollavg"] = roll_sum/3
+      world.features["z_rollavg"] = roll_sum/3
 
     else:
-      self.features["z_rollavg"] = 0.0
+      world.features["z_rollavg"] = 0.0
 
-    logit(self.newscore, "newscore")
-    logit(self.metascore, "metascore")
-    logit(self.features["z_rollavg"], "rollavg")
+    logit(world.newscore, "newscore")
+    logit(world.metascore, "metascore")
+    logit(world.features["z_rollavg"], "rollavg")
 
-      #print(f'So far... z_answer={self.features["z_answer"]:.4f}, z_rolling={self.features["z_rollavg"]:.4f}.')
+      #print(f'So far... z_answer={world.features["z_answer"]:.4f}, z_rolling={world.features["z_rollavg"]:.4f}.')
     if features:
-      for f in self.features_set:
-        data.append(self.features[f])
+      for f in world.features_set:
+        data.append(world.features[f])
     else:
-      for f in self.features_set:
-        data.append(self.features[f])
+      for f in world.features_set:
+        data.append(world.features[f])
 
   else:
-    for f in self.features_set:
+    for f in world.features_set:
       data.append("")
 
   #print('How often does this happen')
 
   out = "\t".join(map(str,data)) + "\n"
 
-  self.unifile.write(out)
+  world.unifile.write(out)
 
-  if self.ep_log:
+  if world.ep_log:
     if event_type == "EP_SUMM" or event_type == "GAME_SUMM":
-      self.epfile.write(out)
-  if self.game_log:
+      world.epfile.write(out)
+  if world.game_log:
     if event_type == "GAME_SUMM":
-      self.gamefile.write(out)
+      world.gamefile.write(out)
 
 
-def episode( self ):
-  self.update_stats_move( self.curr_zoid.get_col(), self.curr_zoid.rot, self.curr_zoid.get_row())
-  if self.fixed_log:
+def episode( world ):
+  world.update_stats_move( world.curr_zoid.get_col(), world.curr_zoid.rot, world.curr_zoid.get_row())
+  if world.fixed_log:
     loglist = ["SID","ECID","session","game_type","game_number","episode_number",
           "level","score","lines_cleared",
           "curr_zoid","next_zoid","danger_mode",
@@ -307,110 +305,110 @@ def episode( self ):
           "initial_lat","drop_lat","avg_lat",
           "tetrises_game","tetrises_level",
           "agree","newscore","metascore","rollavg"]
-    universal(self, "EP_SUMM", loglist, features = True)
+    universal(world, "EP_SUMM", loglist, features = True)
   else:
-    data = [":ts", get_time() - self.starttime,
+    data = [":ts", world.moment - world.startTime,
         ":event_type", "EP_SUMM",
-        ":SID", self.SID,
-        ":session", self.session,
-        ":game_number", self.game_number,
-        ":episode_number", self.episode_number,
-        ":level", self.level,
-        ":score",self.score,
-        ":lines_cleared", self.lines_cleared]
+        ":SID", world.SID,
+        ":session", world.session,
+        ":game_number", world.game_number,
+        ":episode_number", world.episode_number,
+        ":level", world.level,
+        ":score",world.score,
+        ":lines_cleared", world.lines_cleared]
 
-    data += [":curr_zoid", self.curr_zoid.type,
-          ":next_zoid", self.next_zoid.type,
-          ":danger_mode", self.danger_mode,
-          ":zoid_rot", self.curr_zoid.rot,
-          ":zoid_col", self.curr_zoid.get_col(),
-          ":zoid_row", self.curr_zoid.get_row(),
-          ":board_rep", "'%s'" % json.dumps( self.board ),
-          ":zoid_rep", "'%s'" % json.dumps( zoid_in_board(self) )]
+    data += [":curr_zoid", world.curr_zoid.type,
+          ":next_zoid", world.next_zoid.type,
+          ":danger_mode", world.danger_mode,
+          ":zoid_rot", world.curr_zoid.rot,
+          ":zoid_col", world.curr_zoid.get_col(),
+          ":zoid_row", world.curr_zoid.get_row(),
+          ":board_rep", "'%s'" % json.dumps( world.board ),
+          ":zoid_rep", "'%s'" % json.dumps( zoid_in_board(world) )]
 
 
     #board statistics
-    for f in self.features_set:
-      data += [":"+f, self.features[f]]
+    for f in world.features_set:
+      data += [":"+f, world.features[f]]
 
-    self.unifile.write("\t".join(map(str,data)) + "\n")
-    if self.ep_log:
-      self.epfile.write("\t".join(map(str,data)) + "\n")
+    world.unifile.write("\t".join(map(str,data)) + "\n")
+    if world.ep_log:
+      world.epfile.write("\t".join(map(str,data)) + "\n")
 
-def gameresults( self, complete = True ):
-  if self.fixed_log:
+def gameresults( world, complete = True ):
+  if world.fixed_log:
     loglist = ["SID","ECID","session","game_type","game_number","episode_number",
           "level","score","lines_cleared","completed",
           "game_duration","avg_ep_duration","zoid_sequence","newscore","metascore","rollavg"]
-    universal(self, "GAME_SUMM",loglist, complete = complete)
+    universal(world, "GAME_SUMM",loglist, complete = complete)
   else:
     data = [
-      ":ts", get_time() - self.starttime,
+      ":ts", world.moment - world.startTime,
       ":event_type", "GAME_SUMM",
-      ":SID", self.SID,
-      ":session", self.session,
-      ":game_type", self.game_type,
-      ":game_number", self.game_number,
-      ":episode_number", self.episode_number,
-      ":level", self.level,
-      ":score", self.score,
-      ":lines_cleared", self.lines_cleared,
+      ":SID", world.SID,
+      ":session", world.session,
+      ":game_type", world.game_type,
+      ":game_number", world.game_number,
+      ":episode_number", world.episode_number,
+      ":level", world.level,
+      ":score", world.score,
+      ":lines_cleared", world.lines_cleared,
       ":completed", complete,
-      ":game_duration", get_time() - self.game_start_time,
-      ":avg_ep_duration", (get_time() - self.game_start_time)/(self.episode_number+1),
-      ":zoid_sequence", "'%s'" % json.dumps( self.zoid_buff )
+      ":game_duration", world.moment - world.gameStartTime,
+      ":avg_ep_duration", (world.moment - world.gameStartTime)/(world.episode_number+1),
+      ":zoid_sequence", "'%s'" % json.dumps( world.zoid_buff )
     ]
 
-    self.unifile.write("\t".join(map(str,data)) + "\n")
-    if self.ep_log:
-      self.epfile.write("\t".join(map(str,data)) + "\n")
-    if self.game_log:
-      self.gamefile.write("\t".join(map(str,data)) + "\n")
+    world.unifile.write("\t".join(map(str,data)) + "\n")
+    if world.ep_log:
+      world.epfile.write("\t".join(map(str,data)) + "\n")
+    if world.game_log:
+      world.gamefile.write("\t".join(map(str,data)) + "\n")
 
   message = [
-    "Game " , str(self.game_number) , ":\n" ,
-    "\tScore: " , str(self.score) , "\n" ,
-    "\tLevel: " , str(self.level) , "\n" ,
-    "\tLines: " , str(self.lines_cleared) , "\n" ,
-    "\tZoids: " , str(self.episode_number) , "\n" ,
-    "\tSID: " , str(self.SID) , "\n" ,
+    "Game " , str(world.game_number) , ":\n" ,
+    "\tScore: " , str(world.score) , "\n" ,
+    "\tLevel: " , str(world.level) , "\n" ,
+    "\tLines: " , str(world.lines_cleared) , "\n" ,
+    "\tZoids: " , str(world.episode_number) , "\n" ,
+    "\tSID: " , str(world.SID) , "\n" ,
     "\tComplete: ", str(complete), "\n",
-    "\tSession: " + str(self.session) , "\n" ,
-    "\tGame Type: " + str(self.game_type) + "\n",
-    "\tGame duration:" + str(get_time() - self.game_start_time) + "\n",
-    "\tAvg Ep duration:" + str((get_time() - self.game_start_time)/(self.episode_number+1)) + "\n"
+    "\tSession: " + str(world.session) , "\n" ,
+    "\tGame Type: " + str(world.game_type) + "\n",
+    "\tGame duration:" + str(world.moment - world.gameStartTime) + "\n",
+    "\tAvg Ep duration:" + str((world.moment - world.gameStartTime)/(world.episode_number+1)) + "\n"
   ]
 
   message = "".join(message)
   if complete:
-    self.game_scores += [self.score]
+    world.game_scores += [world.score]
   print(message)
 
 #log a game event
-def game_event( self, id, data1 = "", data2 = "" ):
-  if self.fixed_log:
+def game_event( world, id, data1 = "", data2 = "" ):
+  if world.fixed_log:
     loglist = [
       "SID","ECID","session","game_type","game_number","episode_number",
       "level","score","lines_cleared", "curr_zoid","next_zoid","danger_mode",
       "delaying","dropping", "newscore","metascore","rollavg",
       "zoid_rot", "zoid_col", "zoid_row"
     ]
-    universal(self, "GAME_EVENT", loglist, evt_id = id, evt_data1 = data1, evt_data2 = data2)
+    universal(world, "GAME_EVENT", loglist, evt_id = id, evt_data1 = data1, evt_data2 = data2)
 
   else:
     out = [
-      ":ts", get_time() - self.starttime,
+      ":ts", world.moment - world.startTime,
       ":event_type", 'GAME_EVENT',
       ":evt_id", id,
       ":evt_data1", data1,
       ":evt_data2", data2
     ]
     outstr = "\t".join( map( str, out ) ) + "\n"
-    self.unifile.write( outstr )
+    world.unifile.write( outstr )
 
 #log the world state
-def world( self ):
-  if self.fixed_log:
+def worldState( world ):
+  if world.fixed_log:
     loglist = [
       "SID","ECID","session","game_type","game_number","episode_number",
       "level","score","lines_cleared","danger_mode",
@@ -418,39 +416,39 @@ def world( self ):
       "zoid_rot","zoid_col","zoid_row","board_rep","zoid_rep",
       "newscore","metascore","rollavg"
     ]
-    universal(self, "GAME_STATE", loglist)
+    universal(world, "GAME_STATE", loglist)
 
 
   else:
     #session and types
-    data = [":ts", get_time() - self.starttime,
+    data = [":ts", world.moment - world.startTime,
         ":event_type", "GAME_STATE"]
 
     #gameplay values
     data += [
-      ":delaying", self.needs_new_zoid,
-      ":dropping", self.interval_toggle,
-      ":curr_zoid", self.curr_zoid.type,
-      ":next_zoid", self.next_zoid.type,
-      ":zoid_rot", self.curr_zoid.rot,
-      ":zoid_col", self.curr_zoid.get_col(),
-      ":zoid_row", self.curr_zoid.get_row(),
-      ":board_rep", "'%s'" % json.dumps( self.board ),
-      ":zoid_rep", "'%s'" % json.dumps( zoid_in_board(self) )
+      ":delaying", world.needs_new_zoid,
+      ":dropping", 1 if world.isDropping else 0,
+      ":curr_zoid", world.curr_zoid.type,
+      ":next_zoid", world.next_zoid.type,
+      ":zoid_rot", world.curr_zoid.rot,
+      ":zoid_col", world.curr_zoid.get_col(),
+      ":zoid_row", world.curr_zoid.get_row(),
+      ":board_rep", "'%s'" % json.dumps( world.board ),
+      ":zoid_rep", "'%s'" % json.dumps( zoid_in_board(world) )
     ]
 
-    self.unifile.write( "\t".join( map( str, data ) ) + "\n" )
+    world.unifile.write( "\t".join( map( str, data ) ) + "\n" )
 
 
-def zoid_in_board( self ):
-  zoid = self.curr_zoid.get_shape()
-  z_x = self.curr_zoid.col
-  z_y = self.game_ht - self.curr_zoid.row
+def zoid_in_board( world ):
+  zoid = world.curr_zoid.get_shape()
+  z_x = world.curr_zoid.col
+  z_y = world.game_ht - world.curr_zoid.row
 
   board = []
-  for y in range(0,self.game_ht):
+  for y in range(0,world.game_ht):
     line = []
-    for x in range(0,self.game_wd):
+    for x in range(0,world.game_wd):
       line.append(0)
     board.append(line)
 
@@ -464,15 +462,15 @@ def zoid_in_board( self ):
 
 
 # write .history file
-def history( self ):
+def history( world ):
   def hwrite( name ):
-    self.histfile.write(name + ": " + str(vars(self)[name]) + "\n")
-    #self.unifile.write(":ts\t" + str(get_time()-self.starttime) +  "\t:event_type\t" + "SETUP_EVENT" + "\t" + ":" + name + "\t" + str(vars(self)[name]) + "\n")
-    game_event(self, name, data1 = vars(self)[name], data2 = "setup")
+    world.histfile.write(name + ": " + str(vars(world)[name]) + "\n")
+    #world.unifile.write(":ts\t" + str(world.moment-world.startTime) +  "\t:event_type\t" + "SETUP_EVENT" + "\t" + ":" + name + "\t" + str(vars(world)[name]) + "\n")
+    game_event(world, name, data1 = vars(world)[name], data2 = "setup")
   def hwrite2( name, val ):
-    self.histfile.write(name + ": " + str(val) + "\n")
-    #self.unifile.write(":ts\t" + str(get_time()-self.starttime) +  "\t:event_type\t" + "SETUP_EVENT" + "\t" + ":" + name + "\t" + str(val) + "\n")
-    game_event(self, name, data1 = val, data2 = "setup")
+    world.histfile.write(name + ": " + str(val) + "\n")
+    #world.unifile.write(":ts\t" + str(world.moment-world.startTime) +  "\t:event_type\t" + "SETUP_EVENT" + "\t" + ":" + name + "\t" + str(val) + "\n")
+    game_event(world, name, data1 = val, data2 = "setup")
 
   #capture all static variables
 
@@ -480,14 +478,14 @@ def history( self ):
   hwrite("RIN")
   hwrite("ECID")
   hwrite("game_type")
-  hwrite2("Start time", self.starttime)
-  hwrite2("Session" ,self.session)
+  hwrite2("Start time", world.startTime)
+  hwrite2("Session" ,world.session)
   hwrite("random_seeds")
   hwrite("seed_order")
-  hwrite2("Log-Version" ,self.LOG_VERSION)
+  hwrite2("Log-Version" ,world.LOG_VERSION)
   hwrite("distance_from_screen")
 
-  self.histfile.write("\nManipulations:\n")
+  world.histfile.write("\nManipulations:\n")
   hwrite("inverted")
   hwrite("tetris_zoids")
   hwrite("pentix_zoids")
@@ -523,7 +521,7 @@ def history( self ):
   hwrite("border_color")
   hwrite("kept_bgc")
 
-  self.histfile.write("\nMechanics:\n")
+  world.histfile.write("\nMechanics:\n")
   hwrite("continues")
   hwrite("game_ht")
   hwrite("game_wd")
@@ -541,25 +539,25 @@ def history( self ):
   hwrite("drop_bonus")
   hwrite("seven_bag_switch")
 
-  self.histfile.write("\nLayout:\n")
-  hwrite2("Screen X",self.screeninfo.current_w)
-  hwrite2("Screen Y",self.screeninfo.current_h)
-  hwrite2("worldsurf_rect.width",self.worldsurf_rect.width)
-  hwrite2("worldsurf_rect.height",self.worldsurf_rect.height)
-  hwrite2("gamesurf_rect.top",self.gamesurf_rect.top)
-  hwrite2("gamesurf_rect.left",self.gamesurf_rect.left)
-  hwrite2("gamesurf_rect.width",self.gamesurf_rect.width)
-  hwrite2("gamesurf_rect.height",self.gamesurf_rect.height)
-  hwrite2("nextsurf_rect.top",self.nextsurf_rect.top)
-  hwrite2("nextsurf_rect.left",self.nextsurf_rect.left)
-  hwrite2("nextsurf_rect.width",self.nextsurf_rect.width)
-  hwrite2("nextsurf_rect.height",self.nextsurf_rect.height)
+  world.histfile.write("\nLayout:\n")
+  hwrite2("Screen X",world.screeninfo.current_w)
+  hwrite2("Screen Y",world.screeninfo.current_h)
+  hwrite2("worldsurf_rect.width",world.worldsurf_rect.width)
+  hwrite2("worldsurf_rect.height",world.worldsurf_rect.height)
+  hwrite2("gamesurf_rect.top",world.gamesurf_rect.top)
+  hwrite2("gamesurf_rect.left",world.gamesurf_rect.left)
+  hwrite2("gamesurf_rect.width",world.gamesurf_rect.width)
+  hwrite2("gamesurf_rect.height",world.gamesurf_rect.height)
+  hwrite2("nextsurf_rect.top",world.nextsurf_rect.top)
+  hwrite2("nextsurf_rect.left",world.nextsurf_rect.left)
+  hwrite2("nextsurf_rect.width",world.nextsurf_rect.width)
+  hwrite2("nextsurf_rect.height",world.nextsurf_rect.height)
 
-  if self.keep_zoid:
-    hwrite2("keptsurf_rect.top",self.keptsurf_rect.top)
-    hwrite2("keptsurf_rect.left",self.keptsurf_rect.left)
-    hwrite2("keptsurf_rect.width",self.keptsurf_rect.width)
-    hwrite2("keptsurf_rect.height",self.keptsurf_rect.height)
+  if world.keep_zoid:
+    hwrite2("keptsurf_rect.top",world.keptsurf_rect.top)
+    hwrite2("keptsurf_rect.left",world.keptsurf_rect.left)
+    hwrite2("keptsurf_rect.width",world.keptsurf_rect.width)
+    hwrite2("keptsurf_rect.height",world.keptsurf_rect.height)
 
   hwrite("side")
   hwrite("score_lab_left")
@@ -570,5 +568,5 @@ def history( self ):
   hwrite("lines_left")
   hwrite("level_left")
   hwrite("newscore_left")
-  self.histfile.write("\n")
-  self.histfile.close()
+  world.histfile.write("\n")
+  world.histfile.close()

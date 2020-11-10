@@ -1,11 +1,40 @@
 import pygame
 
-import gui
+import gui, states, configscreen
 
-#draw the introduction screen
+def handleInput(world, event):
+  if event.type == pygame.KEYDOWN:
+    if event.key == pygame.K_SPACE:
+      moveForward(world)
+
+    elif event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+      changeFocusedElm(world)
+
+    elif event.key == pygame.K_ESCAPE:
+      world.running = False
+
+  elif event.type == pygame.JOYBUTTONDOWN:
+    if event.button == world.JOY_START :
+      moveForward(world)
+    elif event.button == pygame.JOY_LEFT or event.button == pygame.JOY_RIGHT:
+      changeFocusedElm(world)
+
+
+def changeFocusedElm(world):
+  if world.focused == "intro.play":
+    world.focused = "intro.settings"
+  else:
+    world.focused = "intro.play"
+
+def moveForward(world):
+  if world.focused == "intro.play":
+    world.state = states.Setup
+  else:
+    configscreen.enter(world)
+
 def draw( world ):
   r = world.worldsurf_rect
-  world.worldsurf.fill( ( 39, 39, 39 ) )
+  world.worldsurf.fill( world.bg_color )
 
   logo_rect = world.logo.get_rect()
   logo_rect.centerx = r.centerx
@@ -17,17 +46,21 @@ def draw( world ):
   gclogo_rect.centerx = r.centerx
   world.worldsurf.blit( world.gclogo, gclogo_rect )
 
-  gui.button(world, "SETTINGS", r.centerx-160, r.bottom-210, 160, 44)
-  gui.button(world, "PLAY", r.centerx+40, r.bottom-210, 120, 44)
+  gui.button(world, "SETTINGS", r.centerx-160, r.bottom-210, 160, 51,
+    world.focused == "intro.settings"
+  )
+  gui.button(world, "PLAY", r.centerx+40, r.bottom-210, 120, 51,
+    world.focused == "intro.play"
+  )
 
-  world.title_blink_timer += 1
-  if world.title_blink_timer <= world.fps:
+  txty = r.height - gclogo_rect.height - 40
+  if world.moment >= world.textBlinkLastTime + 0.7:
     btnName = "START" if pygame.joystick.get_count() > 0 else "SPACE BAR"
-    gui.textSurface("Press " + btnName +" to begin",
+    actName = " to begin" if world.focused == "intro.play" else " for settings"
+    gui.textSurface("Press " + btnName + actName,
       world.scores_font, ( 200, 200, 200 ),
-      ( r.centerx, r.height - r.height / 5 ),
+      ( r.centerx, txty ),
       world.worldsurf
     )
-
-  if world.title_blink_timer > world.fps * 2:
-    world.title_blink_timer = 0
+    if world.moment >= world.textBlinkLastTime + 2:
+      world.textBlinkLastTime = world.moment

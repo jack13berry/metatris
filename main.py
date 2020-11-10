@@ -7,7 +7,7 @@ import argparse
 import pygame
 import time
 
-from gameplay import World
+from world import World
 
 
 pygame.display.init()
@@ -40,11 +40,6 @@ def date_time_filename():
 def main():
 
   parser = argparse.ArgumentParser( formatter_class = argparse.ArgumentDefaultsHelpFormatter )
-
-  parser.add_argument( '-c', '--config',
-    action = "store", dest = "config_names",
-    type = str, default = "default", nargs = '+',
-    help = "Set the filename(s) of the .config file(s) to be used")
 
   parser.add_argument( '-L', '--logfile',
     action = "store", dest = "logfile", default = date_time_filename(),

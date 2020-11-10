@@ -1,20 +1,6 @@
 import pygame
 import states, logger
-
-
-def introStateHandler(world, event):
-  if event.type == pygame.KEYDOWN:
-    if event.key == pygame.K_SPACE:
-      world.state += 1
-
-  #joystick controls
-  elif event.type == pygame.JOYBUTTONDOWN:
-    if event.button == world.JOY_START :
-      world.state += 1
-
-  if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-    # world.lc.stop()
-    world.running = False
+import introscreen, configscreen
 
 
 def aarStateHandler(world, event):
@@ -24,9 +10,9 @@ def aarStateHandler(world, event):
     elif event.key == pygame.K_UP or event.key == pygame.K_w and world.inverted:
       world.input_stop_drop()
     elif event.key == pygame.K_LEFT or event.key == pygame.K_a:
-      world.input_trans_stop(-1)
+      world.dasKeyReleased(-1)
     elif event.key == pygame.K_RIGHT or event.key == pygame.K_d:
-      world.input_trans_stop(1)
+      world.dasKeyReleased(1)
     elif event.key == pygame.K_SPACE and world.AAR_worldpaced:
       world.input_end_AAR()
   elif event.type == pygame.JOYBUTTONDOWN:
@@ -39,9 +25,10 @@ def aarStateHandler(world, event):
       elif event.button == world.JOY_UP and world.inverted:
         world.input_stop_drop()
       elif event.button == world.JOY_LEFT:
-        world.input_trans_stop(-1)
+        world.dasKeyReleased(-1)
       elif event.button == world.JOY_RIGHT:
-        world.input_trans_stop(1)
+        world.dasKeyReleased(1)
+
 
 def playStateHandler(world, event):
   if event.type == pygame.KEYUP or event.type == pygame.KEYDOWN:
@@ -56,10 +43,10 @@ def playStateHandler(world, event):
       world.state = states.Intro
     elif event.key == pygame.K_LEFT or event.key == pygame.K_a:
       world.input_trans_left()
-      world.das_held = -1
+      world.dasStart(-1)
     elif event.key == pygame.K_RIGHT or event.key == pygame.K_d:
       world.input_trans_right()
-      world.das_held = 1
+      world.dasStart(1)
 
     elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
       if world.inverted:
@@ -115,9 +102,9 @@ def playStateHandler(world, event):
     elif event.key == pygame.K_UP or event.key == pygame.K_w and world.inverted:
       world.input_stop_drop()
     elif event.key == pygame.K_LEFT or event.key == pygame.K_a:
-      world.input_trans_stop(-1)
+      world.dasKeyReleased(-1)
     elif event.key == pygame.K_RIGHT or event.key == pygame.K_d:
-      world.input_trans_stop(1)
+      world.dasKeyReleased(1)
     elif event.key == pygame.K_q:
       world.input_mask_toggle(False)
 
@@ -192,9 +179,9 @@ def playStateHandler(world, event):
         elif released == "UP" and world.inverted:
           world.input_stop_drop()
         elif released == "LEFT":
-          world.input_trans_stop(-1)
+          world.dasKeyReleased(-1)
         elif released == "RIGHT":
-          world.input_trans_stop(1)
+          world.dasKeyReleased(1)
 
         logger.game_event(world,  "KEYPRESS", "RELEASE", released)
         #print("released", released)
@@ -218,11 +205,11 @@ def playStateHandler(world, event):
         elif pressed == "LEFT":
           world.last_lr_pressed = pressed
           world.input_trans_left()
-          world.das_held = -1
+          world.dasStart(-1)
         elif pressed == "RIGHT":
           world.last_lr_pressed = pressed
           world.input_trans_right()
-          world.das_held = 1
+          world.dasStart(1)
         logger.game_event(world,  "KEYPRESS", "PRESS", pressed)
         #print("pressed", pressed)
 
@@ -231,10 +218,10 @@ def playStateHandler(world, event):
     if not world.two_player or event.joy == 0:
       if event.button == world.JOY_LEFT:
         world.input_trans_left()
-        world.das_held = -1
+        world.dasStart(-1)
       elif event.button == world.JOY_RIGHT:
         world.input_trans_right()
-        world.das_held = 1
+        world.dasStart(1)
       elif event.button == world.JOY_DOWN:
         if world.inverted:
           world.input_slam()
@@ -274,9 +261,9 @@ def playStateHandler(world, event):
       elif event.button == world.JOY_UP and world.inverted:
         world.input_stop_drop()
       elif event.button == world.JOY_LEFT:
-        world.input_trans_stop(-1)
+        world.dasKeyReleased(-1)
       elif event.button == world.JOY_RIGHT:
-        world.input_trans_stop(1)
+        world.dasKeyReleased(1)
       elif event.button == world.JOY_A:
         world.add_latency("RR")
       elif event.button == world.JOY_B:
@@ -312,9 +299,12 @@ def gameoverStateHandler(world, event):
 
 
 HANDLERS = {
-  states.Intro: introStateHandler,
-  states.Aar:   aarStateHandler,
-  states.Play:  playStateHandler,
-  states.Pause: pauseStateHandler,
-  states.Gameover: gameoverStateHandler
+  states.Intro:      introscreen.handleInput,
+  states.Aar:        aarStateHandler,
+  states.Play:       playStateHandler,
+  states.Pause:      pauseStateHandler,
+  states.Gameover:   gameoverStateHandler,
+  states.Config:     configscreen.handleInput,
+  states.ConfigLvl1: configscreen.handleInput,
+  states.ConfigLvl2: configscreen.handleInput
 }

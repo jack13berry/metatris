@@ -10,256 +10,297 @@ except ImportError:
   cryptoSupport = False
 
 
-def write( self ):
-  for varname in self.configs_to_write:
-    if type(vars(self)[varname]) is list or type(vars(self)[varname]) is tuple:
+def write( world ):
+  # print ("Will write configs:", world.configfile)
+  for varname in world.configs_to_write:
+    if type(getattr(world, varname)) is list or type(getattr(world, varname)) is tuple:
       out = []
-      for i in vars(self)[varname]:
+      for i in getattr(world, varname):
         out += [str(i)]
       out = ",".join(out)
     else:
-      out = str(vars(self)[varname])
-    prepend = ""
+      out = str(getattr(world, varname))
+    prefix = ""
     if varname in ['permute_seeds', 'random_seeds', 'fixed_seeds']:
-      prepend = "#"
-    self.configfile.write(prepend + varname + " = " + out + "\n")
+      prefix = "#"
 
-def load( self, name = "default" ):
-  self.config = {}
+    # print("CnfLine: '%s'"%(prefix + varname + " = " + out))
+    world.configfile.write(prefix + varname + " = " + out + "\n")
 
-  f = open("configs" + sep + name + ".config")
-  lines = f.readlines()
-  f.close()
 
-  for l in lines:
-    l = l.strip().split("#")
-    if l[0] != '':
-      line = l[0].split("=")
-      key = line[0].strip()
-      val = line[1].strip()
-      self.config[key] = val
+def updateUserConfig(world, key, val):
+  userconf = world.rawConfDicts["user"]
+  print("Will Update User Config from ", userconf,
+    "\n\twith\n",
+    key, "=", val
+  )
+  userconf[key] = val
 
-  self.configs_to_write = []
+  fl = open("configs" + sep + "user.config", "w")
+  for (key, val) in userconf.items():
+    fl.write(key + " = " + str(val) + "\n")
+  fl.close()
 
-  ## Session variables
-  #print(self.args)
-  #print(self.config)
+  setattr(world, key, val)
+
+
+def read(world, flname):
+  fl = open("configs" + sep + flname + ".config")
+  lines = fl.readlines()
+  fl.close()
+
+  confdict = {}
+
+  for line in [rawline.strip().split("#") for rawline in lines]:
+    if line[0] == '':
+      continue
+
+    line = line[0].split("=")
+    key = line[0].strip()
+    val = line[1].strip()
+    world.config[key] = val
+    confdict = {}
+
+  world.rawConfDicts[flname] = confdict
+
+
+def set_var( world, name, default, type ):
+  setattr(world, name, default)
+  if name in world.config:
+    val = []
+    if type == 'float' or type == 'int':
+      val = eval(type)(world.config[name])
+    elif type == 'bool':
+      entry = world.config[name].lower()
+      val = ( entry == 'true') or (entry == 't') or (entry == 'yes') or (entry == 'y')
+    elif type == 'string':
+      val = world.config[name]
+    elif type == 'int_list' or 'color':
+      list = world.config[name].split(",")
+      for i in list:
+        val.append(int(i.strip()))
+      if type == 'color':
+        val = tuple(val)
+
+    setattr(world, name, val)
+
+  world.configs_to_write += [name]
+
+
+def setAll(world):
+  world.configs_to_write = []
 
   #read once for value
-  self.set_var('logdir', 'data', 'string')
-  self.set_var('SID', 'Test', 'string')
+  set_var(world, 'logdir', 'data', 'string')
+  set_var(world, 'SID', 'Test', 'string')
 
-  self.set_var('RIN', '000000000', 'string')
+  set_var(world, 'RIN', '000000000', 'string')
 
-  self.set_var('ECID', 'NIL', 'string')
+  set_var(world, 'ECID', 'NIL', 'string')
 
   if cryptoSupport:
-    self.RIN = pycogworks.crypto.rin2id(self.RIN)[0]
+    world.RIN = pycogworks.crypto.rin2id(world.RIN)[0]
 
-  self.set_var('game_type', "standard", 'string')
+  set_var(world, 'game_type', "standard", 'string')
 
-  self.set_var('distance_from_screen', -1.0, 'float')
+  set_var(world, 'distance_from_screen', -1.0, 'float')
 
-  self.set_var('fixed_log', True, 'bool')
-  self.set_var('ep_log', True, 'bool')
-  self.set_var('game_log', True, 'bool')
+  set_var(world, 'fixed_log', True, 'bool')
+  set_var(world, 'ep_log', True, 'bool')
+  set_var(world, 'game_log', True, 'bool')
 
 
-  self.set_var('continues', 0, 'int')
+  set_var(world, 'continues', 0, 'int')
 
   ## Game definitions
 
   # Manipulable variable setup
 
-  self.set_var('music_vol', 0.5, 'float')
-  self.set_var('sfx_vol', 1.0, 'float')
-  self.set_var('song', "korobeiniki", 'string')
+  set_var(world, 'music_vol', 0.5, 'float')
+  set_var(world, 'sfx_vol', 1.0, 'float')
+  set_var(world, 'song', "korobeiniki", 'string')
 
-  self.set_var('fullscreen', False, 'bool')
+  set_var(world, 'fullscreen', False, 'bool')
 
   # Frames per second, updates per frame
-  self.set_var('fps', 30 ,'int')
-  self.set_var('tps', 60 ,'int')
+  set_var(world, 'fps', 30 ,'int')
+  set_var(world, 'tps', 60 ,'int')
 
   # render
-  self.set_var('inverted', False ,'bool')
+  set_var(world, 'inverted', False ,'bool')
 
   # zoid set
-  self.set_var('tetris_zoids', True ,'bool')
-  self.set_var('pentix_zoids', False ,'bool')
-  self.set_var('tiny_zoids', False ,'bool')
+  set_var(world, 'tetris_zoids', True ,'bool')
+  set_var(world, 'pentix_zoids', False ,'bool')
+  set_var(world, 'tiny_zoids', False ,'bool')
 
   # Held left-right repeat delays
-  self.set_var('das_delay', 16, 'int')
-  self.set_var('das_repeat', 6, 'int')
-  #  in milliseconds based on 60 fps, 16 frames and 6 frames respectively...
-  self.set_var('das_delay_ms', 266 ,'int')
-  self.set_var('das_repeat_ms', 100 ,'int')
-
+  set_var(world, 'das_delay', 16, 'int')
+  set_var(world, 'das_repeat', 6, 'int')
 
   # Zoid placement delay
-  self.set_var('are_delay', 10 ,'int')
+  set_var(world, 'are_delay', 10 ,'int')
 
   # Line clear delay
-  self.set_var('lc_delay', 20 ,'int')
+  set_var(world, 'lc_delay', 20 ,'int')
 
   # Lines per level
-  self.set_var('lines_per_lvl', 10 ,'int')
+  set_var(world, 'lines_per_lvl', 10 ,'int')
 
   # Game speed information
-  self.set_var('intervals', [48, 43, 38, 33, 28, 23, 18, 13, 8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1] ,'int_list')
-  self.set_var('drop_interval', 2 ,'int')
+  set_var(world, 'timingSetup', 'NesNtsc' ,'string')
 
-  self.set_var('gravity', True ,'bool')
+  set_var(world, 'intervals', [48, 43, 38, 33, 28, 23, 18, 13, 8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1] ,'int_list')
+  set_var(world, 'drop_interval', 2 ,'int')
+
+  set_var(world, 'gravity', True ,'bool')
 
 
   # Starting board information
-  self.set_var('boardname', 'empty', 'string')
+  set_var(world, 'boardname', 'empty', 'string')
 
-  self.set_var('game_ht', 20 ,'int')
-  self.set_var('game_wd', 10 ,'int')
+  set_var(world, 'game_ht', 20 ,'int')
+  set_var(world, 'game_wd', 10 ,'int')
 
   # Invisible tetris
-  self.set_var('visible_board', True ,'bool')
-  self.set_var('visible_zoid', True ,'bool')
-  self.set_var('board_echo_placed', True ,'bool')
-  self.set_var('board_echo_lc', True ,'bool')
+  set_var(world, 'visible_board', True ,'bool')
+  set_var(world, 'visible_zoid', True ,'bool')
+  set_var(world, 'board_echo_placed', True ,'bool')
+  set_var(world, 'board_echo_lc', True ,'bool')
 
   # Number of next pieces to display (currently only 0 or 1)
-  self.set_var('look_ahead', 1 ,'int')
+  set_var(world, 'look_ahead', 1 ,'int')
 
-  self.set_var('seven_bag_switch', False ,'bool')
+  set_var(world, 'seven_bag_switch', False ,'bool')
 
-  self.set_var('drop_bonus', True ,'bool')
+  set_var(world, 'drop_bonus', True ,'bool')
 
-  self.set_var('scoring', [40,100,300,1200,6000] ,'int_list')
+  set_var(world, 'scoring', [40,100,300,1200,6000] ,'int_list')
 
   # manipulations
-  self.set_var('undo', False ,'bool')
+  set_var(world, 'undo', False ,'bool')
 
-  self.set_var('far_next', False ,'bool')
-  self.set_var('next_dim', True ,'bool')
-  self.set_var('next_dim_alpha', 50 ,'int')
+  set_var(world, 'far_next', False ,'bool')
+  set_var(world, 'next_dim', True ,'bool')
+  set_var(world, 'next_dim_alpha', 50 ,'int')
 
-  self.set_var('next_mask', False ,'bool')
-  self.set_var('board_mask', False, 'bool')
+  set_var(world, 'next_mask', False ,'bool')
+  set_var(world, 'board_mask', False, 'bool')
 
 
   #modern game features
-  self.set_var('ghost_zoid', False ,'bool')
+  set_var(world, 'ghost_zoid', False ,'bool')
 
-  self.set_var('zoid_slam', False ,'bool')
+  set_var(world, 'zoid_slam', False ,'bool')
 
-  self.set_var('keep_zoid', False ,'bool')
+  set_var(world, 'keep_zoid', False ,'bool')
 
   # allow rotations to "kick" away from wall and piece collisions
-  self.set_var('wall_kicking', False ,'bool')
+  set_var(world, 'wall_kicking', False ,'bool')
 
 
   #must include board states, placement summaries, and piece events once implemented
-  self.set_var('feedback_mode', False ,'bool')
+  set_var(world, 'feedback_mode', False ,'bool')
 
   #dimtris!
-  self.set_var('dimtris', False, 'bool')
-  self.set_var('dimtris_alphas', [255,225,200,175,150,125,100,75,50,25,0], 'int_list')
+  set_var(world, 'dimtris', False, 'bool')
+  set_var(world, 'dimtris_alphas', [255,225,200,175,150,125,100,75,50,25,0], 'int_list')
 
   #gridlines
-  self.set_var('gridlines_x', False, 'bool')
-  self.set_var('gridlines_y', False, 'bool')
-  self.set_var('gridlines_color', (50,50,50), 'color')
+  set_var(world, 'gridlines_x', False, 'bool')
+  set_var(world, 'gridlines_y', False, 'bool')
+  set_var(world, 'gridlines_color', (50,50,50), 'color')
 
   #draw fixations?
-  self.set_var('draw_avg', False, 'bool')
-  self.set_var('draw_err', False, 'bool')
-  self.set_var('gaze_window', 30, 'int')
+  set_var(world, 'draw_avg', False, 'bool')
+  set_var(world, 'draw_err', False, 'bool')
+  set_var(world, 'gaze_window', 30, 'int')
 
-  self.set_var('spotlight', False, 'bool')
-  self.set_var('spot_radius', 350, 'int')
-  self.set_var('spot_color', (50,50,50), 'color')
-  self.set_var('spot_alpha', 255, 'int')
-  self.set_var('spot_gradient', True, 'bool')
+  set_var(world, 'spotlight', False, 'bool')
+  set_var(world, 'spot_radius', 350, 'int')
+  set_var(world, 'spot_color', (50,50,50), 'color')
+  set_var(world, 'spot_alpha', 255, 'int')
+  set_var(world, 'spot_gradient', True, 'bool')
 
   #unimplemented
-  self.set_var('grace_period', 0, 'int') #UNIMPLEMENTED
-  self.set_var('grace_refresh', False, 'bool') #UNIMPLEMENTED
+  set_var(world, 'grace_period', 0, 'int') #UNIMPLEMENTED
+  set_var(world, 'grace_refresh', False, 'bool') #UNIMPLEMENTED
   ###
 
-  self.set_var('bg_color', (39,39,39), 'color')
-  self.set_var('border_color', (250,250,250), 'color')
+  set_var(world, 'bg_color', (26,26,26), 'color')
+  set_var(world, 'border_color', (250,250,250), 'color')
 
-  self.set_var('kept_bgc', ( 50, 50, 50 ), 'color')
+  set_var(world, 'kept_bgc', ( 50, 50, 50 ), 'color')
 
-  self.set_var('pause_enabled', True, 'bool')
+  set_var(world, 'pause_enabled', True, 'bool')
 
-  self.set_var('das_chargeable', True, 'bool')
-  self.set_var('das_reversible', True, 'bool')
+  set_var(world, 'das_chargeable', True, 'bool')
+  set_var(world, 'das_reversible', True, 'bool')
 
-  self.set_var('two_player', False, 'bool')
+  set_var(world, 'two_player', False, 'bool')
 
-  self.set_var('misdirection', False, 'bool') #UNIMPLEMENTED
+  set_var(world, 'misdirection', False, 'bool') #UNIMPLEMENTED
 
-  self.set_var('max_eps', -1, 'int')
+  set_var(world, 'max_eps', -1, 'int')
 
-  self.set_var('show_high_score', False, 'bool')
+  set_var(world, 'show_high_score', False, 'bool')
 
-  self.set_var('starting_level', 0, 'int')
-
-
-  self.set_var('ep_screenshots', False, 'bool')
+  set_var(world, 'starting_level', 0, 'int')
 
 
-  self.set_var('n_back', False, 'bool')
-  self.set_var('nback_n', 2, 'int')
-
-  self.set_var('ax_cpt', False, 'bool')
-  self.set_var('ax_cue', 'O', 'string')
-  self.set_var('ax_target', 'I', 'string')
-
-  # self.set_var('fixed_seeds', False, 'bool')
-  self.set_var('random_seeds', [int(self.starttime * 10000000000000.0)], 'int_list')
-  self.set_var('permute_seeds', False, 'bool')
-  self.set_var('shuffle_seed', int(self.starttime * 10000000000000.0), 'int')
+  set_var(world, 'ep_screenshots', False, 'bool')
 
 
-  self.set_var('joystick_type', "NES_RETRO-USB", 'string')
+  set_var(world, 'n_back', False, 'bool')
+  set_var(world, 'nback_n', 2, 'int')
 
-  self.set_var('solve_button', False, 'bool')
-  self.set_var('auto_solve', False, 'bool')
+  set_var(world, 'ax_cpt', False, 'bool')
+  set_var(world, 'ax_cue', 'O', 'string')
+  set_var(world, 'ax_target', 'I', 'string')
 
-  self.set_var('hint_zoid', False, 'bool')
-  self.set_var('hint_button', False, 'bool')
-  self.set_var('hint_release', True, 'bool')
-  self.set_var('hint_limit', -1, 'int')
+  # set_var(world, 'fixed_seeds', False, 'bool')
+  set_var(world, 'random_seeds', [int(world.startTime * 10000000000000.0)], 'int_list')
+  set_var(world, 'permute_seeds', False, 'bool')
+  set_var(world, 'shuffle_seed', int(world.startTime * 10000000000000.0), 'int')
 
-  self.set_var('controller', "dellacherie", 'string')
-  self.set_var('sim_overhangs', True, 'bool')
-  self.set_var('sim_force_legal', True, 'bool')
 
-  self.set_var('color_mode', "STANDARD", 'string')
+  set_var(world, 'joystick_type', "NES_RETRO-USB", 'string')
 
+  set_var(world, 'solve_button', False, 'bool')
+  set_var(world, 'auto_solve', False, 'bool')
+
+  set_var(world, 'hint_zoid', False, 'bool')
+  set_var(world, 'hint_button', False, 'bool')
+  set_var(world, 'hint_release', True, 'bool')
+  set_var(world, 'hint_limit', -1, 'int')
+
+  set_var(world, 'controller', "dellacherie", 'string')
+  set_var(world, 'sim_overhangs', True, 'bool')
+  set_var(world, 'sim_force_legal', True, 'bool')
+
+  set_var(world, 'color_mode', "STANDARD", 'string')
 
   #tutoring system modes
     #NONE, CONSTANT, CONTEXT, CONFLICT
 
   #context-only hint zoids (i.e., correct rotation and column found)
-  self.set_var('hint_context', False, 'bool')
-  self.set_var('hint_context_col_tol', 0, 'int')
+  set_var(world, 'hint_context', False, 'bool')
+  set_var(world, 'hint_context_col_tol', 0, 'int')
 
   #after-action review
-  self.set_var('AAR', False, 'bool')
-  self.set_var('AAR_max_conflicts', 1, 'int')
-  self.set_var('AAR_dim', 50, 'int')
-  self.set_var('AAR_dur', 20, 'int')
-  self.set_var('AAR_dur_scaling', True, 'bool')
-  self.set_var('AAR_curr_zoid_hl', True, 'bool')
-  self.set_var('AAR_selfpaced', False, 'bool')
+  set_var(world, 'AAR', False, 'bool')
+  set_var(world, 'AAR_max_conflicts', 1, 'int')
+  set_var(world, 'AAR_dim', 50, 'int')
+  set_var(world, 'AAR_dur', 20, 'int')
+  set_var(world, 'AAR_dur_scaling', True, 'bool')
+  set_var(world, 'AAR_curr_zoid_hl', True, 'bool')
+  set_var(world, 'AAR_selfpaced', False, 'bool')
 
-  self.set_var('score_align', 'left', 'string')
+  set_var(world, 'score_align', 'left', 'string')
 
-  self.set_var('gray_zoid', False, 'bool')
-  self.set_var('gray_board', False, 'bool')
-  self.set_var('gray_next', True, 'bool')
-  self.set_var('gray_kept', False, 'bool')
-
+  set_var(world, 'gray_zoid', False, 'bool')
+  set_var(world, 'gray_board', False, 'bool')
+  set_var(world, 'gray_next', True, 'bool')
+  set_var(world, 'gray_kept', False, 'bool')
 
   return True

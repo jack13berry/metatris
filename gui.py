@@ -9,34 +9,106 @@ def borderOutside(surface, color, weight, x, y, w, h):
 
 
 def pillOutside(surface, color, weight, x, y, w, h):
-  pygame.draw.rect( surface, color, [(x-weight, y-weight), (w+weight, weight)])
+  ax = x-weight
+  ay = y-weight
+  r = h+2*weight
+  lx = ax+(h+1)/2-weight
+  lw = w+2*weight-h
+  l2y = y+h+1-weight
+  a2x = ax+lw-2*weight
+
+  pygame.draw.rect( surface, color, [(lx, ay), (lw, weight)])
   pygame.draw.rect( surface, color, [(x+w, y-weight), (weight, h+weight)])
-  pygame.draw.rect( surface, color, [(x, y+h), (w+weight, weight)])
+  pygame.draw.rect( surface, color, [(lx, l2y), (lw, weight)])
   pygame.draw.rect( surface, color, [(x-weight, y), (weight, h+weight)])
-  # pygame.draw.arc(surface, color, [(x-weight,y),(h,h+weight)], math.pi/2, 1.5*math.pi, weight)
+  pygame.draw.arc(surface, color, [(ax,ay),(r,r)], 0.5*math.pi, 1.5*math.pi, weight)
+  pygame.draw.arc(surface, color, [(a2x,ay),(r,r)], 1.5*math.pi, 0.5*math.pi, weight)
 
 
 def borderOutsideOfRect(surface, color, weight, rect):
   borderOutside(surface, color, weight, rect.left, rect.top, rect.width, rect.height)
 
 
-def textSurface( text, font, color, loc, surf, justify = "center" ):
+def textSurface( text, font, color, loc, surf, justify = "center", upsideDown=False):
   t = font.render( text, True, color )
   tr = t.get_rect()
+  if upsideDown:
+    t = pygame.transform.flip(t, False, True)
+
   setattr( tr, justify, loc )
   surf.blit( t, tr )
   return tr
 
 
 def textSurfaceBox( self ):
-  pygame.draw.rect( self.worldsurf, self.message_box_color, self.gamesurf_msg_rect, 0 )
+  return pygame.draw.rect(
+    self.worldsurf, self.message_box_color, self.gamesurf_msg_rect, 0 )
 
 
-def button(world, txt, x, y, w, h):
-  pillOutside(world.worldsurf, (120,200,50), 2, x,y,w,h)
-  textSurface(txt, world.scores_font, (120,200,40), (x+w//2, y+h//2),
-    world.worldsurf, "center"
-  )
+def button(world, txt, x, y, w, h,
+  focused=False, withTicks=True,
+  clr1=(120,200,50), clr2 = (120,200,40)):
+
+  srfc = world.worldsurf
+  borderOutside(srfc, clr1, 2, x, y, w, h)
+
+  if focused:
+    pygame.draw.rect( srfc, clr1, [(x, y), (w, h)]) # button fill
+
+    clr2 = world.bg_color # text and arrow color
+
+    # arrows
+    tx, ty, t2x = x-2, y+(h-20)/2, x+w+2
+    if withTicks:
+      pygame.draw.polygon(srfc, clr2, [(tx, ty), (tx+14, ty+10), (tx,ty+20)])
+      pygame.draw.polygon(srfc, clr2, [(t2x, ty), (t2x-14, ty+10), (t2x,ty+20)])
+
+  textSurface(txt, world.scores_font, clr2, (x+w//2, y+h//2), srfc, "center")
+
+
+def verticalTab(world, txt, x, y, w, h, focused=False,
+    clrFocused = (120,200,50),
+    clrUnfocused = (60,140,10) ):
+
+  srfc = world.worldsurf
+  marginBottom = 1
+  if focused:
+    h += 4
+    w += 10
+    y -= 2
+    x -= 6
+    marginBottom = -3
+    pygame.draw.rect( srfc, clrFocused, [(x, y), (w, h)]) # button fill
+
+    clrTxt = world.bg_color # text and arrow color
+
+    # arrows
+    ty = y+(h-20)/2
+    pygame.draw.polygon(srfc, clrUnfocused,
+      [(x-2, ty), (x+14, ty+10), (x-2,ty+20)])
+
+  else:
+    # pygame.draw.rect( srfc, clr1, [(x, y), (w, 2)])
+    # pygame.draw.rect( srfc, clrUnfocused, [(x+w, y), (1, h)])
+    pygame.draw.rect( srfc, clrUnfocused, [(x, y+h), (w+1, 1)])
+    clrTxt = clrUnfocused
+
+  textSurface(txt, world.scores_font, clrTxt, (x+w//2, y+h//2), srfc, "center")
+
+  return y+h+marginBottom
+
+
+def infoText(world, text, x=-1, y=-1, color=(120,200,50), srf = None):
+  if x == -1 or y == -1:
+    rect = world.worldsurf_rect
+    if x == -1:
+      x = int(rect.width/4)*3 + 15
+    if y == -1:
+      y = int(rect.height/2)
+  if srf == None:
+    srf = world.worldsurf
+
+  return textSurface(text, world.scores_font, color, (x, y), srf, "center")
 
 
 def square( self, surface, left, top, color_id , alpha = 255, gray = False):
@@ -78,10 +150,16 @@ def board( self, alpha = 255):
   )
 
   if self.visible_board or echo:
+
     if not self.board_mask or not self.mask_toggle:
       if self.dimtris and not echo:
         alpha = self.dimtris_alphas[min(self.level, len(self.dimtris_alphas)-1)]
-      blocks(self, self.board, self.gamesurf, self.gamesurf_rect, resetX = True, alpha = alpha, gray = self.gray_board)
+
+      blocks(
+        self, self.board, self.gamesurf, self.gamesurf_rect,
+        resetX = True, alpha = alpha, gray = self.gray_board
+      )
+
     else:
       self.gamesurf.fill( self.mask_color )
       self.worldsurf.blit( self.gamesurf , self.gamesurf_rect)

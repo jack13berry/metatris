@@ -297,7 +297,7 @@ class Zoid( object ):
     self.refresh_floor()
   ###
 
-  def down( self , user_down ):
+  def down(self, user_down):
     #log event
     if user_down == 0:
       logger.game_event(self.world, "ZOID", "DOWN" )
@@ -319,7 +319,7 @@ class Zoid( object ):
 
     #otherwise
     elif self.world.gravity:
-      self.world.end_trial()
+      self.world.endEpisode()
 
     #player-downs award 1 point per down
   ###
@@ -346,7 +346,7 @@ class Zoid( object ):
   def place( self ):
     new_row = self.row - 1
     if self.collide( self.col, new_row, self.rot, self.world.board ):
-      self.world.end_trial()
+      self.world.endEpisode()
 
   def place_pos( self, col, rot, row, move = True):
     #print("col:",self.col,"rot:",self.rot,"row",self.row)
@@ -359,7 +359,7 @@ class Zoid( object ):
       self.row = newrow
     return (newcol, newrot, newrow)
     #print("col2:",self.col,"rot2:",self.rot,"row2",self.row)
-    #self.world.end_trial()
+    #self.world.endEpisode()
 
   def left( self ):
     self.translate( -1 )

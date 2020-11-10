@@ -4,3 +4,6 @@ Play = 2
 Pause = 3
 Gameover = 4
 Aar = 5
+Config = 10
+ConfigLvl1 = 11
+ConfigLvl2 = 12

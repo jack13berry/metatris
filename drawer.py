@@ -1,10 +1,9 @@
-import pygame, platform, time, numpy
+import pygame, platform, numpy
+# import time
 
 import states, gui
-import introscreen, playscreen
+import introscreen, playscreen, configscreen
 from zoid import Zoid
-
-get_time = time.time if platform.system() == 'Windows' else time.process_time
 
 
 def setupOSWindow(world, w=0, h=0):
@@ -123,8 +122,6 @@ def setupLayout(world):
   world.tetris_flash_tick = 0 #currently dependent on framerate
   world.tetris_flash_colors = [world.bg_color, ( 100, 100, 100 )]
 
-  world.title_blink_timer = 0
-
   world.blocks = []
   #generate blocks for all levels
   for l in range( 0, 10 ):
@@ -221,6 +218,12 @@ def drawTheWorld( world ):
     playscreen.drawGameOver(world)
   elif world.state == states.Aar:
     playscreen.draw_AAR(world)
+  elif world.state >= states.Config:
+    configscreen.draw(world)
 
   world.screen.blit( world.worldsurf, world.worldsurf_rect )
+  # t1 = time.perf_counter()*1000
   pygame.display.flip()
+  # t2 = time.perf_counter()*1000
+  # if t2-t1 > 1:
+  #   print("DRAW TIME:", t2-t1, t2-world.moment*1000, pygame.time.Clock().get_fps())
