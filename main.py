@@ -69,11 +69,6 @@ def main():
     type = between_zero_and_one,
     help = 'Set sound effects volume.' )
 
-  parser.add_argument( '-ct', '--continues',
-    action = "store", dest = "continues",
-    type = int,
-    help = "Sets number of games to be played this session. Set to 0 for infinite.")
-
   parser.add_argument( '-wd', '--width',
     action = "store", dest = "game_wd",
     type = int,

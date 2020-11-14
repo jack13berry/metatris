@@ -4,7 +4,9 @@ from settings import all as settings
 import gui
 
 def handleInput(world, event):
+  valid = False
   if event.type == pygame.KEYDOWN:
+    valid = True
     if event.key == pygame.K_SPACE:
       fwd(world)
 
@@ -25,8 +27,10 @@ def handleInput(world, event):
 
     else:
       print("UNEXPECTED KEY:", event.key)
+      valid = False
 
   elif event.type == pygame.JOYBUTTONDOWN:
+    valid = True
     if event.button == world.JOY_START:
       fwd(world)
     elif event.button == pygame.JOY_LEFT:
@@ -39,6 +43,10 @@ def handleInput(world, event):
       down(world)
     else:
       print("UNEXPECTED BUTTON:", event.button)
+      valid = False
+
+  if valid:
+    world.sounds['uiaction'].play(0)
 
 
 def fwd(world):
@@ -46,7 +54,6 @@ def fwd(world):
     return right(world)
 
   world.shouldRedraw = True
-  print("going fwd")
 
 
 def bwd(world):
@@ -55,7 +62,6 @@ def bwd(world):
 
   world.shouldRedraw = True
   world.state = states.Intro
-  print("going bwd")
 
 
 def left(world):
@@ -68,7 +74,6 @@ def left(world):
     world.configOptX = -1
 
   world.shouldRedraw = True
-  print("going left")
 
 
 def right(world):
@@ -85,7 +90,6 @@ def right(world):
 
 
   world.shouldRedraw = True
-  print("going right", world.state)
 
 
 def up(world):
@@ -103,7 +107,6 @@ def up(world):
       opt.up(world)
 
   world.shouldRedraw = True
-  print("going up")
 
 
 def down(world):
@@ -122,7 +125,6 @@ def down(world):
 
 
   world.shouldRedraw = True
-  print("going down")
 
 
 def draw( world ):
@@ -137,7 +139,6 @@ def draw( world ):
   if world.state >= states.ConfigLvl1:
     drawValues(world)
 
-  print("world redrawn at", world.state)
   world.shouldRedraw = False
 
 
@@ -174,7 +175,6 @@ def drawValues(world):
 
   pygame.draw.rect(world.worldsurf, (81, 155, 214), [(x, 0), (4, rect.height)])
   o.draw(world)
-  # print(g.title + "." + o.title)
 
 
 def enter(world):

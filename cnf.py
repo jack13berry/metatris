@@ -1,5 +1,7 @@
 import os
 
+import drawer
+
 sep = os.path.sep
 
 try:
@@ -11,7 +13,6 @@ except ImportError:
 
 
 def write( world ):
-  # print ("Will write configs:", world.configfile)
   for varname in world.configs_to_write:
     if type(getattr(world, varname)) is list or type(getattr(world, varname)) is tuple:
       out = []
@@ -24,24 +25,22 @@ def write( world ):
     if varname in ['permute_seeds', 'random_seeds', 'fixed_seeds']:
       prefix = "#"
 
-    # print("CnfLine: '%s'"%(prefix + varname + " = " + out))
     world.configfile.write(prefix + varname + " = " + out + "\n")
 
 
 def updateUserConfig(world, key, val):
   userconf = world.rawConfDicts["user"]
-  print("Will Update User Config from ", userconf,
-    "\n\twith\n",
-    key, "=", val
-  )
   userconf[key] = val
 
   fl = open("configs" + sep + "user.config", "w")
-  for (key, val) in userconf.items():
-    fl.write(key + " = " + str(val) + "\n")
+  for (k, v) in userconf.items():
+    fl.write(k + " = " + str(v) + "\n")
   fl.close()
 
   setattr(world, key, val)
+  drawer.setupLayout(world)
+  drawer.setupColors(world)
+  world.updateVolumes()
 
 
 def read(world, flname):
@@ -59,7 +58,7 @@ def read(world, flname):
     key = line[0].strip()
     val = line[1].strip()
     world.config[key] = val
-    confdict = {}
+    confdict[key] = val
 
   world.rawConfDicts[flname] = confdict
 
@@ -88,8 +87,6 @@ def set_var( world, name, default, type ):
 
 
 def setAll(world):
-  world.configs_to_write = []
-
   #read once for value
   set_var(world, 'logdir', 'data', 'string')
   set_var(world, 'SID', 'Test', 'string')
@@ -118,7 +115,7 @@ def setAll(world):
 
   set_var(world, 'music_vol', 0.5, 'float')
   set_var(world, 'sfx_vol', 1.0, 'float')
-  set_var(world, 'song', "korobeiniki", 'string')
+  set_var(world, 'song', "music-1.ogg", 'string')
 
   set_var(world, 'fullscreen', False, 'bool')
 

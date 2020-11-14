@@ -49,12 +49,12 @@ class Radio():
 
 
   def draw(opt, world):
-    currentX = opt.getCurrentX(world)
-    y = world.worldsurf_rect.height//2 - currentX*30
+    opt.currentX = opt.getCurrentX(world)
+    y = world.worldsurf_rect.height//2 - opt.currentX*30
 
     for (x, val) in enumerate(opt.set):
       txt = val[1]
-      if x == currentX:
+      if x == opt.currentX:
         txtcolor = (116, 176, 223)
         rect = gui.infoText(world, txt, y=y, color=txtcolor)
         if world.state == states.ConfigLvl2:
@@ -83,15 +83,16 @@ class ControllerSetup():
   def draw(opt, world):
     opt.infotext(world, "Hit space key to edit")
 
+
+
 dynamics = G("Dynamics")
 
-dynamics.opts.append(Radio("starting_level", "Start Level",
+dynamics.opts.append(Radio("starting_level", "Starting Level",
   [ [a, "Level %02d"%a, ""] for a in range(0, 20) ]
 ))
 
-dynamics.opts.append(Radio("timingSetup", "Timing", [
-  ["NesNtsc", "NES NTSC", ""],
-  ["NesPal", "NES PAL", ""]
+dynamics.opts.append(Radio("boardname", "Starting Board", [
+  [ "empty", "Empty" ], ["quarterfull", "Quarter Full"]
 ]))
 
 dynamics.opts.append(Radio("inverted", "Direction", [
@@ -99,17 +100,47 @@ dynamics.opts.append(Radio("inverted", "Direction", [
   [True, "Upside Down", "Pieces fly up"]
 ]))
 
+dynamics.opts.append(Radio("timingSetup", "Timing", [
+  ["NesNtsc", "NES NTSC", ""],
+  ["NesPal", "NES PAL", ""]
+]))
+
+
+
+appearance = G("Appearance")
+
+appearance.opts.append(Radio("ghost_zoid", "Ghost Piece", [
+  [False, "Off", ""],
+  [True, "On", ""]
+]))
+
+appearance.opts.append(Radio("color_mode", "Piece Colors", [
+  ["STANDARD", "Standard", ""],
+  ["REMIX", "Remix", ""]
+]))
+
+
+
+audio = G("Audio")
+
+audio.opts.append(Radio("sfx_vol", "Effects Volume",
+  [ [a/100, "%02d%%"%a, ""] for a in range(0, 101, 10) ]
+))
+
+audio.opts.append(Radio("music_vol", "Music Volume",
+  [ [a/100, "%02d%%"%a, ""] for a in range(0, 101, 10) ]
+))
+
 controls = G("Controls")
 
 controls.opts.append(ControllerSetup("keyboard", "Keyboard"))
 controls.opts.append(ControllerSetup("joystick", "Joystick"))
 
-# profile = G("Theme")
 
-# profile = G("Profile")
 
 all = [
   dynamics,
-  controls,
-  # profile
+  appearance,
+  audio,
+  controls
 ]

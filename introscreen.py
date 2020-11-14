@@ -2,8 +2,11 @@ import pygame
 
 import gui, states, configscreen
 
+
 def handleInput(world, event):
+  valid = False
   if event.type == pygame.KEYDOWN:
+    valid = True
     if event.key == pygame.K_SPACE:
       moveForward(world)
 
@@ -13,12 +16,22 @@ def handleInput(world, event):
     elif event.key == pygame.K_ESCAPE:
       world.running = False
 
+    else:
+      valid = False
+
   elif event.type == pygame.JOYBUTTONDOWN:
+    valid = True
     if event.button == world.JOY_START :
       moveForward(world)
+
     elif event.button == pygame.JOY_LEFT or event.button == pygame.JOY_RIGHT:
       changeFocusedElm(world)
 
+    else:
+      valid = False
+
+  if valid:
+    world.sounds['uiaction'].play(0)
 
 def changeFocusedElm(world):
   if world.focused == "intro.play":
@@ -26,11 +39,13 @@ def changeFocusedElm(world):
   else:
     world.focused = "intro.play"
 
+
 def moveForward(world):
   if world.focused == "intro.play":
     world.state = states.Setup
   else:
     configscreen.enter(world)
+
 
 def draw( world ):
   r = world.worldsurf_rect

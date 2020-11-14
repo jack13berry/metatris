@@ -8,11 +8,16 @@
 # frames per drop   5  5  4  4  4  3  3  3  2  2  2  2  2  2  2  2  2  2  1
 
 class TimingSetup():
-  pass
+  def __init__(ts, fps, dasWaitTime, dasRepeatTime):
+    ts.fps = fps
+    ts.dasWaitTime = dasWaitTime
+    ts.dasRepeatTime = dasRepeatTime
 
-NesNtsc = TimingSetup()
-NesNtsc.dasWaitTime = 0.2662282774
-NesNtsc.dasRepeatTime = 0.09983560404
+
+NesNtsc = TimingSetup(60.0988, 0.2662282774, 0.09983560404)
+NesNtsc.areWaitTimes = [
+  20
+]
 
 NesNtsc.levels = [
   0.79868483230,  # Lvl:00    F:48
@@ -48,9 +53,10 @@ NesNtsc.levels = [
 ]
 
 
-NesPal = TimingSetup()
-NesPal.dasWaitTime = 0.2399664047
-NesPal.dasRepeatTime = 0.07998880157
+NesPal = TimingSetup(50.0070, 0.2399664047, 0.07998880157)
+NesPal.areWaitTimes = [
+  0.1
+]
 
 NesPal.levels = [
   0.71989921410,  # Lvl:00    F:36
