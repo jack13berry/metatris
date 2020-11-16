@@ -165,7 +165,8 @@ def universal( world, event_type, loglist, complete = False, evt_id = False, evt
 
   #["delaying","dropping","zoid_rot","zoid_col","zoid_row"]
   logit(world.needs_new_zoid, "delaying")
-  logit(1 if world.isDropping else 0, "dropping")
+  logit(world.interval_toggle, "dropping")
+  #  logit(1 if world.isDropping else 0, "dropping")
   logit(world.curr_zoid.rot, "zoid_rot")
   logit(world.curr_zoid.get_col(), "zoid_col")
   logit(world.curr_zoid.get_row(), "zoid_row")
