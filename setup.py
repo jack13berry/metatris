@@ -21,8 +21,8 @@ executables = [
   Executable(
     'main.py',
     base=base,
-    targetName = 'game-changer',
-    icon = 'media/game-changer.ico'
+    targetName = 'metatetris',
+    icon = 'media/metatetris.ico'
   )
 ]
 

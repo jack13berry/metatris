@@ -2,11 +2,19 @@ import pygame, states
 from settings import all as settings
 
 import gui
+kx = 0
+bx = 0
 
 def handleInput(world, event):
+  global kx, bx
   valid = False
+
   if event.type == pygame.KEYDOWN:
     valid = True
+    kx += 1
+    world.controllerSetupLastButton = "Key %d: %d" % (kx, event.key)
+    world.shouldRedraw = True
+
     if event.key == pygame.K_SPACE:
       fwd(world)
 
@@ -29,21 +37,27 @@ def handleInput(world, event):
       print("UNEXPECTED KEY:", event.key)
       valid = False
 
+
   elif event.type == pygame.JOYBUTTONDOWN:
     valid = True
+    bx += 1
+    world.controllerSetupLastButton = "Button %d: %d" % (bx, event.button)
+    world.shouldRedraw = True
+
     if event.button == world.JOY_START:
       fwd(world)
-    elif event.button == pygame.JOY_LEFT:
+    elif event.button == world.JOY_LEFT:
       left(world)
-    elif event.button == pygame.JOY_RIGHT:
+    elif event.button == world.JOY_RIGHT:
       right(world)
-    elif event.button == pygame.JOY_UP:
+    elif event.button == world.JOY_UP:
       up(world)
-    elif event.button == pygame.JOY_DOWN:
+    elif event.button == world.JOY_DOWN:
       down(world)
     else:
       print("UNEXPECTED BUTTON:", event.button)
       valid = False
+
 
   if valid:
     world.sounds['uiaction'].play(0)

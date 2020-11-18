@@ -81,7 +81,9 @@ class ControllerSetup():
     gui.infoText(world, text, y = int(world.worldsurf_rect.height*0.9))
 
   def draw(opt, world):
-    opt.infotext(world, "Hit space key to edit")
+    if not hasattr(world, "controllerSetupLastButton"):
+      world.controllerSetupLastButton = "Press a joystick button or keyboard key"
+    opt.infotext(world, world.controllerSetupLastButton)
 
 
 

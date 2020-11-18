@@ -24,7 +24,7 @@ def handleInput(world, event):
     if event.button == world.JOY_START :
       moveForward(world)
 
-    elif event.button == pygame.JOY_LEFT or event.button == pygame.JOY_RIGHT:
+    elif event.button == world.JOY_LEFT or event.button == world.JOY_RIGHT:
       changeFocusedElm(world)
 
     else:
