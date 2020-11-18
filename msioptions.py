@@ -1,6 +1,7 @@
 
 msi_options = {
-  'install_icon': 'media/game-changer.ico',
+  'install_icon': 'media/metatetris.ico',
+  'upgrade_code': "{36173754-973f-4ae0-8005-d9ad447a9711}",
   'data': {
     'Shortcut': [
       (
@@ -8,7 +9,7 @@ msi_options = {
         'DesktopShortcut',  'DesktopFolder', 'Game Changer', 'TARGETDIR',
 
         #Target                        Arguments        Description   Hotkey
-        '[TARGETDIR]game-changer.exe', None,            None,         None,
+        '[TARGETDIR]metatetris.exe', None,            None,         None,
 
         #Icon   IconIndex    ShowCmd   WkDir
         None,   None,        None,     'TARGETDIR'
@@ -19,7 +20,7 @@ msi_options = {
         'StartMenu',        'ProgramMenuFolder', 'Game Changer', 'TARGETDIR',
 
         #Target                        Arguments    Description   Hotkey
-        '[TARGETDIR]game-changer.exe', None,        None,         None,
+        '[TARGETDIR]metatetris.exe', None,        None,         None,
 
         #Icon   IconIndex    ShowCmd   WkDir
         None,   None,        None,     'TARGETDIR'

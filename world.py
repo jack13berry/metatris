@@ -290,7 +290,7 @@ class World( object ):
 
     self.scorebarsrc = pygame.image.load( "media" + sep + "scorebar.png" )
 
-    gameicon = pygame.image.load( "media" + sep + "game-changer.ico" )
+    gameicon = pygame.image.load( "media" + sep + "metatetris.ico" )
     pygame.display.set_icon(gameicon)
 
 
