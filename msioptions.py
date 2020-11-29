@@ -6,7 +6,7 @@ msi_options = {
     'Shortcut': [
       (
         #Shortcut            Directory        Name            Component
-        'DesktopShortcut',  'DesktopFolder', 'Game Changer', 'TARGETDIR',
+        'DesktopShortcut',  'DesktopFolder', 'MetaTetris', 'TARGETDIR',
 
         #Target                        Arguments        Description   Hotkey
         '[TARGETDIR]metatetris.exe', None,            None,         None,
@@ -17,7 +17,7 @@ msi_options = {
 
       (
         #Shortcut            Directory            Name            Component
-        'StartMenu',        'ProgramMenuFolder', 'Game Changer', 'TARGETDIR',
+        'StartMenu',        'ProgramMenuFolder', 'MetaTetris', 'TARGETDIR',
 
         #Target                        Arguments    Description   Hotkey
         '[TARGETDIR]metatetris.exe', None,        None,         None,

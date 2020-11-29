@@ -14,8 +14,8 @@ exe_options = {
   ]
 }
 
-#base = 'Console'
-base = 'Win32GUI'
+base = 'Console'
+#base = 'Win32GUI'
 
 executables = [
   Executable(
@@ -27,9 +27,9 @@ executables = [
 ]
 
 setup(
-  name='Game Changer',
+  name='Metatris',
   version = '1.0',
   description = '',
-  options = {'build_exe': exe_options, 'bdist_msi':msi_options},
+  options = {'build_exe':exe_options, 'bdist_msi':msi_options},
   executables = executables
 )

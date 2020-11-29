@@ -72,7 +72,7 @@ def drawGameOver( world ):
       msg2 = "Press START"
       msg3 = "Esc to Exit"
     else:
-      msg2 = "Press Spacebar"
+      msg2 = "Press Enter"
       msg3 = "Esc to Exit"
     offset = 36
     colors =  world.NES_colors[world.level%len(world.NES_colors)]

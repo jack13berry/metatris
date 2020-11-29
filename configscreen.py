@@ -1,66 +1,30 @@
-import pygame, states
+import pygame, states, events
 from settings import all as settings
 
 import gui
-kx = 0
-bx = 0
 
 def handleInput(world, event):
-  global kx, bx
-  valid = False
+  if event == events.btnSelectOn or event == events.btnStartOn:
+    fwd(world)
 
-  if event.type == pygame.KEYDOWN:
-    valid = True
-    kx += 1
-    world.controllerSetupLastButton = "Key %d: %d" % (kx, event.key)
-    world.shouldRedraw = True
+  elif event == events.btnLeftOff:
+    left(world)
 
-    if event.key == pygame.K_SPACE:
-      fwd(world)
+  elif event == events.btnRightOff:
+    right(world)
 
-    elif event.key == pygame.K_LEFT:
-      left(world)
+  elif event == events.btnUpOff:
+    up(world)
 
-    elif event.key == pygame.K_RIGHT:
-      right(world)
+  elif event == events.btnDownOff:
+    down(world)
 
-    elif event.key == pygame.K_UP:
-      up(world)
+  elif event == events.btnEscapeOn:
+    bwd(world)
 
-    elif event.key == pygame.K_DOWN:
-      down(world)
-
-    elif event.key == pygame.K_ESCAPE:
-      bwd(world)
-
-    else:
-      print("UNEXPECTED KEY:", event.key)
-      valid = False
-
-
-  elif event.type == pygame.JOYBUTTONDOWN:
-    valid = True
-    bx += 1
-    world.controllerSetupLastButton = "Button %d: %d" % (bx, event.button)
-    world.shouldRedraw = True
-
-    if event.button == world.JOY_START:
-      fwd(world)
-    elif event.button == world.JOY_LEFT:
-      left(world)
-    elif event.button == world.JOY_RIGHT:
-      right(world)
-    elif event.button == world.JOY_UP:
-      up(world)
-    elif event.button == world.JOY_DOWN:
-      down(world)
-    else:
-      print("UNEXPECTED BUTTON:", event.button)
-      valid = False
-
-
-  if valid:
+  if event%10 == 0:
     world.sounds['uiaction'].play(0)
+  world.shouldRedraw = True
 
 
 def fwd(world):

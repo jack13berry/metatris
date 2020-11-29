@@ -1,37 +1,25 @@
 import pygame
 
-import gui, states, configscreen
+import gui, states, events, configscreen
 
 
 def handleInput(world, event):
-  valid = False
-  if event.type == pygame.KEYDOWN:
-    valid = True
-    if event.key == pygame.K_SPACE:
-      moveForward(world)
+  invalid = False
+  if event == events.btnSelectOn or event == events.btnStartOn:
+    moveForward(world)
 
-    elif event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-      changeFocusedElm(world)
+  elif event == events.btnLeftOn or event == events.btnRightOn:
+    changeFocusedElm(world)
 
-    elif event.key == pygame.K_ESCAPE:
-      world.running = False
+  elif event == events.btnEscapeOn:
+    world.running = False
 
-    else:
-      valid = False
+  else:
+    invalid = True
 
-  elif event.type == pygame.JOYBUTTONDOWN:
-    valid = True
-    if event.button == world.JOY_START :
-      moveForward(world)
-
-    elif event.button == world.JOY_LEFT or event.button == world.JOY_RIGHT:
-      changeFocusedElm(world)
-
-    else:
-      valid = False
-
-  if valid:
+  if event%10 == 1 and not invalid:
     world.sounds['uiaction'].play(0)
+
 
 def changeFocusedElm(world):
   if world.focused == "intro.play":
@@ -70,7 +58,7 @@ def draw( world ):
 
   txty = r.height - gclogo_rect.height - 40
   if world.moment >= world.textBlinkLastTime + 0.7:
-    btnName = "START" if pygame.joystick.get_count() > 0 else "SPACE BAR"
+    btnName = "START" if pygame.joystick.get_count() > 0 else "Enter"
     actName = " to begin" if world.focused == "intro.play" else " for settings"
     gui.textSurface("Press " + btnName + actName,
       world.scores_font, ( 200, 200, 200 ),

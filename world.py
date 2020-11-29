@@ -1,15 +1,6 @@
 # Based on the work by John K. Lindstedt
 
-import os
-import sys
-import copy
-import csv
-import random
-import time
-import json
-import datetime
-import platform
-import random
+import os, sys, copy, csv, random, time, json, datetime, platform, random
 
 import pygame, numpy
 
@@ -17,7 +8,7 @@ from zoid import Zoid
 
 from simulator import TetrisSimulator
 
-import states, logger, cnf, drawer, inputhandler, timing
+import states, events, logger, cnf, drawer, inputhandler, timing
 
 sep = os.path.sep
 
@@ -79,6 +70,7 @@ class World( object ):
       cnf.read(self, configName)
 
     cnf.setAll(self)
+    events.init(self)
 
     self.timing = getattr(timing, self.timingSetup)
     self.levelTimes = self.timing.levels
@@ -88,15 +80,42 @@ class World( object ):
     ## Input init
 
     #...# provide a function for setting game controls here.
+    pygame.init()
+    # print("pygame init[92]: %s" % pygame.joystick.get_init())
+    # print("Controller Count: %d" % pygame.joystick.get_count())
+
+    self.lastAxisDown = None
+    self.contobj = None
+    contid = pygame.joystick.get_count()
+    self.numberOfControllers = contid
+    while contid > 0:
+      contid -= 1
+      contobj = pygame.joystick.Joystick(contid)
+      setattr(self, ("joystick%d" % contid), contobj)
+
+      print("Recognized Controller %d:")
+      print("            id: '%s'" % contobj.get_instance_id())
+      print("          guid: '%s'" % contobj.get_guid())
+      print("          name: '%s'" % contobj.get_name())
+      print("    powerlevel: '%s'" % contobj.get_power_level())
+      print("       numaxes: '%s'" % contobj.get_numaxes())
+      print("      numballs: '%s'" % contobj.get_numballs())
+      print("    numbuttons: '%s'" % contobj.get_numbuttons())
+      print("       numhats: '%s'" % contobj.get_numhats())
+
+      print("\n")
+      print("           pre: '%s'" % (contobj.get_init()))
+      contobj.init()
+      print("          post: '%s'" % (contobj.get_init()))
 
     #initialize joystick
-    pygame.joystick.init()
-    if pygame.joystick.get_count() > 0:
-      self.joystick1 = pygame.joystick.Joystick(0)
-      self.joystick1.init()
-    if pygame.joystick.get_count() > 1:
-      self.joystick2 = pygame.joystick.Joystick(1)
-      self.joystick2.init()
+    # pygame.joystick.init()
+    # if pygame.joystick.get_count() > 0:
+    #   self.joystick1 = pygame.joystick.Joystick(0)
+    #   self.joystick1.init()
+    # if pygame.joystick.get_count() > 1:
+    #   self.joystick2 = pygame.joystick.Joystick(1)
+    #   self.joystick2.init()
 
     ## Drawing init
     # modifier for command keys
@@ -1171,6 +1190,55 @@ class World( object ):
       self.AAR_timer -= 1
 
 
+  def logControllerStates(self, event):
+    evtname = pygame.event.event_name(event.type)
+    self.eventLogCounter += 1
+    lc = self.eventLogCounter
+    if evtname.lower() == "joyaxismotion":
+      print("%d: axisMotion <%s|%s>"  % (lc, event.axis, event.value))
+
+    elif evtname.lower() == "joyballmotion":
+      print("%d: ballMotion <%s|%s>"  % (lc, event.ball, event.rel))
+
+    elif evtname.lower() == "joyhatmotion":
+      print("%d: hatMotion <%s|%s>"   % (lc, event.hat, event.value))
+
+    elif evtname.lower() == "joybuttondown":
+      print("%d: btnPress <%s>"    % (lc, event.button))
+
+    elif evtname.lower() == "joybuttonup":
+      print("%d: btnRelease <%s>"  % (lc, event.button))
+
+    else:
+      print("%d: irrelevant: <%s>" % (lc, evtname))
+
+
+    # print("====== EVENT [%d]: %s ========" % (self.eventLogCounter, evtname))
+    # for i in range(0, self.numberOfControllers):
+    #   contobj = getattr(self, "joystick%d"%i)
+
+    #   print("  controller: %d" % i )
+    #   astr = "        axes: "
+    #   for ax in range(0, contobj.get_numaxes()):
+    #     astr += "[%d]%d " % (ax, contobj.get_axis(ax))
+    #   print(astr)
+
+    #   bstr = "       balls: "
+    #   for bx in range(0, contobj.get_numballs()):
+    #     bstr += "[%d]%d " % (bx, contobj.get_ball(bx))
+    #   print(bstr)
+
+    #   bstr = "     buttons: "
+    #   for bx in range(0, contobj.get_numbuttons()):
+    #     bstr += "[%d]%d " % (bx, contobj.get_button(bx))
+    #   print(bstr)
+
+    #   hstr = "        hats: "
+    #   for hx in range(0, contobj.get_numhats()):
+    #     hstr += "[%d]%d " % (hx, contobj.get_hat(hx))
+    #   print(hstr)
+
+
   def run( self ):
     self.running = True
     self.state = states.Intro
@@ -1183,6 +1251,7 @@ class World( object ):
     self.frmStartTime = self.moment
 
     self.curFrm = 0
+    self.eventLogCounter = 0
     while self.running:
       self.moment = time.perf_counter()
       curFrm = int( (self.moment - self.gameStartTime) * self.timing.fps )
@@ -1191,15 +1260,21 @@ class World( object ):
         self.curFrm = curFrm
         self.frmStartTime = self.moment
 
-      for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+      for event in events.readAll(self):
+
+        if event == events.reqQuit:
           return self.quit()
 
-        elif event.type == pygame.VIDEORESIZE:
-            resizeEvent = event
+        if event is None:
+          continue
 
-        #screenshot clause
-        elif event.type == pygame.KEYDOWN and event.key == pygame.K_i:
+        # self.logControllerStates(event)
+        print("E:", event)
+
+        if event == events.reqWinResize:
+          resizeEvent = self.lastResize
+
+        elif event == events.reqScreenShot:
           self.do_screenshot()
 
         else:
