@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, r'.\extlib')
+# sys.path.insert(0, r'.\extlib')
 
 from cx_Freeze import setup, Executable
 from msioptions import msi_options
@@ -21,8 +21,8 @@ executables = [
   Executable(
     'main.py',
     base=base,
-    targetName = 'metatetris',
-    icon = 'media/metatetris.ico'
+    targetName = 'metatris',
+    icon = 'media/metatris.ico'
   )
 ]
 

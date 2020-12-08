@@ -14,7 +14,7 @@ def setupOSWindow(world, w=0, h=0):
       w = 800
       h = 600
     world.screen = pygame.display.set_mode( (w, h), pygame.RESIZABLE )
-    pygame.display.set_caption("MetaTetris")
+    pygame.display.set_caption("Metatris")
 
   world.worldsurf = world.screen.copy()
   world.worldsurf_rect = world.worldsurf.get_rect()

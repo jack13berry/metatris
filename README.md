@@ -1,4 +1,4 @@
-# MetaTetris Frontend
+# Metatris Frontend
 
 This repository contains the source code of the game and environment setup for
 creation of Windows installers for both 32bit and 64bit platforms.
