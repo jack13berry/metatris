@@ -57,14 +57,20 @@ def init(world):
 
   key.add("on" +str(pygame.K_p),        reqPauseResume)
 
+  key.add("off" +str(pygame.K_RETURN),  btnStartOff)
   key.add("on" +str(pygame.K_RETURN),   btnStartOn)
+
+  key.add("off" +str(pygame.K_SPACE),   btnSelectOff)
   key.add("on" +str(pygame.K_SPACE),    btnSelectOn)
 
-  btn.add("off1",                       btnRotateCcwOff)
-  btn.add("on1",                        btnRotateCcwOn)
+  btn.add("off1",                       btnRotateCwOff)
+  btn.add("on1",                        btnRotateCwOn)
 
-  btn.add("off2",                       btnRotateCwOff)
-  btn.add("on2",                        btnRotateCwOn)
+  btn.add("off2",                       btnRotateCcwOff)
+  btn.add("on2",                        btnRotateCcwOn)
+
+  btn.add("off9",                       btnSelectOff)
+  btn.add("on9",                        btnSelectOn)
 
 
 def readAll(world):
@@ -84,9 +90,12 @@ def readAll(world):
       world.lastResize = e
 
     elif e.type == pygame.JOYAXISMOTION:
+      print("axisUnv: %d %s" %(e.axis, e.value))
       if axisConsumed == e.value:
+        print("axisSkipped: %d %s" %(e.axis, e.value))
         continue
       if e.axis == 4:
+        print("axis4:  %s" % (e.value))
         if e.value < -1:
           lst.append( btnUpOn )
           world.lastAxisDown = btnUpOn
@@ -95,12 +104,13 @@ def readAll(world):
           world.lastAxisDown = btnDownOn
         elif e.value < 0:
           if world.lastAxisDown is not None:
-            lst.append( world.lastAxisDown+1 )
+            lst.append( world.lastAxisDown-1 )
             world.lastAxisDown = None
 
         axisConsumed = e.value
 
       elif e.axis == 0:
+        print("axis0:  %s" % (e.value))
         if e.value < -1:
           lst.append( btnLeftOn )
           world.lastAxisDown = btnLeftOn
@@ -109,10 +119,13 @@ def readAll(world):
           world.lastAxisDown = btnRightOn
         elif e.value < 0:
           if world.lastAxisDown is not None:
-            lst.append( world.lastAxisDown+1 )
+            lst.append( world.lastAxisDown-1 )
             world.lastAxisDown = None
 
         axisConsumed = e.value
+
+      else:
+        print("axisN: %d %s" % (e.axis, e.value))
 
     else:
       lst.append( map(world, e) )
@@ -122,11 +135,18 @@ def readAll(world):
 
 def map(world, event):
   if event.type not in world.eventMap:
-    print("UnknownEvent:", event.type)
+    # print("UnknownEvent:", event.type)
     return None
 
   group = world.eventMap[event.type]
-  # print("MatchedGroup:", group)
+  # print("EventGroup:", group)
+
+  if hasattr(event, "button"):
+    print("C: %d" % event.button)
+  elif hasattr(event, "key"):
+    print("K: %d" % event.key)
+
+
   return group.map(world, event)
 
 
