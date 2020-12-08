@@ -1,5 +1,6 @@
 # Based on the work by John K. Lindstedt
 
+import mond
 import os, sys, copy, csv, random, time, json, datetime, platform, random
 
 import pygame, numpy
@@ -26,6 +27,9 @@ class World( object ):
 
   #initializes the game object with most needed resources at startup
   def __init__( self, args ):
+    # Start connector:
+    mond.init()
+
     # Time Now
     self.moment = time.perf_counter()
 
@@ -1095,6 +1099,8 @@ class World( object ):
 
 
   def quit( self ):
+    mond.quit()
+
     if self.game_number > 0 and not self.state == states.Gameover:
       logger.gameresults(self, complete=False)
     self.criterion_score()
