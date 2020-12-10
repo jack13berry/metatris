@@ -2,7 +2,6 @@ import pygame
 
 import gui, states, events, configscreen
 
-
 def handleInput(world, event):
   invalid = False
   if event == events.btnSelectOn or event == events.btnStartOn:
@@ -29,6 +28,7 @@ def changeFocusedElm(world):
 
 
 def moveForward(world):
+  world.quit()
   if world.focused == "intro.play":
     world.state = states.Setup
   else:

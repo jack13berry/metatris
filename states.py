@@ -7,3 +7,4 @@ Aar = 5
 Config = 10
 ConfigLvl1 = 11
 ConfigLvl2 = 12
+Auth = 21

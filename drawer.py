@@ -2,7 +2,7 @@ import pygame, platform, numpy
 # import time
 
 import states, gui
-import introscreen, playscreen, configscreen
+import introscreen, playscreen, configscreen, authscreen
 from zoid import Zoid
 
 
@@ -218,6 +218,8 @@ def drawTheWorld( world ):
     playscreen.drawGameOver(world)
   elif world.state == states.Aar:
     playscreen.draw_AAR(world)
+  elif world.state == states.Auth:
+    authscreen.draw(world)
   elif world.state >= states.Config:
     configscreen.draw(world)
 

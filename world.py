@@ -29,6 +29,12 @@ class World( object ):
   def __init__( self, args ):
     # Start connector:
     mond.init()
+    if mond.status() != "authorized":
+      self.state = states.Auth
+      print("Will render auth screen")
+    else:
+      self.state = states.Intro
+      print("Will render intro screen")
 
     # Time Now
     self.moment = time.perf_counter()
@@ -190,9 +196,6 @@ class World( object ):
     if self.tiny_zoids:
       self.zoids += Zoid.set_tiny
 
-    ## Gameplay variables
-    self.state = states.Intro
-
     #universal frame timer
     self.timer = 0
 
@@ -292,7 +295,6 @@ class World( object ):
     # Gets screen information
     self.screeninfo = pygame.display.Info()
 
-
     # Remove modes that are double the width of another mode
     # which indicates a dual monitor resolution
     modes = pygame.display.list_modes()
@@ -308,6 +310,7 @@ class World( object ):
 
     self.logo = pygame.image.load( "media" + sep + "logo.png" )
     self.logo = pygame.transform.scale(self.logo, (400, 300))
+    self.minilogo = pygame.transform.scale(self.logo, (200, 150))
     self.gclogo = pygame.image.load( "media" + sep + "gclogo.png" )
     self.gclogo = pygame.transform.scale(self.gclogo, (368, 72))
 
@@ -325,6 +328,8 @@ class World( object ):
     fontPath = sep.join(["media", "fonts", "Montserrat", "Montserrat-Medium.ttf"])
     fontBPath = sep.join(["media", "fonts", "Montserrat", "Montserrat-Black.ttf"])
     self.intro_font = pygame.font.Font( fontPath, int(.04 * self.worldsurf_rect.height) )
+    self.authInfoFont = pygame.font.Font( fontPath, int(.040 * self.worldsurf_rect.height) )
+    self.authDigitFont = pygame.font.Font( fontPath, int(.100 * self.worldsurf_rect.height) )
     self.instantScoreFont = pygame.font.Font( fontPath, int(.040 * self.worldsurf_rect.height) )
     self.inBoardScoreFont = pygame.font.Font( fontBPath, int(.10 * self.worldsurf_rect.height) )
     self.scores_font = pygame.font.Font( fontPath, int(.033 * self.worldsurf_rect.height) )
@@ -1247,7 +1252,8 @@ class World( object ):
 
   def run( self ):
     self.running = True
-    self.state = states.Intro
+    self.shouldRedraw = True
+    # self.state = states.Intro
     resizeEvent = False
 
     self.moment = time.perf_counter()

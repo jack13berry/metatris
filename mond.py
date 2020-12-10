@@ -1,7 +1,8 @@
-import socket, subprocess
+import socket, subprocess, time
 
 cp = None    # connector process
 sock = None  # socket for communication
+authdgts = ""
 
 def init():
   global sock, cp
@@ -16,14 +17,31 @@ def quit():
   print("Terminating mond-connector")
   sock.close()
   cp.terminate()
+  cp.wait()
+
+
+def authDigits():
+  global authdgts
+  if authdgts != "":
+    return authdgts
+
+  sock.send("session.digits\n".encode())
+  response = sock.recv(4096)
+  authdgts = response.decode().strip()
+  print ("AUTHDGTS:", authdgts)
+  return authdgts
+
 
 def checkSession():
-  sock.send("session.check\n".encode())
-  print("checking session")
-  
+  sock.send("session.init\n".encode())
   response = sock.recv(4096)
-  print(f'Received: {response.decode()!r}')
+  return response.decode().strip()
 
 
-def ready():
-  return False
+statusLastCheck = 0
+lastStatus = 0
+
+def status():
+  sock.send("session.check\n".encode())
+  response = sock.recv(4096)
+  return response.decode().strip()
