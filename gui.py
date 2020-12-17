@@ -68,7 +68,15 @@ def button(world, txt, x, y, w, h,
 
 def verticalTab(world, txt, x, y, w, h, focused=False,
     clrFocused = (120,200,50),
-    clrUnfocused = (60,140,10) ):
+    clrBlurred = (60,140,10),
+    clrFocusedText = None,
+    clrBlurredText = (60,140,10)
+):
+
+  if clrFocusedText == None:
+    clrFocusedText = world.bg_color
+  if clrBlurredText == None:
+    clrBlurredText = clrBlurred
 
   srfc = world.worldsurf
   marginBottom = 1
@@ -80,22 +88,29 @@ def verticalTab(world, txt, x, y, w, h, focused=False,
     marginBottom = -3
     pygame.draw.rect( srfc, clrFocused, [(x, y), (w, h)]) # button fill
 
-    clrTxt = world.bg_color # text and arrow color
+    clrTxt = clrFocusedText # text and arrow color
 
     # arrows
     ty = y+(h-20)/2
-    pygame.draw.polygon(srfc, clrUnfocused,
+    pygame.draw.polygon(srfc, clrBlurred,
       [(x-2, ty), (x+14, ty+10), (x-2,ty+20)])
 
   else:
     # pygame.draw.rect( srfc, clr1, [(x, y), (w, 2)])
-    # pygame.draw.rect( srfc, clrUnfocused, [(x+w, y), (1, h)])
-    pygame.draw.rect( srfc, clrUnfocused, [(x, y+h), (w+1, 1)])
-    clrTxt = clrUnfocused
+    # pygame.draw.rect( srfc, clrBlurred, [(x+w, y), (1, h)])
+    pygame.draw.rect( srfc, clrBlurred, [(x, y+h), (w+1, 1)])
+    clrTxt = clrBlurredText
 
   textSurface(txt, world.scores_font, clrTxt, (x+w//2, y+h//2), srfc, "center")
 
   return y+h+marginBottom
+
+
+def simpleText(world, text, x=-1, y=-1, color=(120,200,50), srf=None, alignment="center"):
+  if srf == None:
+    srf = world.worldsurf
+
+  return textSurface(text, world.scores_font, color, (x, y), srf, alignment)
 
 
 def infoText(world, text, x=-1, y=-1, color=(120,200,50), srf = None):
@@ -105,10 +120,8 @@ def infoText(world, text, x=-1, y=-1, color=(120,200,50), srf = None):
       x = int(rect.width/4)*3 + 15
     if y == -1:
       y = int(rect.height/2)
-  if srf == None:
-    srf = world.worldsurf
 
-  return textSurface(text, world.scores_font, color, (x, y), srf, "center")
+  return simpleText(world, text, x, y, color, srf, "center")
 
 
 def square( self, surface, left, top, color_id , alpha = 255, gray = False):

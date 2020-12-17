@@ -28,13 +28,13 @@ class World( object ):
   #initializes the game object with most needed resources at startup
   def __init__( self, args ):
     # Start connector:
-    mond.init()
-    if mond.status() != "authorized":
-      self.state = states.Auth
-      print("Will render auth screen")
-    else:
-      self.state = states.Intro
-      print("Will render intro screen")
+    # mond.init()
+    # if mond.status() != "authorized":
+    #   self.state = states.Auth
+    #   print("Will render auth screen")
+    # else:
+    #   self.state = states.Intro
+    self.state = states.Intro
 
     # Time Now
     self.moment = time.perf_counter()
@@ -103,20 +103,20 @@ class World( object ):
       contobj = pygame.joystick.Joystick(contid)
       setattr(self, ("joystick%d" % contid), contobj)
 
-      print("Recognized Controller %d:")
-      print("            id: '%s'" % contobj.get_instance_id())
-      print("          guid: '%s'" % contobj.get_guid())
-      print("          name: '%s'" % contobj.get_name())
-      print("    powerlevel: '%s'" % contobj.get_power_level())
-      print("       numaxes: '%s'" % contobj.get_numaxes())
-      print("      numballs: '%s'" % contobj.get_numballs())
-      print("    numbuttons: '%s'" % contobj.get_numbuttons())
-      print("       numhats: '%s'" % contobj.get_numhats())
+      # print("Recognized Controller %d:")
+      # print("            id: '%s'" % contobj.get_instance_id())
+      # print("          guid: '%s'" % contobj.get_guid())
+      # print("          name: '%s'" % contobj.get_name())
+      # print("    powerlevel: '%s'" % contobj.get_power_level())
+      # print("       numaxes: '%s'" % contobj.get_numaxes())
+      # print("      numballs: '%s'" % contobj.get_numballs())
+      # print("    numbuttons: '%s'" % contobj.get_numbuttons())
+      # print("       numhats: '%s'" % contobj.get_numhats())
 
-      print("\n")
-      print("           pre: '%s'" % (contobj.get_init()))
+      # print("\n")
+      # print("           pre: '%s'" % (contobj.get_init()))
       contobj.init()
-      print("          post: '%s'" % (contobj.get_init()))
+      # print("          post: '%s'" % (contobj.get_init()))
 
     #initialize joystick
     # pygame.joystick.init()
@@ -1104,7 +1104,7 @@ class World( object ):
 
 
   def quit( self ):
-    mond.quit()
+    # mond.quit()
 
     if self.game_number > 0 and not self.state == states.Gameover:
       logger.gameresults(self, complete=False)
@@ -1281,7 +1281,7 @@ class World( object ):
           continue
 
         # self.logControllerStates(event)
-        print("E:", event)
+        # print("E:", event)
 
         if event == events.reqWinResize:
           resizeEvent = self.lastResize

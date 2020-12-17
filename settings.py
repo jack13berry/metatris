@@ -1,4 +1,4 @@
-import cnf, gui, states
+import cnf, gui, states, events
 
 class O():
   pass
@@ -52,11 +52,12 @@ class Radio():
     opt.currentX = opt.getCurrentX(world)
     y = world.worldsurf_rect.height//2 - opt.currentX*30
 
+    txtcolor = (116, 176, 223)
     for (x, val) in enumerate(opt.set):
       txt = val[1]
       if x == opt.currentX:
-        txtcolor = (116, 176, 223)
         rect = gui.infoText(world, txt, y=y, color=txtcolor)
+
         if world.state == states.ConfigLvl2:
           gui.button(world, txt, rect.left-30, y-15, rect.w+60, 30,
             focused=True, withTicks=False,
@@ -77,15 +78,72 @@ class ControllerSetup():
   def __init__(opt, target, title):
     opt.target = target
     opt.title = title
+    opt.set = []
+    opt.currentX = (len(events.buttonNames)+1)//2
 
-  def infotext(opt, world, text):
+    if target == "keyboard":
+      opt.namedMap = events.mappedKeyNames
+      opt.actName = "key"
+    else:
+      opt.actName = "button"
+      opt.namedMap = events.mappedBtnNames
+
+
+  def infoText(opt, world, text):
     gui.infoText(world, text, y = int(world.worldsurf_rect.height*0.9))
 
-  def draw(opt, world):
-    if not hasattr(world, "controllerSetupLastButton"):
-      world.controllerSetupLastButton = "Press a joystick button or keyboard key"
-    opt.infotext(world, world.controllerSetupLastButton)
 
+  def up(opt, world):
+    if opt.currentX > 0:
+      opt.currentX -= 1
+    else:
+      opt.currentX = len(events.buttonNames) - 1
+
+
+  def down(opt, world):
+    if opt.currentX < len(events.buttonNames) - 1:
+      opt.currentX += 1
+    else:
+      opt.currentX = 0
+
+
+  def draw(opt, world):
+    txtcolor = (116, 176, 223)
+    midy = world.worldsurf_rect.height//2
+    x = int(world.worldsurf_rect.width*0.75)
+
+    if world.state == states.ConfigLvl1:
+      opt.infoText(world, opt.title + " Mappings")
+
+    elif world.state == states.ConfigLvl2:
+      world.remapActTarget = events.buttonNames[opt.currentX]
+      gui.infoText(world, "◀▶", x=x, y=midy-15, color=txtcolor)
+      opt.infoText(world, "Enter to remap")
+
+    else:
+      gui.infoText(world, ("Press the %s for" % opt.actName),
+        x=x, y=midy-20, color=txtcolor
+      )
+      gui.infoText(world, "'%s' action." % events.buttonNames[opt.currentX],
+        x=x, y=midy+20, color=txtcolor
+      )
+      opt.infoText(world, "Esc to cancel")
+      return
+
+
+    y = midy - opt.currentX*30
+    ix = 0
+    for name in events.buttonNames:
+      # selected = (world.state == states.ConfigLvl1) \
+      #            and (opt.currentX == ix)
+
+      gui.simpleText(world, name, x-12, y-15, color=txtcolor,
+        alignment="midright")
+      gui.simpleText(world, opt.namedMap[name], x+12, y-15, color=txtcolor,
+        alignment="midleft")
+
+      ix += 1
+      y += 30
 
 
 dynamics = G("Dynamics")
@@ -122,7 +180,10 @@ appearance.opts.append(Radio("color_mode", "Piece Colors", [
   ["REMIX", "Remix", ""]
 ]))
 
-
+appearance.opts.append(Radio("render_scores", "Show Scores", [
+  [False, "Only at the End", ""],
+  [True, "Always", ""]
+]))
 
 audio = G("Audio")
 
@@ -137,7 +198,7 @@ audio.opts.append(Radio("music_vol", "Music Volume",
 controls = G("Controls")
 
 controls.opts.append(ControllerSetup("keyboard", "Keyboard"))
-controls.opts.append(ControllerSetup("joystick", "Joystick"))
+controls.opts.append(ControllerSetup("controller", "Controller"))
 
 
 

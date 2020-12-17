@@ -7,4 +7,6 @@ Aar = 5
 Config = 10
 ConfigLvl1 = 11
 ConfigLvl2 = 12
+KeyRemapping = 13
+BtnRemapping = 14
 Auth = 21

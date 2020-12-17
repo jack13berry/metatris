@@ -13,6 +13,10 @@ clrBad = ( 255, 63, 63 )
 prevMondState = ""
 
 def draw( world ):
+  world.state = states.Intro
+  world.shouldRedraw = True
+  return
+
   global authCode, skipx, prevMondState
 
   mondstate = mond.status()

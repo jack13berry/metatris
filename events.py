@@ -1,4 +1,5 @@
 import pygame.event
+import states
 
 btnLeftOff      = 110
 btnLeftOn       = 111
@@ -27,6 +28,47 @@ reqPause        = 990
 reqResume       = 991
 reqPauseResume  = 992
 reqQuit         = 999
+
+
+buttonNames = [
+  "Up", "Right", "Down", "Left",
+  "Rotate CW", "Rotate CCW",
+  "Start", "Select"
+]
+
+mappedKeyNames = {
+  "Up": "Default",
+  "Right": "Default",
+  "Down": "Default",
+  "Left": "Default",
+  "Rotate CW": "Default",
+  "Rotate CCW": "Default",
+  "Start": "Default",
+  "Select": "Default"
+}
+
+mappedBtnNames = {
+  "Up": "Default",
+  "Right": "Default",
+  "Down": "Default",
+  "Left": "Default",
+  "Rotate CW": "Default",
+  "Rotate CCW": "Default",
+  "Start": "Default",
+  "Select": "Default"
+}
+
+
+buttonVarNames = {
+  "Up": "btnUp",
+  "Right": "btnRight",
+  "Down": "btnDown",
+  "Left": "btnLeft",
+  "Rotate CW": "btnRotateCw",
+  "Rotate CCW": "btnRotateCcw",
+  "Start": "btnStart",
+  "Select": "btnSelect"
+}
 
 
 def init(world):
@@ -75,8 +117,14 @@ def init(world):
 
 def readAll(world):
   rawList = pygame.event.get()
+
   if len(rawList) == 1:
-    return [ map(world, rawList[0]) ]
+    # print("SINGLEEVT:", world.state, world.state in [states.KeyRemapping, states.BtnRemapping])
+    if world.state in [states.KeyRemapping, states.BtnRemapping]:
+      # print("RAWINP @%d: %s" % (world.state, rawList))
+      return rawList
+    else:
+      return [ map(world, rawList[0]) ]
 
   lst = []
   axisConsumed = None
@@ -90,9 +138,9 @@ def readAll(world):
       world.lastResize = e
 
     elif e.type == pygame.JOYAXISMOTION:
-      print("axisUnv: %d %s" %(e.axis, e.value))
+      # print("axisUnv: %d %s" %(e.axis, e.value))
       if axisConsumed == e.value:
-        print("axisSkipped: %d %s" %(e.axis, e.value))
+        # print("axisSkipped: %d %s" %(e.axis, e.value))
         continue
       if e.axis == 4:
         print("axis4:  %s" % (e.value))
@@ -110,7 +158,7 @@ def readAll(world):
         axisConsumed = e.value
 
       elif e.axis == 0:
-        print("axis0:  %s" % (e.value))
+        # print("axis0:  %s" % (e.value))
         if e.value < -1:
           lst.append( btnLeftOn )
           world.lastAxisDown = btnLeftOn
@@ -128,7 +176,10 @@ def readAll(world):
         print("axisN: %d %s" % (e.axis, e.value))
 
     else:
-      lst.append( map(world, e) )
+      if world.state in [states.KeyRemapping, states.BtnRemapping]:
+        lst.append( e )
+      else:
+        lst.append( map(world, e) )
 
   return lst
 
@@ -141,11 +192,10 @@ def map(world, event):
   group = world.eventMap[event.type]
   # print("EventGroup:", group)
 
-  if hasattr(event, "button"):
-    print("C: %d" % event.button)
-  elif hasattr(event, "key"):
-    print("K: %d" % event.key)
-
+  # if hasattr(event, "button"):
+  #   print("C: %d" % event.button)
+  # elif hasattr(event, "key"):
+  #   print("K: %d" % event.key)
 
   return group.map(world, event)
 
@@ -175,3 +225,94 @@ class KeyboardKey():
     #KEYDOWN:on, KEYUP:off
     dir = "off" if event.type == pygame.KEYUP else "on"
     return group.known.get(dir+str(event.key), None)
+
+
+def exitRemapConfig(world):
+  world.state = states.ConfigLvl2
+  world.shouldRedraw = True
+
+
+def startRemapping(world, device):
+  if device == "btn":
+    world.mappingBtnDown = None
+    world.mappingAxsDown = None
+    world.state = states.BtnRemapping
+    # print("ENTERED::BTN for '%s' @%d" % (world.remapActTarget, world.state))
+  else:
+    world.mappingKeyDown = None
+    world.state = states.KeyRemapping
+    # print("ENTERED::KEY for '%s' @%d" % (world.remapActTarget, world.state))
+
+
+def handleKeyRemapInput(world, event):
+  if event.type != pygame.KEYDOWN and event.type != pygame.KEYUP:
+    return
+
+  # enter/right released
+  if event.type == pygame.KEYUP and world.mappingKeyDown == None:
+    # print("K:initial key release")
+    return
+
+  if event.key == pygame.K_ESCAPE:
+    # print("K:escape key")
+    return exitRemapConfig(world)
+
+  if event.type == pygame.KEYDOWN:
+    # print("K:keydown, setting mappingKeyDown to '%s'" % event.key)
+    world.mappingKeyDown = event.key
+
+  elif event.type == pygame.KEYUP:
+    # print("K:keyup, mappingKey %s" % event.key)
+    theMap = world.eventMap[pygame.KEYDOWN]
+    mappedKeyNames[world.remapActTarget] = keyTitleFor(event)
+    theAct = buttonVarNames[world.remapActTarget]
+    names = globals()
+    theMap.add("off"+str(event.key), names[theAct+"Off"])
+    theMap.add("on"+str(event.key), names[theAct+"On"])
+    # print("Remap '%s' ==> '%s'." % ("on"+str(event.key), names[theAct+"On"]))
+    exitRemapConfig(world)
+
+
+def handleBtnRemapInput(world, event):
+  # print("BtnRemapEvt:", event)
+  if event.type != pygame.JOYBUTTONDOWN and \
+      event.type != pygame.JOYBUTTONUP and event.type != pygame.JOYAXISMOTION:
+
+    if event.type == pygame.KEYDOWN or event.type == pygame.KEYUP:
+      if event.key == pygame.K_ESCAPE:
+        exitRemapConfig(world)
+
+    return
+
+  # select/start released
+  if event.type == pygame.JOYBUTTONUP and world.mappingBtnDown == None:
+    # print("K:initial btn release")
+    return
+
+  if event.type == pygame.JOYBUTTONDOWN:
+    # print("K:keydown, setting mappingKeyDown to '%s'" % event.key)
+    world.mappingBtnDown = event.button
+
+  elif event.type == pygame.JOYBUTTONUP:
+    # print("K:keyup, mappingKey %s" % event.button)
+    theMap = world.eventMap[pygame.JOYBUTTONDOWN]
+    mappedBtnNames[world.remapActTarget] = "Btn<%d>" % (event.button)
+    theAct = buttonVarNames[world.remapActTarget]
+    names = globals()
+    theMap.add("off"+str(event.button), names[theAct+"Off"])
+    theMap.add("on"+str(event.button), names[theAct+"On"])
+    # print("Remap '%s' ==> '%s'." % ("on"+str(event.button), names[theAct+"On"]))
+    exitRemapConfig(world)
+
+  elif event.type == pygame.JOYAXISMOTION:
+    mappedBtnNames[world.remapActTarget] = "Jx<%d>" % event.button
+
+
+def keyTitleFor(event):
+  # print("Title for:", event)
+  try:
+    keynm = pygame.key.name(event.key)
+  except:
+    keynm = "K<%d>" % (event.key)
+
+  return keynm[0].upper() + keynm[1:]

@@ -87,7 +87,9 @@ def set_var( world, name, default, type ):
 
 
 def setAll(world):
-  #read once for value
+  # Added
+  set_var(world, 'render_scores', False, 'bool')
+
   set_var(world, 'logdir', 'data', 'string')
   set_var(world, 'SID', 'Test', 'string')
 
@@ -187,9 +189,7 @@ def setAll(world):
 
   #modern game features
   set_var(world, 'ghost_zoid', False ,'bool')
-
   set_var(world, 'zoid_slam', False ,'bool')
-
   set_var(world, 'keep_zoid', False ,'bool')
 
   # allow rotations to "kick" away from wall and piece collisions

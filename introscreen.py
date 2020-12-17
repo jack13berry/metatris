@@ -28,7 +28,6 @@ def changeFocusedElm(world):
 
 
 def moveForward(world):
-  world.quit()
   if world.focused == "intro.play":
     world.state = states.Setup
   else:

@@ -148,12 +148,14 @@ def gameoverStateHandler(world, event):
 
 
 HANDLERS = {
-  states.Intro:      introscreen.handleInput,
-  states.Aar:        aarStateHandler,
-  states.Play:       playStateHandler,
-  states.Pause:      pauseStateHandler,
-  states.Gameover:   gameoverStateHandler,
-  states.Config:     configscreen.handleInput,
-  states.ConfigLvl1: configscreen.handleInput,
-  states.ConfigLvl2: configscreen.handleInput
+  states.Intro:        introscreen.handleInput,
+  states.Aar:          aarStateHandler,
+  states.Play:         playStateHandler,
+  states.Pause:        pauseStateHandler,
+  states.Gameover:     gameoverStateHandler,
+  states.Config:       configscreen.handleInput,
+  states.ConfigLvl1:   configscreen.handleInput,
+  states.ConfigLvl2:   configscreen.handleInput,
+  states.KeyRemapping: events.handleKeyRemapInput,
+  states.BtnRemapping: events.handleBtnRemapInput,
 }

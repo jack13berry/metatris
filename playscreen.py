@@ -1,6 +1,6 @@
 import pygame
 
-import gui
+import gui, states
 from zoid import Zoid
 
 def draw( world ):
@@ -155,16 +155,6 @@ def draw_gridlines( world ):
 
 
 def draw_scores( world ):
-  gui.textSurface("Score:", world.scores_font, ( 210, 210, 210 ), world.score_lab_left, world.worldsurf, "midleft" )
-  gui.textSurface("Tetrises:", world.scores_font, ( 210, 210, 210 ), world.tetrises_lab_left, world.worldsurf, "midleft" )
-  gui.textSurface("Lines:", world.scores_font, ( 210, 210, 210 ), world.lines_lab_left, world.worldsurf, "midleft" )
-  gui.textSurface("Level:", world.scores_font, ( 210, 210, 210 ), world.level_lab_left, world.worldsurf, "midleft" )
-
-  gui.textSurface(str( world.score ), world.scores_font, ( 210, 210, 210 ), world.score_left, world.worldsurf, "midright" )
-  gui.textSurface(str( world.tetrises_game ), world.scores_font, ( 210, 210, 210 ), world.tetrises_left, world.worldsurf, "midright" )
-  gui.textSurface(str( world.lines_cleared ), world.scores_font, ( 210, 210, 210 ), world.lines_left, world.worldsurf, "midright" )
-  gui.textSurface(str( world.level ), world.scores_font, ( 210, 210, 210 ), world.level_left, world.worldsurf, "midright" )
-
   newscore = world.newscore
   if newscore <= 100:
     newscoreText = "{:0.2f}".format(world.newscore)
@@ -176,6 +166,17 @@ def draw_scores( world ):
     world.newscoreColor = (255,0,0)
     newscoreText = "100+"
     lineColor = (255,0,0)
+
+  if world.render_scores or world.state == states.Gameover:
+    gui.textSurface("Score:", world.scores_font, ( 210, 210, 210 ), world.score_lab_left, world.worldsurf, "midleft" )
+    gui.textSurface("Tetrises:", world.scores_font, ( 210, 210, 210 ), world.tetrises_lab_left, world.worldsurf, "midleft" )
+    gui.textSurface("Lines:", world.scores_font, ( 210, 210, 210 ), world.lines_lab_left, world.worldsurf, "midleft" )
+    gui.textSurface("Level:", world.scores_font, ( 210, 210, 210 ), world.level_lab_left, world.worldsurf, "midleft" )
+
+    gui.textSurface(str( world.score ), world.scores_font, ( 210, 210, 210 ), world.score_left, world.worldsurf, "midright" )
+    gui.textSurface(str( world.tetrises_game ), world.scores_font, ( 210, 210, 210 ), world.tetrises_left, world.worldsurf, "midright" )
+    gui.textSurface(str( world.lines_cleared ), world.scores_font, ( 210, 210, 210 ), world.lines_left, world.worldsurf, "midright" )
+    gui.textSurface(str( world.level ), world.scores_font, ( 210, 210, 210 ), world.level_left, world.worldsurf, "midright" )
 
   world.newscoreText = newscoreText
   world.metabarSfc.fill( world.bg_color )
