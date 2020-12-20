@@ -1,12 +1,15 @@
-import socket, subprocess, time
+import socket, subprocess, time, json
 
 cp = None    # connector process
 sock = None  # socket for communication
 authdgts = ""
+statusLastCheck = 0
+lastStatus = 0
+
 
 def init():
   global sock, cp
-  print("starting mond-connector")
+  print("  starting mond-connector")
   cp = subprocess.Popen(".\\bin\\metatris-connector.exe")
   sock = socket.create_connection(("127.0.0.1", 29843))
 
@@ -14,7 +17,7 @@ def init():
 
 
 def quit():
-  print("Terminating mond-connector")
+  print("  terminating mond-connector")
   sock.close()
   cp.terminate()
   cp.wait()
@@ -38,10 +41,21 @@ def checkSession():
   return response.decode().strip()
 
 
-statusLastCheck = 0
-lastStatus = 0
-
 def status():
+  global lastStatus, statusLastCheck
+  now = time.perf_counter()
+  if now - 0.6 < statusLastCheck:
+    return lastStatus
+
   sock.send("session.check\n".encode())
   response = sock.recv(4096)
-  return response.decode().strip()
+  lastStatus = response.decode().strip()
+  statusLastCheck = now
+
+  return lastStatus
+
+
+def send(kind, msg, expectedSize = 4096):
+  sock.send( (kind + "\n" + json.dumps(msg) + "\n").encode() )
+  resp = sock.recv(expectedSize).decode().strip()
+  return resp
