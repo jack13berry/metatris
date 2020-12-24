@@ -34,7 +34,11 @@ class World( object ):
     #   print("Will render auth screen")
     # else:
     #   self.state = states.Intro
+
     self.state = states.Intro
+    # self.configCatX = 3
+    # self.configOptX = 1
+    # self.state = states.BtnRemapping
 
     # Time Now
     self.moment = time.perf_counter()
@@ -80,7 +84,7 @@ class World( object ):
       cnf.read(self, configName)
 
     cnf.setAll(self)
-    events.init(self)
+    # events.init(self)
 
     self.timing = getattr(timing, self.timingSetup)
     self.levelTimes = self.timing.levels
@@ -93,39 +97,6 @@ class World( object ):
     pygame.init()
     # print("pygame init[92]: %s" % pygame.joystick.get_init())
     # print("Controller Count: %d" % pygame.joystick.get_count())
-
-    self.lastAxisDown = None
-    self.contobj = None
-    contid = pygame.joystick.get_count()
-    self.numberOfControllers = contid
-    while contid > 0:
-      contid -= 1
-      contobj = pygame.joystick.Joystick(contid)
-      setattr(self, ("joystick%d" % contid), contobj)
-
-      # print("Recognized Controller %d:")
-      # print("            id: '%s'" % contobj.get_instance_id())
-      # print("          guid: '%s'" % contobj.get_guid())
-      # print("          name: '%s'" % contobj.get_name())
-      # print("    powerlevel: '%s'" % contobj.get_power_level())
-      # print("       numaxes: '%s'" % contobj.get_numaxes())
-      # print("      numballs: '%s'" % contobj.get_numballs())
-      # print("    numbuttons: '%s'" % contobj.get_numbuttons())
-      # print("       numhats: '%s'" % contobj.get_numhats())
-
-      # print("\n")
-      # print("           pre: '%s'" % (contobj.get_init()))
-      contobj.init()
-      # print("          post: '%s'" % (contobj.get_init()))
-
-    #initialize joystick
-    # pygame.joystick.init()
-    # if pygame.joystick.get_count() > 0:
-    #   self.joystick1 = pygame.joystick.Joystick(0)
-    #   self.joystick1.init()
-    # if pygame.joystick.get_count() > 1:
-    #   self.joystick2 = pygame.joystick.Joystick(1)
-    #   self.joystick2.init()
 
     ## Drawing init
     # modifier for command keys
@@ -1264,6 +1235,9 @@ class World( object ):
 
     self.curFrm = 0
     self.eventLogCounter = 0
+    events.init(self)
+    # events.setupControllers(self)
+
     while self.running:
       self.moment = time.perf_counter()
       curFrm = int( (self.moment - self.gameStartTime) * self.timing.fps )

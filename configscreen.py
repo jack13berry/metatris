@@ -52,7 +52,7 @@ def left(world):
 
 
 def right(world):
-  print("CNF: %d.%d @%d" % (world.configCatX, world.configOptX, world.state))
+  # print("CNF: %d.%d @%d" % (world.configCatX, world.configOptX, world.state))
   if world.state == states.ConfigLvl2:
     if world.configCatX == 3: #controls
       if world.configOptX == 1:
@@ -85,7 +85,7 @@ def up(world):
     if hasattr(opt, "up"):
       opt.up(world)
 
-  print("CNF: %d.%d @%d" % (world.configCatX, world.configOptX, world.state))
+  # print("CNF: %d.%d @%d" % (world.configCatX, world.configOptX, world.state))
   world.shouldRedraw = True
 
 
@@ -104,7 +104,7 @@ def down(world):
       opt.down(world)
 
 
-  print("CNF: %d.%d @%d" % (world.configCatX, world.configOptX, world.state))
+  # print("CNF: %d.%d @%d" % (world.configCatX, world.configOptX, world.state))
   world.shouldRedraw = True
 
 

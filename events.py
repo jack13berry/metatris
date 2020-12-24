@@ -1,4 +1,4 @@
-import pygame.event
+import math, pygame.event
 import states
 
 btnLeftOff      = 110
@@ -71,10 +71,48 @@ buttonVarNames = {
 }
 
 
+class KeyboardKey():
+  def __init__(group):
+    group.known = {}
+
+  def add(group, keyCode, eventCode):
+    # print("AddKeyCode:", keyCode, eventCode)
+    group.known[keyCode] = eventCode
+
+  def map(group, world, event):
+    #KEYDOWN:on, KEYUP:off
+    dir = "off" if event.type == pygame.KEYUP else "on"
+    return group.known.get(dir+str(event.key), None)
+
+
+class ControllerButton():
+  def __init__(group):
+    group.known = {}
+
+  def add(group, btnCode, eventCode):
+    group.known[btnCode] = eventCode
+
+  def map(group, world, event):
+    #JOYBUTTONDOWN:on, JOYBUTTONUP:off
+    dir = "off" if event.type == pygame.JOYBUTTONUP else "on"
+    return group.known.get(dir+str(event.button), None)
+
+
 def init(world):
   m = world.eventMap = {}
   key = m[pygame.KEYDOWN] = m[pygame.KEYUP] = KeyboardKey()
   btn = m[pygame.JOYBUTTONDOWN] = m[pygame.JOYBUTTONUP] = ControllerButton()
+
+  axs = world.axisStateMap = {
+    "01": btnUpOn,
+    "10": btnLeftOn,
+    "02": btnDownOn,
+    "20": btnRightOn,
+    "00001": btnUpOn,
+    "11110": btnLeftOn,
+    "00002": btnDownOn,
+    "22220": btnRightOn
+  }
 
   key.add("off"+str(pygame.K_LEFT),     btnLeftOff)
   key.add("on" +str(pygame.K_LEFT),     btnLeftOn)
@@ -105,31 +143,59 @@ def init(world):
   key.add("off" +str(pygame.K_SPACE),   btnSelectOff)
   key.add("on" +str(pygame.K_SPACE),    btnSelectOn)
 
-  btn.add("off1",                       btnRotateCwOff)
-  btn.add("on1",                        btnRotateCwOn)
+  btn.add("off0",                       btnRotateCwOff)
+  btn.add("on0",                        btnRotateCwOn)
 
-  btn.add("off2",                       btnRotateCcwOff)
-  btn.add("on2",                        btnRotateCcwOn)
+  btn.add("off2",                       btnRotateCwOff)
+  btn.add("on2",                        btnRotateCwOn)
 
-  btn.add("off9",                       btnSelectOff)
-  btn.add("on9",                        btnSelectOn)
+  btn.add("off1",                       btnRotateCcwOff)
+  btn.add("on1",                        btnRotateCcwOn)
+
+  btn.add("off8",                       btnSelectOff)
+  btn.add("on8",                        btnSelectOn)
+
+  btn.add("off9",                       btnStartOff)
+  btn.add("on9",                        btnStartOn)
+
+  setupControllers(world)
 
 
+# rawInpX = 0
 def readAll(world):
-  rawList = pygame.event.get()
+  rawList = []
+  axisMotionIndex = -1
+  ex = 0
+  for e in pygame.event.get():
+    if e.type == pygame.MOUSEMOTION:
+      continue
 
-  if len(rawList) == 1:
-    # print("SINGLEEVT:", world.state, world.state in [states.KeyRemapping, states.BtnRemapping])
-    if world.state in [states.KeyRemapping, states.BtnRemapping]:
-      # print("RAWINP @%d: %s" % (world.state, rawList))
-      return rawList
-    else:
-      return [ map(world, rawList[0]) ]
+    if e.type == pygame.JOYAXISMOTION:
+      if axisMotionIndex == -1:
+        axisMotionIndex = ex
+      else:
+        rawList[axisMotionIndex] = e
+        continue
+
+    rawList.append(e)
+    ex += 1
+
+  if len(rawList) == 0:
+    return rawList
+
+  # print("EVTS:", len(rawList))
+
+  if world.state in [states.KeyRemapping, states.BtnRemapping]:
+    # global rawInpX
+    # rawInpX += 1
+    # if rawList[0].type == pygame.KEYDOWN:
+      # print("Controller %1d %17s %s" % (0, " ", axisToButton(world, 0)))
+    # else:
+    #   print("\n\n\nRAWINP @%0.4d: %d" % (rawInpX, len(rawList)))
+    return rawList
 
   lst = []
-  axisConsumed = None
   for e in rawList:
-
     if e.type == pygame.QUIT:
       lst.append( reqQuit )
 
@@ -138,48 +204,26 @@ def readAll(world):
       world.lastResize = e
 
     elif e.type == pygame.JOYAXISMOTION:
-      # print("axisUnv: %d %s" %(e.axis, e.value))
-      if axisConsumed == e.value:
-        # print("axisSkipped: %d %s" %(e.axis, e.value))
-        continue
-      if e.axis == 4:
-        print("axis4:  %s" % (e.value))
-        if e.value < -1:
-          lst.append( btnUpOn )
-          world.lastAxisDown = btnUpOn
-        elif e.value > 0:
-          lst.append( btnDownOn )
-          world.lastAxisDown = btnDownOn
-        elif e.value < 0:
-          if world.lastAxisDown is not None:
-            lst.append( world.lastAxisDown-1 )
-            world.lastAxisDown = None
+      axisState = axisToButton(world, e.joy)
+      if axisState != "":
+        if world.jaxPrevious != None:
+          # print("AxisEvent: '%s' is off" % world.jaxPrevious )
+          lst.append( world.axisStateMap.get(world.jaxPrevious)-1 )
+          world.jaxPrevious = None
 
-        axisConsumed = e.value
-
-      elif e.axis == 0:
-        # print("axis0:  %s" % (e.value))
-        if e.value < -1:
-          lst.append( btnLeftOn )
-          world.lastAxisDown = btnLeftOn
-        elif e.value > 0:
-          lst.append( btnRightOn )
-          world.lastAxisDown = btnRightOn
-        elif e.value < 0:
-          if world.lastAxisDown is not None:
-            lst.append( world.lastAxisDown-1 )
-            world.lastAxisDown = None
-
-        axisConsumed = e.value
-
-      else:
-        print("axisN: %d %s" % (e.axis, e.value))
+        if axisState != world.jaxNatural:
+          newevt = world.axisStateMap.get(axisState)
+          if newevt:
+            lst.append( newevt )
+            world.jaxPrevious = axisState
+            # print("AxisEvent: '%s' is on" % axisState )
+          # else:
+          #   print("AxisEvent: '%s' was ignored" % axisState)
 
     else:
-      if world.state in [states.KeyRemapping, states.BtnRemapping]:
-        lst.append( e )
-      else:
-        lst.append( map(world, e) )
+      newevt = map(world, e)
+      if newevt:
+        lst.append( newevt )
 
   return lst
 
@@ -200,33 +244,6 @@ def map(world, event):
   return group.map(world, event)
 
 
-class ControllerButton():
-  def __init__(group):
-    group.known = {}
-
-  def add(group, btnCode, eventCode):
-    group.known[btnCode] = eventCode
-
-  def map(group, world, event):
-    #JOYBUTTONDOWN:on, JOYBUTTONUP:off
-    dir = "off" if event.type == pygame.JOYBUTTONUP else "on"
-    return group.known.get(dir+str(event.button), None)
-
-
-class KeyboardKey():
-  def __init__(group):
-    group.known = {}
-
-  def add(group, keyCode, eventCode):
-    # print("AddKeyCode:", keyCode, eventCode)
-    group.known[keyCode] = eventCode
-
-  def map(group, world, event):
-    #KEYDOWN:on, KEYUP:off
-    dir = "off" if event.type == pygame.KEYUP else "on"
-    return group.known.get(dir+str(event.key), None)
-
-
 def exitRemapConfig(world):
   world.state = states.ConfigLvl2
   world.shouldRedraw = True
@@ -235,7 +252,9 @@ def exitRemapConfig(world):
 def startRemapping(world, device):
   if device == "btn":
     world.mappingBtnDown = None
-    world.mappingAxsDown = None
+    world.axisToMap = None
+    world.jaxNatural = axisToButton(world, 0)
+    # print("JAXNATURAL:", world.jaxNatural)
     world.state = states.BtnRemapping
     # print("ENTERED::BTN for '%s' @%d" % (world.remapActTarget, world.state))
   else:
@@ -274,7 +293,9 @@ def handleKeyRemapInput(world, event):
 
 
 def handleBtnRemapInput(world, event):
-  # print("BtnRemapEvt:", event)
+  if not hasattr(event, 'type'):
+    return
+
   if event.type != pygame.JOYBUTTONDOWN and \
       event.type != pygame.JOYBUTTONUP and event.type != pygame.JOYAXISMOTION:
 
@@ -305,7 +326,28 @@ def handleBtnRemapInput(world, event):
     exitRemapConfig(world)
 
   elif event.type == pygame.JOYAXISMOTION:
-    mappedBtnNames[world.remapActTarget] = "Jx<%d>" % event.button
+    # mappedBtnNames[world.remapActTarget] = "Jx<%d>" % event.button
+    axisState = axisToButton(world, event.joy)
+    if axisState == "":
+      return
+
+    if world.axisToMap == None:
+      if axisState != world.jaxNatural:
+        world.axisToMap = axisState
+      return
+
+    if axisState == world.jaxNatural:
+      axisState = world.axisToMap
+      world.axisToMap = None
+      theAct = buttonVarNames[world.remapActTarget]
+      mappedBtnNames[world.remapActTarget] = "X<%s>" % (axisState)
+      names = globals()
+      world.axisStateMap[axisState] = globals()[theAct+"On"]
+      # print("Remap '%s' ==> '%s'." % (axisState, names[theAct+"On"]))
+      exitRemapConfig(world)
+
+    else:
+      print("Confusing controller")
 
 
 def keyTitleFor(event):
@@ -316,3 +358,101 @@ def keyTitleFor(event):
     keynm = "K<%d>" % (event.key)
 
   return keynm[0].upper() + keynm[1:]
+
+
+def axisToButtonForStandardController(world, event):
+  xx = math.floor(event.value*4) # >0.5 is on and <0.5 is off
+  if event.axis == 0:
+    if xx > 2:
+      btn = "onE"
+      world.jaxX = 1
+    elif xx < -2:
+      btn = "onW"
+      world.jaxX = -1
+    elif world.jaxX == 1:
+      world.jaxX = 0
+      btn = "offE"
+    elif world.jaxX == -1:
+      world.jaxX = 0
+      btn = "offW"
+    else:
+      btn = ""
+  elif event.axis == 1:
+    if xx > 2:
+      btn = "onS"
+      world.jaxY = 1
+    elif xx < -2:
+      btn = "onN"
+      world.jaxY = -1
+    elif world.jaxY == 1:
+      world.jaxY = 0
+      btn = "offS"
+    elif world.jaxY == -1:
+      world.jaxY = 0
+      btn = "offN"
+    else:
+      btn = ""
+  else:
+    btn = ""
+
+  print("%d.%d -- %2.10f ===> %s" % (
+    event.axis, xx, event.value, btn
+  ))
+  return btn
+
+
+def axisToButton(world, cx = 0):
+  # xx = math.floor(event.value*2) # int(round((event.value+1)/2.0 * 50))
+  # col1 = "  Axis.%d: %12.10f --> %2d" % ( event.axis, event.value, xx )
+  # print("%30s %s" % ( col1, axisReport(world, event.joy) ))
+  j = getattr(world, 'joystick%d'%(cx))
+  nax = j.get_numaxes()
+  axes = ''
+  for x in range(0, nax):
+    # axes += '%d' % (math.floor(j.get_axis(x)*2)+4)
+    xval = j.get_axis(x)
+    axes += '1' if xval < -0.4 else ( '0' if xval < 0.4 else '2')
+
+  return axes
+
+
+def axisReport(world, cx):
+  j = getattr(world, 'joystick%d'%(cx))
+  nax = j.get_numaxes()
+  axes = []
+  for x in range(0, nax):
+    xval = j.get_axis(x)
+    # xx = math.floor(xval*2)+4
+    xx = 1 if xval < -0.4 else ( 0 if xval < 0.4 else 2)
+    axes.append( '%24s' % ('%d: %12.10f --> %2d' % (x, xval, xx)) )
+    # axes.append('%d'%xx)
+
+  return ''.join(axes)
+
+
+def setupControllers(world):
+  contid = pygame.joystick.get_count()
+  world.numberOfControllers = contid
+  while contid > 0:
+    contid -= 1
+    contobj = pygame.joystick.Joystick(contid)
+    setattr(world, ("joystick%d" % contid), contobj)
+    # global axisToButton
+    # if contobj.get_numaxes() > 2:
+    #   axisToButton = axisToButtonForWeirdController
+    #   world.jaxNatural = ""
+
+    # else:
+    #   world.jaxX = 0
+    #   world.jaxY = 0
+    #   axisToButton = axisToButtonForWeirdController
+    #   world.jaxNatural = axisToButton(world, 0)
+    #   # axisToButton = axisToButtonForStandardController
+
+    # print("Controller %1d %17s %s" % (contid, " ", axisReport(world, contid)))
+
+    contobj.init()
+
+  if world.numberOfControllers > 0:
+    world.jaxPrevious = None
+    world.jaxNatural = axisToButton(world)
