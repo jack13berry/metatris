@@ -1,0 +1,176 @@
+/*Doc.default.k:1 | !DOCTYPE*/
+html, body, * { margin:0;padding:0;box-sizing:border-box;font-weight:300 }
+
+/*Doc.default.k:1 | !DOCTYPE*/
+a, a:hover, a:visited, a:active { text-decoration:none;color:#1ce448 }
+
+/*Doc.default.k:1 | !DOCTYPE*/
+html, body { background:#242445;color:#e0e0e0;width:100%;height:100% }
+
+/*Doc.default.k:1 | !DOCTYPE*/
+h1 { margin:0; font-size:3rem }
+
+/*Doc.default.k:1 | !DOCTYPE*/
+h2 { margin:2rem 0 0 0; font-size:2.4rem }
+
+/*Doc.default.k:1 | !DOCTYPE*/
+h3 { margin:2rem 0 0 0; font-size:1.8rem }
+
+/*Doc.default.k:1 | !DOCTYPE*/
+p { margin:1rem 0 }
+
+/*Doc.default.k:1 | !DOCTYPE*/
+div.infobox { font-size:2rem }
+
+/*Doc.default.k:1 | !DOCTYPE*/
+div.infobox p { margin:1.4rem 0 }
+
+/*Doc.default.k:1 | !DOCTYPE*/
+body { display:flex;flex-direction:column; font-family: 'Nunito', 'Open Sans', 'Helvetica', 'Arial', sans-serif; }
+
+/*Doc.default.k:1 | !DOCTYPE*/
+body>header, body>footer { position:relative; z-index:3 }
+
+/*Doc.default.k:1 | !DOCTYPE*/
+body>main { flex:1 1 auto; position:relative; z-index:1 }
+
+/*Doc.default.k:2.k:2.k:1 | header*/
+.n1 { flex:0 0 6rem; }
+
+/*Doc.default.k:2.k:2.k:1.k:1 | div*/
+.n2 { display:flex; height:4rem; padding:0 1rem 0 3rem; overflow:visible; background:#462545; }
+
+/*Doc.default.k:2.k:2.k:1.k:1.k:1 | div*/
+.n3 { flex:0 0 auto; height:4rem; position:relative; }
+
+/*Doc.default.k:2.k:2.k:1.k:1.k:1.k:1 | img*/
+.n4 { height:4rem; width:auto; }
+
+/*Doc.default.k:2.k:2.k:1.k:1.k:2 | div*/
+.n5 { flex:1; display:flex; align-items:stretch; justify-content:flex-end; }
+
+/*Doc.default.k:2.k:2.k:1.k:1.k:2.k:1.b:1.k:1 | a*/
+.n6 { display:flex; align-items:center; font-size:1.4rem; }
+
+/*Doc.default.k:2.k:2.k:1.k:1.k:2.k:1.b:1.k:1.k:1 | img*/
+.n7 { height:3rem; width:auto; }
+
+/*Doc.default.k:2.k:2.k:1.k:2 | div*/
+.n8 { display:flex; height:2rem; padding:0 1rem; overflow:visible; align-items:stretch; justify-content:center; background:#260525; }
+
+/*Doc.default.k:2.k:2.k:1.k:2 | div*/
+.n8 a, .n8 a:hover, .n8 a:active, .n8 a:visited { display:flex;align-items:center;padding:0 3rem;color:#e7ff69 }
+
+/*Doc.default.k:2.k:2.k:1.k:2 | div*/
+.n8 a:hover, .n8 a:active { background:#4a0848 }
+
+/*Trim:HomePage.default.k:1 | main*/
+.n9 { padding:6rem 3rem; background:#1e1e33; color:#ffe03f; }
+
+/*Trim:HomePage.default.k:1 | main*/
+@media (max-width:50rem) {
+  .n9 { padding:3rem 1rem }
+}
+
+/*Trim:HomePage.default.k:1.k:1 | div*/
+.n10 { max-width:44rem; margin:0 auto }
+
+/*Doc.default.k:2.k:2.k:3 | footer*/
+.n11 { flex:0 0 2.4rem; display:flex; align-items:center; justify-content:flex-end; padding:0 2rem; background:#462545 }
+
+/*Trim:DownloadPage.default.k:1 | main*/
+.n12 { display:flex; flex-direction:column; align-items:center; justify-content:center; background:#1e1e33; color:#ffe03f; }
+
+/*Trim:DownloadPage.default.k:1.k:1 | div*/
+.n13 {  }
+
+/*Trim:DownloadPage.default.k:1.k:1.k:1 | h1*/
+.n14 { font-size:3rem }
+
+/*Trim:DownloadPage.default.k:1.k:1.k:2.b:1.k:1 | form*/
+.n15 { margin:8rem 0 0 0; display:flex; flex-direction:column; justify-content:flex-end; }
+
+/*Trim:DownloadPage.default.k:1.k:1.k:2.b:1.k:1 | form*/
+.n15>input[type="text"], .n15>input[type="password"] { display:block; width:100%; margin:0 0 1rem 0; padding:0.4rem 1rem; border:2px solid #fa8403; outline:none; border-radius:0.4rem; background:#472644; font-size:1.2rem; color:#fff; }
+
+/*Trim:DownloadPage.default.k:1.k:1.k:2.b:1.k:1 | form*/
+.n15>input::placeholder { color:#885a5a; font-style:oblique }
+
+/*Trim:DownloadPage.default.k:1.k:1.k:2.b:1.k:1 | form*/
+.n15>input:focus { background:#5f375b }
+
+/*Trim:DownloadPage.default.k:1.k:1.k:2.b:1.k:1.k:4 | input*/
+.n16 { display:block; width:40%; margin-right:0; margin-left:auto; font-size:1.2rem; padding:0.4rem 1rem; border:2px solid #fa8403; border-radius:0.4rem; background:#472644; color:#fff; }
+
+/*Trim:DownloadPage.default.k:1.k:1.k:2.b:2.k:1 | div*/
+.n17 { display:flex; margin:2rem 0 1rem 0; align-items:center; justify-content:center; cursor:pointer }
+
+/*Trim:DownloadPage.default.k:1.k:1.k:2.b:2.k:1.k:1 | div*/
+.n18 { flex:0; padding:1.5rem }
+
+/*Trim:DownloadPage.default.k:1.k:1.k:2.b:2.k:1.k:2.k:2 | p*/
+.n19 { font-size:1.2rem }
+
+/*Trim:TeamPage.default.k:1 | main*/
+.n20 { padding:6rem 3rem; background:#1e1e33; color:#ffe03f; }
+
+/*Trim:TeamPage.default.k:1 | main*/
+@media (max-width:50rem) {
+  .n20 { padding:3rem 1rem }
+}
+
+/*Trim:TeamPage.default.k:1.k:1 | div*/
+.n21 { max-width:44rem; margin:0 auto }
+
+/*Trim:TeamPage.default.k:1.k:1.k:1.k:3 | img*/
+.n22 { float:left; width:20rem; height:20rem; margin:1rem 1.2rem 1rem 0; clear:left }
+
+/*Trim:TeamPage.default.k:1.k:1.k:1.k:3 | img*/
+@media (max-width:50rem) {
+  .n22 { width:100%; height:auto }
+}
+
+/*Trim:TeamPage.default.k:1.k:1.k:1.k:6 | h2*/
+.n23 { margin-top:3.4rem }
+
+/*Trim:TeamPage.default.k:1.k:1.k:1.k:7 | img*/
+.n24 { float:right; width:20rem; height:20rem; margin:1rem 1.2rem 1rem 0; clear:right }
+
+/*Trim:TeamPage.default.k:1.k:1.k:1.k:7 | img*/
+@media (max-width:50rem) {
+  .n24 { width:100%; height:auto }
+}
+
+/*Trim:Connection.default.k:1 | main*/
+.n25 { display:flex; flex-direction:column; align-items:center; justify-content:center; background:#1e1e33; color:#ffe03f; }
+
+/*Trim:Connection.default.k:1.k:1 | div*/
+.n26 { width:40rem }
+
+/*Trim:Connection.default.k:1.k:1.k:1 | h1*/
+.n27 { font-size:3rem; margin-bottom:1rem }
+
+/*Trim:Connection.default.k:1.k:1.k:2 | p*/
+.n28 { font-size:1.4rem }
+
+/*Trim:Connection.default.k:1.k:1.k:3 | p*/
+.n29 { margin-top:2rem; display:flex; justify-content:center }
+
+/*Trim:Connection.default.k:1.k:1.k:3 | p*/
+.n29>span { display:block; width:4rem; padding:1rem 0; margin-right:1rem; text-align:center; font-size:3rem; font-weight:700; border-radius:0.4rem; background:#ffeb85; color:#1e1e33; }
+
+/*Trim:Connection.default.k:1.k:1.k:3 | p*/
+.n29>span:last-child { margin-right:0 }
+
+/*Trim:Connection.default.k:1.k:1.k:4 | form*/
+.n30 { margin:4rem 0 0 0; display:flex; justify-content:center; }
+
+/*Trim:Connection.default.k:1.k:1.k:4 | form*/
+.n30>button { display:block; width:13rem; font-size:1.2rem; padding:1rem; border-radius:0.4rem; color:#fff; }
+
+/*Trim:Connection.default.k:1.k:1.k:4.k:1 | button*/
+.n31 { margin-right:3rem; border:2px solid #240205; background:#620a12 }
+
+/*Trim:Connection.default.k:1.k:1.k:4.k:2 | button*/
+.n32 { border:2px solid #0f1507; background:#688e2f }
+

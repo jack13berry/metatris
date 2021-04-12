@@ -180,10 +180,10 @@ appearance.opts.append(Radio("color_mode", "Piece Colors", [
   ["REMIX", "Remix", ""]
 ]))
 
-appearance.opts.append(Radio("render_scores", "Show Scores", [
-  [False, "Only at the End", ""],
-  [True, "Always", ""]
-]))
+# appearance.opts.append(Radio("render_scores", "Show Scores", [
+#   [False, "Only at the End", ""],
+#   [True, "Always", ""]
+# ]))
 
 audio = G("Audio")
 

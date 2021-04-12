@@ -84,6 +84,7 @@ class World( object ):
       cnf.read(self, configName)
 
     cnf.setAll(self)
+    self.render_scores = False
     # events.init(self)
 
     self.timing = getattr(timing, self.timingSetup)

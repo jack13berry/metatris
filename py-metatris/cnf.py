@@ -44,7 +44,13 @@ def updateUserConfig(world, key, val):
 
 
 def read(world, flname):
-  fl = open("configs" + sep + flname + ".config")
+  flpath = "configs" + sep + flname + ".config"
+  if not os.path.isfile(flpath):
+    print("Config file '%s' does not exist" % flpath)
+    world.rawConfDicts[flname] = {}
+    return
+
+  fl = open(flpath)
   lines = fl.readlines()
   fl.close()
 

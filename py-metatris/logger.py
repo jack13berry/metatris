@@ -8,6 +8,7 @@ import os, platform, json
 
 # initialize log directory
 def init( world ):
+  # print("logger.init", world.moment)
   if world.args.logfile:
     world.filename = world.SID + "_" + world.args.logfile
     world.logname = os.path.join( world.logdir, world.filename )
@@ -25,19 +26,19 @@ def init( world ):
     world.configfile = open( world.configfile_path, "w")
 
     world.unifile_path = world.logname + "/complete_" + world.filename + ".tsv"
-    world.unifile = open( world.unifile_path + ".incomplete", "w")
+    world.unifile = open( world.unifile_path, "w")
     #world.uni_header()
 
     world.scorefile_path = world.logname + "/score_" + world.filename + ".tsv"
-    world.scorefile = open( world.scorefile_path + ".incomplete", "w")
+    world.scorefile = open( world.scorefile_path, "w")
 
     if world.ep_log:
       world.epfile_path = world.logname + "/episodes_" + world.filename + ".tsv"
-      world.epfile = open(   world.epfile_path + ".incomplete", "w" )
+      world.epfile = open(   world.epfile_path, "w" )
 
     if world.game_log:
       world.gamefile_path = world.logname + "/games_" + world.filename + ".tsv"
-      world.gamefile = open (world.gamefile_path + ".incomplete", "w")
+      world.gamefile = open (world.gamefile_path, "w")
 
   else:
     world.logfile = sys.stdout
@@ -47,8 +48,9 @@ def init( world ):
   board_header = ["board_rep","zoid_rep","newscore","metascore","rollavg"]
 
   #game and up
-  game_header = ["SID","ECID","session","game_type","game_number","episode_number","level","score","lines_cleared",
-          "completed","game_duration","avg_ep_duration","zoid_sequence"]
+  game_header = ["SID","ECID","session","game_type","game_number",
+    "episode_number", "level","score","lines_cleared", "completed",
+    "game_duration","avg_ep_duration", "zoid_sequence"]
 
   #event slots
   event_header = ["evt_id","evt_data1","evt_data2"]
@@ -71,19 +73,16 @@ def init( world ):
 
 
 def close_files( world ):
+  # print("logger.close_files", world.moment)
   game_event(world, "seed_sequence", data1 = world.seeds_used )
   world.unifile.close()
-  os.rename( world.unifile_path + ".incomplete", world.unifile_path)
   world.scorefile.close()
-  os.rename( world.scorefile_path + ".incomplete", world.scorefile_path)
 
   if world.ep_log:
     world.epfile.close()
-    os.rename( world.epfile_path + ".incomplete", world.epfile_path)
 
   if world.game_log:
     world.gamefile.close()
-    os.rename( world.gamefile_path + ".incomplete", world.gamefile_path)
 
   world.configfile.write("\n#fixed values to recreate session's seed sequence\n")
   world.configfile.write("random_seeds = " + ",".join(world.seeds_used) + "\n")
@@ -92,10 +91,10 @@ def close_files( world ):
   world.configfile.close()
   """
   world.logfile.close()
-  os.rename( world.logfile_path + ".incomplete", world.logfile_path)
   """
 
 def universal_header( world ):
+  # print("logger.universal_header", world.moment)
   head = "\t".join( map(str, world.fixed_header) ) + "\n"
   world.unifile.write( head )
   if world.ep_log:
@@ -104,6 +103,7 @@ def universal_header( world ):
     world.gamefile.write( head )
 
 def universal( world, event_type, loglist, complete = False, evt_id = False, evt_data1 = False, evt_data2 = False, features = False):
+  # print("logger.universal", world.moment, event_type, loglist)
   data = []
   def logit(val, key):
     data.append(val if key in loglist else "")
@@ -232,19 +232,23 @@ def universal( world, event_type, loglist, complete = False, evt_id = False, evt
     else:
       z_answer += world.drop_lat*(0.005354*factor3 + 0.021913*factor4 + 0.002672*factor5)
 
-    z_answer += (world.trans - world.min_trans)*(0.001156*factor3 + 0.035219*factor5 + 0.000446*factor7)
+
+    path_length = world.rots + world.trans
+    min_path_diff = path_length - (world.min_rots + world.min_trans)
+    z_answer += min_path_diff * (0.001156*factor3 + 0.035219*factor5 + 0.000446*factor7)
     z_answer += world.avg_latency*(0.001608*factor3 + 0.026717*factor4 + 0.000335*factor7)
-    z_answer += world.trans*(0.000618*factor3 + 0.037343*factor5)
+    z_answer += path_length * (0.000618*factor3 + 0.037343*factor5)
     z_answer += world.initial_lat*(0.013463*factor4 + 0.000403*factor7)
 
     world.features["z_answer"] = z_answer
     world.newscore = z_answer
 
+
     world.metascore = (world.metascore*world.metaticks + z_answer)/(world.metaticks+1)
     world.metaticks = world.metaticks+1
     world.features["z_metascore"] = world.metascore
 
-    #world.scorefile.write(repr(z_answer)+"\n")
+    world.scorefile.write(repr(z_answer)+"\n")
 
     world.roll_avg.append(world.features["z_answer"])
     while len(world.roll_avg) > 3:
@@ -292,6 +296,7 @@ def universal( world, event_type, loglist, complete = False, evt_id = False, evt
 
 
 def episode( world ):
+  # print("logger.episode", world.moment)
   world.update_stats_move( world.curr_zoid.get_col(), world.curr_zoid.rot, world.curr_zoid.get_row())
   if world.fixed_log:
     loglist = ["SID","ECID","session","game_type","game_number","episode_number",
@@ -337,6 +342,7 @@ def episode( world ):
       world.epfile.write("\t".join(map(str,data)) + "\n")
 
 def gameresults( world, complete = True ):
+  # print("logger.gameresults", world.moment, complete)
   if world.fixed_log:
     loglist = ["SID","ECID","session","game_type","game_number","episode_number",
           "level","score","lines_cleared","completed",
@@ -387,6 +393,7 @@ def gameresults( world, complete = True ):
 
 #log a game event
 def game_event( world, id, data1 = "", data2 = "" ):
+  # print("logger.game_event", world.moment, id, data1, data2)
   if world.fixed_log:
     loglist = [
       "SID","ECID","session","game_type","game_number","episode_number",
@@ -409,6 +416,7 @@ def game_event( world, id, data1 = "", data2 = "" ):
 
 #log the world state
 def worldState( world ):
+  # print("logger.worldState", world.moment)
   if world.fixed_log:
     loglist = [
       "SID","ECID","session","game_type","game_number","episode_number",
@@ -442,6 +450,7 @@ def worldState( world ):
 
 
 def zoid_in_board( world ):
+  # print("logger.zoid_in_board", world.moment)
   zoid = world.curr_zoid.get_shape()
   z_x = world.curr_zoid.col
   z_y = world.game_ht - world.curr_zoid.row
@@ -464,6 +473,7 @@ def zoid_in_board( world ):
 
 # write .history file
 def history( world ):
+  # print("logger.history", world.moment)
   def hwrite( name ):
     world.histfile.write(name + ": " + str(vars(world)[name]) + "\n")
     #world.unifile.write(":ts\t" + str(world.moment-world.startTime) +  "\t:event_type\t" + "SETUP_EVENT" + "\t" + ":" + name + "\t" + str(vars(world)[name]) + "\n")
