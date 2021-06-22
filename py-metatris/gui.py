@@ -45,6 +45,18 @@ def textSurfaceBox( self ):
     self.worldsurf, self.message_box_color, self.gamesurf_msg_rect, 0 )
 
 
+def textInput(world, txt, x, y, w, h,
+  focused=False, withTicks=True,
+  clr1=(120,200,50), clr2 = (120,200,40)):
+
+  srfc = world.worldsurf
+  borderOutside(srfc, clr1, 2, x, y, w, h)
+
+  if focused:
+    pygame.draw.rect( srfc, clr1, [(x, y), (w, h)]) # button fill
+  textSurface(txt, world.scores_font, (255,255,255), (x + w // 2, y + h // 2), srfc, "center")
+
+
 def button(world, txt, x, y, w, h,
   focused=False, withTicks=True,
   clr1=(120,200,50), clr2 = (120,200,40)):

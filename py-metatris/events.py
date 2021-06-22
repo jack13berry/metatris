@@ -29,6 +29,46 @@ reqResume       = 991
 reqPauseResume  = 992
 reqQuit         = 999
 
+keyBack = 1000
+keyA = 1001
+keyB = 1002
+keyC = 1003
+keyD = 1004
+keyE = 1005
+keyF = 1006
+keyG = 1007
+keyH = 1008
+keyI = 1009
+keyJ = 1010
+keyK = 1011
+keyL = 1012
+keyM = 1013
+keyN = 1014
+keyO = 1015
+keyP = 1016
+keyQ = 1017
+keyR = 1018
+keyS = 1019
+keyT = 1020
+keyU = 1021
+keyV = 1022
+keyW = 1023
+keyX = 1024
+keyY = 1025
+keyZ = 1026
+key0 = 1027
+key1 = 1028
+key2 = 1029
+key3 = 1030
+key4 = 1031
+key5 = 1032
+key6 = 1033
+key7 = 1034
+key8 = 1035
+key9 = 1036
+keyPeriod = 1037
+keyShift = 1038
+
 
 buttonNames = [
   "Up", "Right", "Down", "Left",
@@ -157,6 +197,46 @@ def init(world):
 
   btn.add("off9",                       btnStartOff)
   btn.add("on9",                        btnStartOn)
+
+  key.add("on" + str(pygame.K_BACKSPACE), keyBack)
+  key.add("on" + str(pygame.K_a), keyA)
+  key.add("on" + str(pygame.K_b), keyB)
+  key.add("on" + str(pygame.K_c), keyC)
+  key.add("on" + str(pygame.K_d), keyD)
+  key.add("on" + str(pygame.K_e), keyE)
+  key.add("on" + str(pygame.K_f), keyF)
+  key.add("on" + str(pygame.K_g), keyG)
+  key.add("on" + str(pygame.K_h), keyH)
+  key.add("on" + str(pygame.K_i), keyI)
+  key.add("on" + str(pygame.K_j), keyJ)
+  key.add("on" + str(pygame.K_k), keyK)
+  key.add("on" + str(pygame.K_l), keyL)
+  key.add("on" + str(pygame.K_m), keyM)
+  key.add("on" + str(pygame.K_n), keyN)
+  key.add("on" + str(pygame.K_o), keyO)
+  key.add("on" + str(pygame.K_p), keyP)
+  key.add("on" + str(pygame.K_q), keyQ)
+  key.add("on" + str(pygame.K_r), keyR)
+  key.add("on" + str(pygame.K_s), keyS)
+  key.add("on" + str(pygame.K_t), keyT)
+  key.add("on" + str(pygame.K_u), keyU)
+  key.add("on" + str(pygame.K_v), keyV)
+  key.add("on" + str(pygame.K_w), keyW)
+  key.add("on" + str(pygame.K_x), keyX)
+  key.add("on" + str(pygame.K_y), keyY)
+  key.add("on" + str(pygame.K_z), keyZ)
+  key.add("on" + str(pygame.K_0), key0)
+  key.add("on" + str(pygame.K_1), key1)
+  key.add("on" + str(pygame.K_2), key2)
+  key.add("on" + str(pygame.K_3), key3)
+  key.add("on" + str(pygame.K_4), key4)
+  key.add("on" + str(pygame.K_5), key5)
+  key.add("on" + str(pygame.K_6), key6)
+  key.add("on" + str(pygame.K_7), key7)
+  key.add("on" + str(pygame.K_8), key8)
+  key.add("on" + str(pygame.K_9), key9)
+  key.add("on" + str(pygame.K_PERIOD), keyPeriod)
+  key.add("on" + str(pygame.K_LSHIFT), keyShift)
 
   setupControllers(world)
 
