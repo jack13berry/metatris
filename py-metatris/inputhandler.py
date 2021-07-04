@@ -1,6 +1,6 @@
 import pygame
 import states, events, logger
-import introscreen, configscreen
+import introscreen, configscreen, perfscreen
 
 
 def aarStateHandler(world, event):
@@ -149,6 +149,7 @@ def gameoverStateHandler(world, event):
 
 HANDLERS = {
   states.Intro:        introscreen.handleInput,
+  states.Perf:         perfscreen.handleInput,
   states.Aar:          aarStateHandler,
   states.Play:         playStateHandler,
   states.Pause:        pauseStateHandler,

@@ -1,4 +1,6 @@
 import os, platform, json
+import api_calls
+from threading import Thread
 
 # Log line types:
 #   events
@@ -341,6 +343,12 @@ def episode( world ):
     if world.ep_log:
       world.epfile.write("\t".join(map(str,data)) + "\n")
 
+
+def upload_perormance_data_thread(perfData,username):
+  print("upload_perormance_data_thread")
+  api_calls.upload_perf_data(perfData,username)
+
+
 def gameresults( world, complete = True ):
   # print("logger.gameresults", world.moment, complete)
   if world.fixed_log:
@@ -390,6 +398,26 @@ def gameresults( world, complete = True ):
   if complete:
     world.game_scores += [world.score]
   print(message)
+
+  #saving the performance data
+  perfData=[]
+  perfData.append("Score: " + str(world.score))
+  perfData.append("Level: " + str(world.level))
+  perfData.append("Lines: " + str(world.lines_cleared))
+  perfData.append("Zoids: " + str(world.episode_number))
+  perfData.append("SID: " + str(world.SID))
+  perfData.append("Complete: "+ str(complete))
+  perfData.append("Session: " + str(world.session))
+  perfData.append("Game Type: " + str(world.game_type))
+  perfData.append("Game duration:" + str(world.moment - world.gameStartTime))
+  perfData.append("Avg Ep duration:" + str((world.moment - world.gameStartTime)/(world.episode_number+1)))
+  world.setperf(perfData)
+
+  t_perfadata = Thread(target=upload_perormance_data_thread, args=(perfData, world.getusername()))
+  t_perfadata.start()
+  # upload_perormance_data_thread(perfData, world.getusername())
+
+
 
 #log a game event
 def game_event( world, id, data1 = "", data2 = "" ):

@@ -6,10 +6,10 @@ import os, sys, copy, csv, random, time, json, datetime, platform, random
 import pygame, numpy
 
 from zoid import Zoid
-
+from threading import Thread
 from simulator import TetrisSimulator
 
-import states, events, logger, cnf, drawer, inputhandler, timing
+import states, events, logger, cnf, drawer, inputhandler, timing, api_calls
 
 sep = os.path.sep
 
@@ -23,10 +23,19 @@ zoid_col_offset = {
   "I":[3,5]
 }
 
+
+def after_game_file_upload_thread(self):
+  print("after_game_file_upload_thread")
+  api_calls.upload_latest_game_data(self.username)
+
 class World( object ):
 
   #initializes the game object with most needed resources at startup
   def __init__( self, args ):
+
+    self.perfdata = []
+    self.username=""
+
     # Start connector:
     # mond.init()
     # if mond.status() != "authorized":
@@ -358,6 +367,18 @@ class World( object ):
     #Initialization complete! Log the history file and get started:
     logger.history(self)
 
+
+  def setperf(self, perfdata):
+    self.perfdata = perfdata
+
+  def getperf(self):
+    return self.perfdata
+
+  def setusername(self, username):
+    self.username = username
+
+  def getusername(self):
+    return self.username
 
   def setup( self ):
     self.initialize_board()
@@ -1031,8 +1052,10 @@ class World( object ):
       logger.game_event(self,  "EPISODE_LIMIT_REACHED" )
 
 
+
   #game over detected, change state
   def game_over( self ):
+    print("game over")
     logger.game_event(self,  "GAME", "END", self.game_number )
     logger.gameresults(self, complete = True)
     self.continues -= 1
@@ -1043,6 +1066,8 @@ class World( object ):
       self.sounds['crash'].play()
     pygame.mixer.music.stop()
 
+    t = Thread(target=after_game_file_upload_thread,args=(self,))
+    t.start()
 
   #push piece down based on timer
   def down_tick( self ):
@@ -1077,7 +1102,7 @@ class World( object ):
 
   def quit( self ):
     # mond.quit()
-
+    print("quit")
     if self.game_number > 0 and not self.state == states.Gameover:
       logger.gameresults(self, complete=False)
     self.criterion_score()

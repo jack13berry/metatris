@@ -17,12 +17,25 @@ def register():
     file.close()
     return "registered successfully"
 
+def getperfdata(username):
+    try:
+        file=open("perf-data/"+username+".txt")
+        perf_data = file.read().strip().split("\n")
+        return perf_data
+    except:
+        return []
+
+
 @app.route("/signin",methods=['POST'])
 def signin():
     user = request.json
     file = open("users.txt")
     users = file.read().split("\n")
     file.close()
+    result={
+        "perf_data":[],
+        "info":""
+    }
     for i in range(0, len(users)):
         userdata = users[i].split()
         username = userdata[0]
@@ -30,10 +43,28 @@ def signin():
         if(not user["username"]==username):
             continue
         if(user["pw"]==pw):
-            return "signed in"
+            perf_data = getperfdata(username)
+            result["perf_data"]=perf_data
+            result["info"]="signed in"
+            return result
         else:
-            return "password wrong"
-    return "not signed in"
+            result["info"]="password wrong"
+            return result
+    result["info"] = "not signed in"
+    return result
+
+@app.route("/uploadperfdata",methods=['POST'])
+def uploadperfdata():
+    try:
+        perf_data = request.json["perf_data"]
+        username = request.json["username"]
+        file=open("perf-data/"+username+".txt","w")
+        for i in range(0,len(perf_data)):
+            file.write(perf_data[i]+"\n")
+        file.close()
+        return "api - performance data saved"
+    except:
+        return "api - error in performance data saving"
 
 
 if __name__ == "__main__":

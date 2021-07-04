@@ -1,6 +1,6 @@
 import pygame
 
-import gui, states, events, configscreen, api_calls
+import gui, states, events, configscreen, api_calls, perfscreen
 
 upDownElementsSignin = ["signin.registeraccount", "signin.signin", "signin.pw","signin.username"]
 upDownElementsSigninIndex= -1
@@ -124,6 +124,8 @@ def moveForward(world):
     world.state = states.Setup
   elif world.focused == "intro.settings":
     configscreen.enter(world)
+  elif world.focused == "intro.performance":
+    perfscreen.enter(world)
   elif world.focused == "signin.registeraccount":
     username_text=""
     password_text=""
@@ -134,7 +136,7 @@ def moveForward(world):
     email_text=""
     signin_screen = True
   elif world.focused == "signin.signin":
-    status_text = api_calls.call_signin(username_text,password_text)
+    status_text = api_calls.call_signin(world,username_text,password_text)
   elif world.focused == "register.register":
     status_text = api_calls.call_register(email_text,username_text,password_text)
 
