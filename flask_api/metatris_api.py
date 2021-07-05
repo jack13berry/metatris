@@ -12,6 +12,13 @@ def metatris():
 def register():
     user = request.json
     new_user = user["username"]+" "+user["pw"]+" "+user["email"]+"\n"
+    file = open("users.txt")
+    user_data = file.read().strip().split("\n")
+    file.close()
+    for i in range(0,len(user_data)):
+        if(user["username"] == user_data[i].split(" ")[0]):
+            return "Username already exist"
+
     file = open("users.txt","a")
     file.write(new_user)
     file.close()

@@ -4,7 +4,7 @@ from settings import all as settings
 import gui
 
 def handleInput(world, event):
-  if event == events.btnEscapeOn:
+  if event == events.btnSelectOn or event == events.btnEscapeOn:
     bwd(world)
 
   if event%10 == 0:
@@ -28,10 +28,8 @@ def draw( world ):
   world.worldsurf.fill(world.bg_color)
 
   perfdata = world.getperf()
-  print("perfdata")
-  print(perfdata)
   for i in range(0,len(perfdata)):
-    gui.simpleText(world, perfdata[i], r.centerx, (i+1)*30+200)
+    gui.simpleText(world, perfdata[i], r.centerx-200, (i+1)*30+100,alignment="midleft")
   world.shouldRedraw = False
 
 def enter(world):

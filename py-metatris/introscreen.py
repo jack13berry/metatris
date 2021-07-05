@@ -1,6 +1,7 @@
 import pygame
 
 import gui, states, events, configscreen, api_calls, perfscreen
+from threading import Thread
 
 upDownElementsSignin = ["signin.registeraccount", "signin.signin", "signin.pw","signin.username"]
 upDownElementsSigninIndex= -1
@@ -14,7 +15,9 @@ status_text=""
 
 def handleInput(world, event):
   invalid = False
-  if event == events.btnSelectOn or event == events.btnStartOn:
+  # if event == events.btnSelectOn or event == events.btnStartOn:
+  #   moveForward(world)
+  if event == events.btnStartOn:
     moveForward(world)
 
   elif event == events.btnLeftOn or event == events.btnRightOn:
@@ -23,7 +26,7 @@ def handleInput(world, event):
   elif event == events.btnUpOn or event == events.btnDownOn:
     changeFocusUpDown(world, event)
 
-  elif event == events.btnEscapeOn:
+  elif event == events.btnSelectOn or event == events.btnEscapeOn :
     world.running = False
 
   elif (event>=1000):
@@ -113,8 +116,17 @@ def changeFocusedElm(world,event):
   elif world.focused == "intro.settings" and event==121:
     world.focused = "intro.play"
 
-def moveForward(world):
+def register_thread(email_text,username_text,password_text):
   global status_text
+  print("register_thread")
+  status_text = api_calls.call_register(email_text,username_text,password_text)
+
+def signin_thread(world,username_text,password_text):
+  global status_text
+  print("signin_thread")
+  status_text = api_calls.call_signin(world,username_text,password_text)
+
+def moveForward(world):
   global signin_screen
   global username_text
   global password_text
@@ -136,16 +148,18 @@ def moveForward(world):
     email_text=""
     signin_screen = True
   elif world.focused == "signin.signin":
-    status_text = api_calls.call_signin(world,username_text,password_text)
+    t_signin = Thread(target=signin_thread, args=(world,username_text,password_text))
+    t_signin.start()
   elif world.focused == "register.register":
-    status_text = api_calls.call_register(email_text,username_text,password_text)
+    t_register = Thread(target=register_thread, args=(email_text,username_text,password_text))
+    t_register.start()
 
 def draw( world ):
   r = world.worldsurf_rect
   world.worldsurf.fill( world.bg_color )
 
   logo_rect = world.logo.get_rect()
-  logo_rect.centerx = r.centerx
+  logo_rect.centerx = r.centerx+10
   logo_rect.top = 80
   world.worldsurf.blit( world.logo, logo_rect )
 
@@ -155,59 +169,59 @@ def draw( world ):
   world.worldsurf.blit( world.gclogo, gclogo_rect )
 
   if(not signin_screen):
-    gui.simpleText(world, "Email :", 266, 30)
+    gui.simpleText(world, "Email :", r.centerx-134, 30)
 
     if(len(email_text)>22):
       email_text_show=email_text[len(email_text)-22:]
     else:
       email_text_show=email_text
 
-    gui.textInput(world, email_text_show, 310, 22, 250, 20, world.focused == "register.email")
+    gui.textInput(world, email_text_show, r.centerx-90, 22, 250, 20, world.focused == "register.email")
 
-    gui.button(world, "REGISTER", 440, 120, 120, 32,
+    gui.button(world, "REGISTER", r.centerx+40, 120, 120, 32,
       world.focused == "register.register"
     )
 
-    gui.button(world, "Sign in to an account", 240, 170, 320, 22,
+    gui.button(world, "Sign in to an account", r.centerx-160, 170, 320, 22,
       world.focused == "register.signinaccount"
     )
 
-  gui.simpleText(world, status_text, 280, 140, (255,0,0))
+  gui.simpleText(world, status_text, r.centerx-80, 136, (255,0,0))
 
-  gui.simpleText(world, "Username :", 290, 60)
-  gui.simpleText(world, "Password  :", 290, 90)
+  gui.simpleText(world, "Username :", r.centerx-110, 60)
+  gui.simpleText(world, "Password  :", r.centerx-110, 90)
 
   if (len(username_text) > 16):
     username_text_show = username_text[len(username_text) - 16:]
   else:
     username_text_show = username_text
-  gui.textInput(world, username_text_show, 360, 52, 200, 20 ,world.focused == "signin.username")
+  gui.textInput(world, username_text_show, r.centerx-40, 52, 200, 20 ,world.focused == "signin.username")
 
   if (len(password_text) > 16):
     password_text_show = password_text[len(password_text) - 16:]
   else:
     password_text_show = password_text
-  gui.textInput(world, password_text_show, 360, 82, 200, 20 ,world.focused == "signin.pw")
+  gui.textInput(world, password_text_show, r.centerx-40, 82, 200, 20 ,world.focused == "signin.pw")
 
   if (signin_screen):
-    gui.button(world, "SIGN IN", 440, 120, 120, 32,
+    gui.button(world, "SIGN IN", r.centerx+40, 120, 120, 32,
       world.focused == "signin.signin"
     )
 
-    gui.button(world, "Register new account", 240, 170, 320, 22,
+    gui.button(world, "Register new account", r.centerx-160, 170, 320, 22,
       world.focused == "signin.registeraccount"
     )
 
 
 
-  gui.button(world, "PERFORMANCE", r.centerx - 360, r.bottom - 210, 160, 51,
+  gui.button(world, "PERFORMANCE", r.centerx - 220, r.bottom - 210, 170, 51,
     world.focused == "intro.performance"
   )
 
-  gui.button(world, "SETTINGS", r.centerx-160, r.bottom-210, 160, 51,
+  gui.button(world, "SETTINGS", r.centerx-34, r.bottom-210, 120, 51,
     world.focused == "intro.settings"
   )
-  gui.button(world, "PLAY", r.centerx+40, r.bottom-210, 120, 51,
+  gui.button(world, "PLAY", r.centerx+100, r.bottom-210, 100, 51,
     world.focused == "intro.play"
   )
 

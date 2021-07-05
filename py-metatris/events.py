@@ -373,6 +373,7 @@ def handleKeyRemapInput(world, event):
 
 
 def handleBtnRemapInput(world, event):
+  print("handleBtnRemapInput")
   if not hasattr(event, 'type'):
     return
 

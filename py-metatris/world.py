@@ -1,7 +1,7 @@
 # Based on the work by John K. Lindstedt
 
 import mond
-import os, sys, copy, csv, random, time, json, datetime, platform, random
+import os, sys, copy, csv, random, time, json, datetime, platform, random, time
 
 import pygame, numpy
 
@@ -814,6 +814,7 @@ class World( object ):
       self.sounds['thud'].play( 0 )
 
     logger.game_event(self,  "PLACED", self.curr_zoid.type, [self.curr_zoid.rot, self.curr_zoid.get_col(), self.curr_zoid.get_row()])
+    time.sleep(0.5)
 
 
   def solve( self , move = True):

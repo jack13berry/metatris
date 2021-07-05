@@ -1,0 +1,10 @@
+Score: 429
+Level: 1
+Lines: 2
+Zoids: 22
+SID: Test
+Complete: False
+Session: 2021-7-5_23-48-14
+Game Type: "standard"
+Game duration:86.2373704
+Avg Ep duration:3.749450886956522

@@ -23,12 +23,12 @@ def playStateHandler(world, event):
   #   dir = "PRESS" if event.type == pygame.JOYBUTTONDOWN else "RELEASE"
   #   logger.game_event(world,  "KEYPRESS", dir, world.buttons[event.button] )
 
-  if event == events.btnEscapeOn:
+  if event == events.btnSelectOn or event == events.btnEscapeOn:
     world.state = states.Intro
 
-  elif event == events.btnSelectOn:
-    world.input_slam()
-    world.input_place()
+  # elif event == events.btnSelectOn:
+  #   world.input_slam()
+  #   world.input_place()
 
   elif event == events.reqPause or event == events.reqPauseResume:
     world.input_pause()
@@ -134,15 +134,15 @@ def pauseStateHandler(world, event):
     world.input_pause()
   elif event == events.btnStartOn:
     world.input_pause()
-  elif event == events.btnEscapeOn:
+  elif event == events.btnSelectOn or event == events.btnEscapeOn:
     world.state = states.Intro
 
 
 def gameoverStateHandler(world, event):
-  if event == events.btnEscapeOn:
+  if event == events.btnSelectOn or event == events.btnEscapeOn:
     world.state = states.Intro
 
-  elif event == events.btnSelectOn or event == events.btnStartOn:
+  elif event == events.btnStartOn:
     if world.episode_number != world.max_eps-1:
       world.input_continue()
 

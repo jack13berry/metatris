@@ -4,7 +4,7 @@ from settings import all as settings
 import gui
 
 def handleInput(world, event):
-  if event == events.btnSelectOn or event == events.btnStartOn:
+  if event == events.btnStartOn:
     fwd(world)
 
   elif event == events.btnLeftOff:
@@ -19,7 +19,7 @@ def handleInput(world, event):
   elif event == events.btnDownOff:
     down(world)
 
-  elif event == events.btnEscapeOn:
+  elif event == events.btnSelectOn or event == events.btnEscapeOn:
     bwd(world)
 
   if event%10 == 0:
