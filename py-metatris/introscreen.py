@@ -148,11 +148,18 @@ def moveForward(world):
     email_text=""
     signin_screen = True
   elif world.focused == "signin.signin":
-    t_signin = Thread(target=signin_thread, args=(world,username_text,password_text))
-    t_signin.start()
+    if(username_text!="" and password_text!=""):
+      t_signin = Thread(target=signin_thread, args=(world,username_text,password_text))
+      t_signin.start()
+      username_text = ""
+      password_text = ""
   elif world.focused == "register.register":
-    t_register = Thread(target=register_thread, args=(email_text,username_text,password_text))
-    t_register.start()
+    if (username_text != "" and password_text != "" and email_text!=""):
+      t_register = Thread(target=register_thread, args=(email_text,username_text,password_text))
+      t_register.start()
+      username_text = ""
+      password_text = ""
+      email_text = ""
 
 def draw( world ):
   r = world.worldsurf_rect

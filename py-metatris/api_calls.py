@@ -3,7 +3,8 @@ import boto3
 import os
 import json
 
-base_url = "http://192.168.1.3"
+# base_url = "http://192.168.1.3"
+base_url = "http://18.116.114.15:5000"
 
 def call_signin(world, username,pw):
     data = {

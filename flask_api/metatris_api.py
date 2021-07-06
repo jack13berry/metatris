@@ -12,13 +12,15 @@ def metatris():
 def register():
     user = request.json
     new_user = user["username"]+" "+user["pw"]+" "+user["email"]+"\n"
-    file = open("users.txt")
-    user_data = file.read().strip().split("\n")
-    file.close()
-    for i in range(0,len(user_data)):
-        if(user["username"] == user_data[i].split(" ")[0]):
-            return "Username already exist"
-
+    try:
+        file = open("users.txt")
+        user_data = file.read().strip().split("\n")
+        file.close()
+        for i in range(0,len(user_data)):
+            if(user["username"] == user_data[i].split(" ")[0]):
+                return "Username already exist"
+    except:
+        pass
     file = open("users.txt","a")
     file.write(new_user)
     file.close()
@@ -75,5 +77,5 @@ def uploadperfdata():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0',port=80)
+    app.run(host='0.0.0.0',port=5000)
 
