@@ -35,6 +35,7 @@ class World( object ):
 
     self.perfdata = []
     self.username=""
+    self.email=""
 
     # Start connector:
     # mond.init()
@@ -352,6 +353,9 @@ class World( object ):
     self.s_drops = 0
 
     self.tetrises_game = 0
+    self.line_1_clear_count = 0
+    self.line_2_clear_count = 0
+    self.line_3_clear_count = 0
     self.tetrises_level = 0
     self.reset_lvl_tetrises = False
 
@@ -379,6 +383,12 @@ class World( object ):
 
   def getusername(self):
     return self.username
+
+  def setemail(self, email):
+    self.email = email
+
+  def getemail(self):
+    return self.email
 
   def setup( self ):
     self.initialize_board()
@@ -448,6 +458,9 @@ class World( object ):
     self.s_drops = 0
 
     self.tetrises_game = 0
+    self.line_1_clear_count = 0
+    self.line_2_clear_count = 0
+    self.line_3_clear_count = 0
     self.tetrises_level = 0
     self.reset_lvl_tetrises = False
 
@@ -924,12 +937,15 @@ class World( object ):
       if numcleared == 1:
         self.score += self.scoring[0] * ( self.level + 1 )
         self.sounds['clear1'].play( 0 )
+        self.line_1_clear_count += 1
       elif numcleared == 2:
         self.score += self.scoring[1] * ( self.level + 1 )
         self.sounds['clear1'].play( 0 )
+        self.line_2_clear_count += 1
       elif numcleared == 3:
         self.score += self.scoring[2] * ( self.level + 1 )
         self.sounds['clear1'].play( 0 )
+        self.line_3_clear_count += 1
       elif numcleared == 4:
         self.score += self.scoring[3] * ( self.level + 1 )
         self.tetris_flash_tick = 10

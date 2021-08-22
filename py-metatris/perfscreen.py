@@ -29,7 +29,11 @@ def draw( world ):
 
   perfdata = world.getperf()
   for i in range(0,len(perfdata)):
-    gui.simpleText(world, perfdata[i], r.centerx-200, (i+1)*30+100,alignment="midleft")
+    separate_point = 15
+    if(i<separate_point):
+      gui.simpleText(world, perfdata[i], r.centerx-350, (i+1)*30,alignment="midleft")
+    else:
+      gui.simpleText(world, perfdata[i], r.centerx - 50, (i-separate_point + 1) * 30, alignment="midleft")
   world.shouldRedraw = False
 
 def enter(world):

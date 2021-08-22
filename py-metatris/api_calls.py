@@ -3,7 +3,7 @@ import boto3
 import os
 import json
 
-# base_url = "http://192.168.1.3"
+# base_url = "http://192.168.1.3:5000"
 base_url = "http://18.116.114.15:5000"
 
 def call_signin(world, username,pw):
@@ -15,8 +15,10 @@ def call_signin(world, username,pw):
         response = requests.post(base_url+'/signin', json=data)
         response_info = json.loads(response.text)["info"]
         response_perfdata = json.loads(response.text)["perf_data"]
+        response_email = json.loads(response.text)["email"]
         if(response_info=="signed in"):
             world.setusername(username)
+            world.setemail(response_email)
             world.setperf(response_perfdata)
         return(response_info)
     except:
@@ -65,11 +67,12 @@ def upload_latest_game_data(username):
         except:
             print("game data not uploaded")
 
-def upload_perf_data(perf_data, username):
+def upload_perf_data(perf_data, username, email):
     if(username!=""):
         data = {
             "perf_data": perf_data,
-            "username":username
+            "username":username,
+            "email":email
         }
         try:
             response = requests.post(base_url+'/uploadperfdata', json=data)

@@ -13,6 +13,7 @@ exe_options = {
     'media'
   ]
 }
+setup_requires = ['lambda_setuptools']
 
 base = 'Console'
 #base = 'Win32GUI'

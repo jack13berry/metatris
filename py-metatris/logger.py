@@ -344,9 +344,9 @@ def episode( world ):
       world.epfile.write("\t".join(map(str,data)) + "\n")
 
 
-def upload_perormance_data_thread(perfData,username):
+def upload_perormance_data_thread(perfData,username,email):
   print("upload_perormance_data_thread")
-  api_calls.upload_perf_data(perfData,username)
+  api_calls.upload_perf_data(perfData,username,email)
 
 
 def gameresults( world, complete = True ):
@@ -380,18 +380,100 @@ def gameresults( world, complete = True ):
     if world.game_log:
       world.gamefile.write("\t".join(map(str,data)) + "\n")
 
+  old_perf = world.getperf()
+
+  total_games=0
+  highest_tetrises_per_game_duration=0
+  highest_tetrises = 0
+  avg_line_1_clears = 0
+  avg_line_2_clears = 0
+  avg_line_3_clears = 0
+  avg_tetrises = 0
+  avg_score = 0
+  highest_score = 0
+  avg_level = 0
+  highest_level = 0
+  avg_levels_increased = 0
+  highest_levels_increased = 0
+  for s in range(0,len(old_perf)):
+    item_name = old_perf[s].split(":")[0].strip()
+    item_value = old_perf[s].split(":")[1].strip()
+    if(item_name=="Total games"):
+      total_games = int(float(item_value))
+    elif(item_name=="Highest tetrises per game duration"):
+      highest_tetrises_per_game_duration = float(item_value)
+    elif (item_name == "Highest tetrises"):
+      highest_tetrises = int(item_value)
+    elif (item_name == "Average 1 line clears"):
+      avg_line_1_clears = float(item_value)
+    elif (item_name == "Average 2 line clears"):
+      avg_line_2_clears = float(item_value)
+    elif (item_name == "Average 3 line clears"):
+      avg_line_3_clears = float(item_value)
+    elif (item_name == "Average tetrises"):
+      avg_tetrises = float(item_value)
+    elif(item_name == "Average score"):
+      avg_score = float(item_value)
+    elif (item_name == "Highest score"):
+      highest_score = float(item_value)
+    elif (item_name == "Average level"):
+      avg_level = float(item_value)
+    elif (item_name == "Highest level"):
+      highest_level = int(item_value)
+    elif (item_name == "Average levels increased"):
+      avg_levels_increased = float(item_value)
+    elif (item_name == "Highest levels increased"):
+      highest_levels_increased = int(item_value)
+
+  if(world.lines_cleared != 0):
+    avg_line_1_clears = (avg_line_1_clears*total_games + world.line_1_clear_count/world.lines_cleared)/(total_games+1)
+    avg_line_2_clears = (avg_line_2_clears*total_games + world.line_2_clear_count/world.lines_cleared)/(total_games+1)
+    avg_line_3_clears = (avg_line_3_clears*total_games + world.line_3_clear_count/world.lines_cleared)/(total_games+1)
+    avg_tetrises = (avg_tetrises*total_games + world.tetrises_game/world.lines_cleared)/(total_games+1)
+  avg_score = (avg_score*total_games + world.score)/(total_games+1)
+  avg_level = (avg_level*total_games + world.level)/(total_games+1)
+  avg_levels_increased = (avg_levels_increased*total_games + (world.level - world.starting_level))/(total_games+1)
+
+  total_games+=1
+  tetrises_per_game_duration = world.tetrises_game/(world.moment - world.gameStartTime)
+  if(highest_tetrises_per_game_duration<tetrises_per_game_duration):
+    highest_tetrises_per_game_duration=tetrises_per_game_duration
+  if(highest_tetrises<world.tetrises_game):
+    highest_tetrises=world.tetrises_game
+  if(highest_score < world.score):
+    highest_score = world.score
+  if (highest_level < world.level):
+    highest_level = world.level
+  if(highest_levels_increased < (world.level - world.starting_level)):
+    highest_levels_increased = world.level - world.starting_level
+
   message = [
     "Game " , str(world.game_number) , ":\n" ,
     "\tScore: " , str(world.score) , "\n" ,
     "\tLevel: " , str(world.level) , "\n" ,
     "\tLines: " , str(world.lines_cleared) , "\n" ,
     "\tZoids: " , str(world.episode_number) , "\n" ,
-    "\tSID: " , str(world.SID) , "\n" ,
-    "\tComplete: ", str(complete), "\n",
-    "\tSession: " + str(world.session) , "\n" ,
-    "\tGame Type: " + str(world.game_type) + "\n",
-    "\tGame duration:" + str(world.moment - world.gameStartTime) + "\n",
-    "\tAvg Ep duration:" + str((world.moment - world.gameStartTime)/(world.episode_number+1)) + "\n"
+    "\tGame duration: " + str(round(world.moment - world.gameStartTime,4)) + "\n",
+    "\tAvg Ep duration: " + str(round((world.moment - world.gameStartTime)/(world.episode_number+1),4)) + "\n",
+    "\tTotal games: " + str(total_games) + "\n",
+    "\t1 line clears: " + str(world.line_1_clear_count) + "\n",
+    "\t2 line clears: " + str(world.line_2_clear_count) + "\n",
+    "\t3 line clears: " + str(world.line_3_clear_count) + "\n",
+    "\tTetrises: " + str(world.tetrises_game) + "\n",
+    "\tAverage 1 line clears: " + str(round(avg_line_1_clears,4)) + "\n",
+    "\tAverage 2 line clears: " + str(round(avg_line_2_clears,4)) + "\n",
+    "\tAverage 3 line clears: " + str(round(avg_line_3_clears,4)) + "\n",
+    "\tAverage tetrises: " + str(round(avg_tetrises,4)) + "\n",
+    "\tHighest tetrises: " + str(highest_tetrises) + "\n",
+    "\tTetrises per game duration: " + str(round(tetrises_per_game_duration,4)) + "\n",
+    "\tHighest tetrises per game duration: " + str(round(highest_tetrises_per_game_duration,4)) + "\n",
+    "\tAverage score: " + str(round(avg_score,4)) + "\n",
+    "\tHighest score: " + str(highest_score) + "\n",
+    "\tAverage level: " + str(round(avg_level,4)) + "\n",
+    "\tHighest level: " + str(highest_level) + "\n",
+    "\tLevels increased: " + str(world.level - world.starting_level) + "\n",
+    "\tAverage levels increased: " + str(round(avg_levels_increased,4)) + "\n",
+    "\tHighest levels increased: " + str(highest_levels_increased) + "\n",
   ]
 
   message = "".join(message)
@@ -405,18 +487,32 @@ def gameresults( world, complete = True ):
   perfData.append("Level: " + str(world.level))
   perfData.append("Lines: " + str(world.lines_cleared))
   perfData.append("Zoids: " + str(world.episode_number))
-  perfData.append("SID: " + str(world.SID))
-  perfData.append("Complete: "+ str(complete))
-  perfData.append("Session: " + str(world.session))
-  perfData.append("Game Type: " + str(world.game_type))
-  perfData.append("Game duration:" + str(world.moment - world.gameStartTime))
-  perfData.append("Avg Ep duration:" + str((world.moment - world.gameStartTime)/(world.episode_number+1)))
+  perfData.append("Game duration: " + str(round(world.moment - world.gameStartTime,4)))
+  perfData.append("Avg Ep duration: " + str(round((world.moment - world.gameStartTime)/(world.episode_number+1),4)))
+  perfData.append("Total games: " + str(total_games))
+  perfData.append("1 line clears: " + str(world.line_1_clear_count))
+  perfData.append("2 line clears: " + str(world.line_2_clear_count))
+  perfData.append("3 line clears: " + str(world.line_3_clear_count))
+  perfData.append("Tetrises: " + str(world.tetrises_game))
+  perfData.append("Average 1 line clears: " + str(round(avg_line_1_clears,4)))
+  perfData.append("Average 2 line clears: " + str(round(avg_line_2_clears,4)))
+  perfData.append("Average 3 line clears: " + str(round(avg_line_3_clears,4)))
+  perfData.append("Average tetrises: " + str(round(avg_tetrises,4)))
+  perfData.append("Highest tetrises: " + str(highest_tetrises))
+  perfData.append("Tetrises per game duration: " + str(round(tetrises_per_game_duration,4)))
+  perfData.append("Highest tetrises per game duration: " + str(round(highest_tetrises_per_game_duration,4)))
+  perfData.append("Average score: " + str(round(avg_score,4)))
+  perfData.append("Highest score: " + str(highest_score))
+  perfData.append("Average level: " + str(round(avg_level,4)))
+  perfData.append("Highest level: " + str(highest_level))
+  perfData.append("Levels increased: " + str(world.level - world.starting_level))
+  perfData.append("Average levels increased: " + str(round(avg_levels_increased,4)))
+  perfData.append("Highest levels increased: " + str(highest_levels_increased))
+
   world.setperf(perfData)
 
-  t_perfadata = Thread(target=upload_perormance_data_thread, args=(perfData, world.getusername()))
+  t_perfadata = Thread(target=upload_perormance_data_thread, args=(perfData, world.getusername(), world.getemail()))
   t_perfadata.start()
-  # upload_perormance_data_thread(perfData, world.getusername())
-
 
 
 #log a game event
