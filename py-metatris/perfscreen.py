@@ -31,7 +31,10 @@ def draw( world ):
   for i in range(0,len(perfdata)):
     separate_point = 15
     if(i<separate_point):
-      gui.simpleText(world, perfdata[i], r.centerx-350, (i+1)*30,alignment="midleft")
+      if(i<5):
+        gui.simpleText(world, perfdata[i], r.centerx - 350, (i + 1) * 30, alignment="midleft", color=(239,145,242))
+      else:
+        gui.simpleText(world, perfdata[i], r.centerx-350, (i+1)*30,alignment="midleft")
     else:
       gui.simpleText(world, perfdata[i], r.centerx - 50, (i-separate_point + 1) * 30, alignment="midleft")
   world.shouldRedraw = False

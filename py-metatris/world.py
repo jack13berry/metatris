@@ -1083,8 +1083,8 @@ class World( object ):
       self.sounds['crash'].play()
     pygame.mixer.music.stop()
 
-    t = Thread(target=after_game_file_upload_thread,args=(self,))
-    t.start()
+    # t = Thread(target=after_game_file_upload_thread,args=(self,))
+    # t.start()
 
   #push piece down based on timer
   def down_tick( self ):
@@ -1120,6 +1120,9 @@ class World( object ):
   def quit( self ):
     # mond.quit()
     print("quit")
+    t = Thread(target=after_game_file_upload_thread, args=(self,))
+    t.start()
+
     if self.game_number > 0 and not self.state == states.Gameover:
       logger.gameresults(self, complete=False)
     self.criterion_score()

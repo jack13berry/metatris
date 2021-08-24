@@ -453,26 +453,26 @@ def gameresults( world, complete = True ):
     "\tLevel: " , str(world.level) , "\n" ,
     "\tLines: " , str(world.lines_cleared) , "\n" ,
     "\tZoids: " , str(world.episode_number) , "\n" ,
-    "\tGame duration: " + str(round(world.moment - world.gameStartTime,4)) + "\n",
-    "\tAvg Ep duration: " + str(round((world.moment - world.gameStartTime)/(world.episode_number+1),4)) + "\n",
+    "\tGame duration: " + str(round(world.moment - world.gameStartTime,2)) + "\n",
+    "\tAvg Ep duration: " + str(round((world.moment - world.gameStartTime)/(world.episode_number+1),2)) + "\n",
     "\tTotal games: " + str(total_games) + "\n",
     "\t1 line clears: " + str(world.line_1_clear_count) + "\n",
     "\t2 line clears: " + str(world.line_2_clear_count) + "\n",
     "\t3 line clears: " + str(world.line_3_clear_count) + "\n",
     "\tTetrises: " + str(world.tetrises_game) + "\n",
-    "\tAverage 1 line clears: " + str(round(avg_line_1_clears,4)) + "\n",
-    "\tAverage 2 line clears: " + str(round(avg_line_2_clears,4)) + "\n",
-    "\tAverage 3 line clears: " + str(round(avg_line_3_clears,4)) + "\n",
-    "\tAverage tetrises: " + str(round(avg_tetrises,4)) + "\n",
+    "\tAverage 1 line clears: " + str(round(avg_line_1_clears,2)) + "\n",
+    "\tAverage 2 line clears: " + str(round(avg_line_2_clears,2)) + "\n",
+    "\tAverage 3 line clears: " + str(round(avg_line_3_clears,2)) + "\n",
+    "\tAverage tetrises: " + str(round(avg_tetrises,2)) + "\n",
     "\tHighest tetrises: " + str(highest_tetrises) + "\n",
-    "\tTetrises per game duration: " + str(round(tetrises_per_game_duration,4)) + "\n",
-    "\tHighest tetrises per game duration: " + str(round(highest_tetrises_per_game_duration,4)) + "\n",
-    "\tAverage score: " + str(round(avg_score,4)) + "\n",
+    "\tTetrises per game duration: " + str(round(tetrises_per_game_duration,2)) + "\n",
+    "\tHighest tetrises per game duration: " + str(round(highest_tetrises_per_game_duration,2)) + "\n",
+    "\tAverage score: " + str(round(avg_score,2)) + "\n",
     "\tHighest score: " + str(highest_score) + "\n",
-    "\tAverage level: " + str(round(avg_level,4)) + "\n",
+    "\tAverage level: " + str(round(avg_level,2)) + "\n",
     "\tHighest level: " + str(highest_level) + "\n",
     "\tLevels increased: " + str(world.level - world.starting_level) + "\n",
-    "\tAverage levels increased: " + str(round(avg_levels_increased,4)) + "\n",
+    "\tAverage levels increased: " + str(round(avg_levels_increased,2)) + "\n",
     "\tHighest levels increased: " + str(highest_levels_increased) + "\n",
   ]
 
@@ -484,29 +484,30 @@ def gameresults( world, complete = True ):
   #saving the performance data
   perfData=[]
   perfData.append("Score: " + str(world.score))
-  perfData.append("Level: " + str(world.level))
   perfData.append("Lines: " + str(world.lines_cleared))
+  perfData.append("Tetrises: " + str(world.tetrises_game))
+  perfData.append("Average score: " + str(round(avg_score, 2)))
+  perfData.append("Average tetrises: " + str(round(avg_tetrises, 2)))
+
+  perfData.append("Level: " + str(world.level))
   perfData.append("Zoids: " + str(world.episode_number))
-  perfData.append("Game duration: " + str(round(world.moment - world.gameStartTime,4)))
-  perfData.append("Avg Ep duration: " + str(round((world.moment - world.gameStartTime)/(world.episode_number+1),4)))
+  perfData.append("Game duration: " + str(round(world.moment - world.gameStartTime,2)))
+  perfData.append("Avg Ep duration: " + str(round((world.moment - world.gameStartTime)/(world.episode_number+1),2)))
   perfData.append("Total games: " + str(total_games))
   perfData.append("1 line clears: " + str(world.line_1_clear_count))
   perfData.append("2 line clears: " + str(world.line_2_clear_count))
   perfData.append("3 line clears: " + str(world.line_3_clear_count))
-  perfData.append("Tetrises: " + str(world.tetrises_game))
-  perfData.append("Average 1 line clears: " + str(round(avg_line_1_clears,4)))
-  perfData.append("Average 2 line clears: " + str(round(avg_line_2_clears,4)))
-  perfData.append("Average 3 line clears: " + str(round(avg_line_3_clears,4)))
-  perfData.append("Average tetrises: " + str(round(avg_tetrises,4)))
+  perfData.append("Average 1 line clears: " + str(round(avg_line_1_clears,2)))
+  perfData.append("Average 2 line clears: " + str(round(avg_line_2_clears,2)))
+  perfData.append("Average 3 line clears: " + str(round(avg_line_3_clears,2)))
   perfData.append("Highest tetrises: " + str(highest_tetrises))
-  perfData.append("Tetrises per game duration: " + str(round(tetrises_per_game_duration,4)))
-  perfData.append("Highest tetrises per game duration: " + str(round(highest_tetrises_per_game_duration,4)))
-  perfData.append("Average score: " + str(round(avg_score,4)))
+  perfData.append("Tetrises per game duration: " + str(round(tetrises_per_game_duration,2)))
+  perfData.append("Highest tetrises per game duration: " + str(round(highest_tetrises_per_game_duration,2)))
   perfData.append("Highest score: " + str(highest_score))
-  perfData.append("Average level: " + str(round(avg_level,4)))
+  perfData.append("Average level: " + str(round(avg_level,2)))
   perfData.append("Highest level: " + str(highest_level))
   perfData.append("Levels increased: " + str(world.level - world.starting_level))
-  perfData.append("Average levels increased: " + str(round(avg_levels_increased,4)))
+  perfData.append("Average levels increased: " + str(round(avg_levels_increased,2)))
   perfData.append("Highest levels increased: " + str(highest_levels_increased))
 
   world.setperf(perfData)
