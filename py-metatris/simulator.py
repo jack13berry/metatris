@@ -853,14 +853,7 @@ class TetrisSimulator(object):
 
 
   def get_cols(self, space):
-    #!# Work to remove this entirely! Unnecessary processing!
-    #transform the space to be column-wise, rather than rows
-
-    #out = []
-    #for i in range(0, len(space[0])):
-    #    out.append(self.get_col(i, space))
-
-    return zip(*space)
+    return list(zip(*space))
 
 
   ### FEATURES
@@ -1001,22 +994,11 @@ class TetrisSimulator(object):
     return self.get_all_transitions(space)
 
   def get_col_diversity(self, colspace):
-    patterns = []
-    for i in colspace:
-      print ("  meh meh : ")
-      print (i)
-      print("\n")
-      pattern = []
-      for j in range(0, len(colspace[i])):
-        pattern.append(colspace[i][j] - colspace[i+1][j])
-
-      patterns.append(pattern)
-
-    patterns2 = []
-    for i in patterns:
-      if i not in patterns2:
-        patterns2.append(i)
-    return len(patterns2)
+    patterns = {
+      tuple(left - right for left, right in zip(column, following))
+      for column, following in zip(colspace, colspace[1:])
+    }
+    return len(patterns)
 
 
   def get_pit_depth(self, v):
@@ -1142,7 +1124,7 @@ class TetrisSimulator(object):
     #find highest value
     crit = None
     for i in opts:
-      if not crit:
+      if crit is None:
         crit = i[-1]
       else:
         crit = max(crit, i[-1])

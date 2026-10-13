@@ -147,13 +147,17 @@ def square( self, surface, left, top, color_id , alpha = 255, gray = False):
   surface.blit( block, ( left, top ) )
 
 
-def blocks( self, obj, surf, rect, x = 0, y = 0, resetX = False, alpha = 255, gray = False):
+def blocks( self, obj, surf, rect, x = 0, y = 0, resetX = False, alpha = 255, gray = False, outline = False):
   ix = x
   iy = y
   for i in obj:
     for j in i:
       if j != 0:
-        square(self, surf, ix, iy, color_id = j, alpha = alpha, gray = gray )
+        if outline:
+          pygame.draw.rect(surf, self.border_color, (ix, iy, self.side, self.side),
+                           max(1, self.side // 12))
+        else:
+          square(self, surf, ix, iy, color_id = j, alpha = alpha, gray = gray )
       ix += self.side
     if resetX:
       ix = 0

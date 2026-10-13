@@ -1,19 +1,25 @@
 # Based on the work by John K. Lindstedt
 
 import sys, os
-sys.path.insert(0, '.' + os.path.sep + 'extlib')
 
 import argparse
 import pygame
 import time
 
 from world import World
+import cnf
+import configselect
+import paths
 
 
-pygame.display.init()
-pygame.font.init()
-pygame.mixer.init()
-pygame.mouse.set_visible( False )
+def initialize_pygame():
+  pygame.init()
+  try:
+    pygame.mixer.init()
+  except pygame.error:
+    pygame.mixer.quit()
+    os.environ["SDL_AUDIODRIVER"] = "dummy"
+    pygame.mixer.init()
 
 
 def between_zero_and_one( string ):
@@ -38,8 +44,13 @@ def date_time_filename():
 
 
 def main():
-
+  paths.initialize_configs(cnf.CONFIG_DIR)
   parser = argparse.ArgumentParser( formatter_class = argparse.ArgumentDefaultsHelpFormatter )
+
+  parser.add_argument('-c', '--config', choices=cnf.available_configs(),
+    help='Use a config by name, skipping the startup picker. Each profile overrides default.config.')
+  parser.add_argument('--self-test', action='store_true',
+    help='Check all bundled study profiles, controls, displays, timers, and saved data without network uploads.')
 
   parser.add_argument( '-L', '--logfile',
     action = "store", dest = "logfile", default = date_time_filename(),
@@ -111,8 +122,18 @@ def main():
 
   args = parser.parse_args()
 
+  if args.self_test:
+    from selftest import run
+    return run()
+  initialize_pygame()
+  if args.config is None:
+    args.config = configselect.choose()
+    if args.config is None:
+      pygame.quit()
+      return
+  pygame.mouse.set_visible(False)
   w = World( args )
   w.run()
 
 if __name__ == '__main__':
-  main()
+  sys.exit(main())

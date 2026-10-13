@@ -33,6 +33,7 @@ def init( world ):
 
     world.scorefile_path = world.logname + "/score_" + world.filename + ".tsv"
     world.scorefile = open( world.scorefile_path, "w")
+    world.scorefile.write("config_name\tgame_type\tgame_number\tepisode_number\tscore\n")
 
     if world.ep_log:
       world.epfile_path = world.logname + "/episodes_" + world.filename + ".tsv"
@@ -50,7 +51,7 @@ def init( world ):
   board_header = ["board_rep","zoid_rep","newscore","metascore","rollavg"]
 
   #game and up
-  game_header = ["SID","ECID","session","game_type","game_number",
+  game_header = ["SID","ECID","session","game_type","config_name","game_number",
     "episode_number", "level","score","lines_cleared", "completed",
     "game_duration","avg_ep_duration", "zoid_sequence"]
 
@@ -120,6 +121,7 @@ def universal( world, event_type, loglist, complete = False, evt_id = False, evt
   logit(world.ECID, "ECID")
   logit(world.session, "session")
   logit(world.game_type, "game_type")
+  data.append(world.config_name)
   logit(world.game_number, "game_number")
   logit(world.episode_number, "episode_number")
   logit(world.level, "level")
@@ -181,7 +183,8 @@ def universal( world, event_type, loglist, complete = False, evt_id = False, evt
   logit("'%s'" % json.dumps( zoid_in_board(world) ), "zoid_rep")
 
 
-  if features or (event_type == "GAME_EVENT" and evt_id == "KEYPRESS" and evt_data1 == "PRESS" and world.episode_number > 0):
+  has_features = features or (event_type == "GAME_EVENT" and evt_id == "KEYPRESS" and evt_data1 == "PRESS" and world.episode_number > 0)
+  if has_features:
     factor1  = 0.663025211
     factor2  = 0.213249645
     factor3  = 0.035625071
@@ -250,7 +253,8 @@ def universal( world, event_type, loglist, complete = False, evt_id = False, evt
     world.metaticks = world.metaticks+1
     world.features["z_metascore"] = world.metascore
 
-    world.scorefile.write(repr(z_answer)+"\n")
+    world.scorefile.write("\t".join(map(str, [world.config_name, world.game_type,
+                          world.game_number, world.episode_number, z_answer])) + "\n")
 
     world.roll_avg.append(world.features["z_answer"])
     while len(world.roll_avg) > 3:
@@ -267,21 +271,11 @@ def universal( world, event_type, loglist, complete = False, evt_id = False, evt
     else:
       world.features["z_rollavg"] = 0.0
 
-    logit(world.newscore, "newscore")
-    logit(world.metascore, "metascore")
-    logit(world.features["z_rollavg"], "rollavg")
-
-      #print(f'So far... z_answer={world.features["z_answer"]:.4f}, z_rolling={world.features["z_rollavg"]:.4f}.')
-    if features:
-      for f in world.features_set:
-        data.append(world.features[f])
-    else:
-      for f in world.features_set:
-        data.append(world.features[f])
-
-  else:
-    for f in world.features_set:
-      data.append("")
+  logit(world.newscore, "newscore")
+  logit(world.metascore, "metascore")
+  logit(world.features.get("z_rollavg", 0.0), "rollavg")
+  for f in world.features_set:
+    data.append(world.features[f] if has_features else "")
 
   #print('How often does this happen')
 
@@ -317,6 +311,8 @@ def episode( world ):
   else:
     data = [":ts", world.moment - world.startTime,
         ":event_type", "EP_SUMM",
+        ":config_name", world.config_name,
+        ":game_type", world.game_type,
         ":SID", world.SID,
         ":session", world.session,
         ":game_number", world.game_number,
@@ -363,6 +359,7 @@ def gameresults( world, complete = True ):
       ":SID", world.SID,
       ":session", world.session,
       ":game_type", world.game_type,
+      ":config_name", world.config_name,
       ":game_number", world.game_number,
       ":episode_number", world.episode_number,
       ":level", world.level,
@@ -449,6 +446,8 @@ def gameresults( world, complete = True ):
 
   message = [
     "Game " , str(world.game_number) , ":\n" ,
+    "\tConfig: " , world.config_name , "\n" ,
+    "\tGame type: " , world.game_type , "\n" ,
     "\tScore: " , str(world.score) , "\n" ,
     "\tLevel: " , str(world.level) , "\n" ,
     "\tLines: " , str(world.lines_cleared) , "\n" ,
@@ -509,6 +508,8 @@ def gameresults( world, complete = True ):
   perfData.append("Levels increased: " + str(world.level - world.starting_level))
   perfData.append("Average levels increased: " + str(round(avg_levels_increased,2)))
   perfData.append("Highest levels increased: " + str(highest_levels_increased))
+  perfData.append("Config: " + world.config_name)
+  perfData.append("Game type: " + world.game_type)
 
   world.setperf(perfData)
 
@@ -532,6 +533,8 @@ def game_event( world, id, data1 = "", data2 = "" ):
     out = [
       ":ts", world.moment - world.startTime,
       ":event_type", 'GAME_EVENT',
+      ":config_name", world.config_name,
+      ":game_type", world.game_type,
       ":evt_id", id,
       ":evt_data1", data1,
       ":evt_data2", data2
@@ -556,7 +559,9 @@ def worldState( world ):
   else:
     #session and types
     data = [":ts", world.moment - world.startTime,
-        ":event_type", "GAME_STATE"]
+        ":event_type", "GAME_STATE",
+        ":config_name", world.config_name,
+        ":game_type", world.game_type]
 
     #gameplay values
     data += [
@@ -614,6 +619,9 @@ def history( world ):
   hwrite("RIN")
   hwrite("ECID")
   hwrite("game_type")
+  hwrite("config_name")
+  hwrite("time_limit")
+  hwrite("bar")
   hwrite2("Start time", world.startTime)
   hwrite2("Session" ,world.session)
   hwrite("random_seeds")

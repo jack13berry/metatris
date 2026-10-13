@@ -183,14 +183,17 @@ def init(world):
   key.add("off" +str(pygame.K_SPACE),   btnSelectOff)
   key.add("on" +str(pygame.K_SPACE),    btnSelectOn)
 
-  btn.add("off0",                       btnRotateCwOff)
-  btn.add("on0",                        btnRotateCwOn)
+  btn.add("off" + str(world.JOY_A),      btnRotateCwOff)
+  btn.add("on" + str(world.JOY_A),       btnRotateCwOn)
 
   btn.add("off2",                       btnRotateCwOff)
   btn.add("on2",                        btnRotateCwOn)
 
-  btn.add("off1",                       btnRotateCcwOff)
-  btn.add("on1",                        btnRotateCcwOn)
+  btn.add("off" + str(world.JOY_B),      btnRotateCcwOff)
+  btn.add("on" + str(world.JOY_B),       btnRotateCcwOn)
+
+  mappedBtnNames["Rotate CW"] = "A"
+  mappedBtnNames["Rotate CCW"] = "B"
 
   btn.add("off8",                       btnSelectOff)
   btn.add("on8",                        btnSelectOn)

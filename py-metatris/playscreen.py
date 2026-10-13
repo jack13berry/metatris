@@ -79,17 +79,19 @@ def drawGameOver( world ):
     col = colors[1]
 
     game_complete = world.episode_number == world.max_eps - 1
-    if world.continues == 0:
+    if world.time_limit_reached:
+      msg0 = "BLOCK COMPLETE"
+      msg1 = "Time limit reached"
+      msg2 = ""
+    elif game_complete:
+      msg0 = "COMPLETED!"
       msg1 = ""
       msg2 = ""
-      msg3 = ""
-      offset = 0
-      col = colors[0]
-
-    if game_complete:
-      msg0 = "COMPLETED!"
-    elif world.continues < 0:
+    elif world.unlimited_games or world.continues < 0:
       msg1 = "Continue?"
+    elif world.continues == 0:
+      msg1 = ""
+      msg2 = ""
     gui.textSurface(msg0, world.end_font, col, ( world.gamesurf_rect.centerx, world.gamesurf_rect.centery - offset ), world.worldsurf )
     gui.textSurface(msg1, world.scores_font, world.end_text_color, ( world.gamesurf_rect.centerx, world.gamesurf_rect.centery + offset ), world.worldsurf )
     if int((tick - world.gameover_tick_max) / (world.fps * 2))% 3 < 2:
@@ -138,9 +140,9 @@ def draw_AAR(world):
 
 
 def draw_borders( world ):
-  gui.borderOutsideOfRect(world.worldsurf, world.newscoreColor, world.border_thickness, world.gamesurf_rect)
+  gui.borderOutsideOfRect(world.worldsurf, world.border_color, world.border_thickness, world.gamesurf_rect)
   if world.look_ahead > 0:
-    gui.borderOutsideOfRect( world.worldsurf, world.newscoreColor, world.border_thickness, world.nextsurf_rect)
+    gui.borderOutsideOfRect( world.worldsurf, world.border_color, world.border_thickness, world.nextsurf_rect)
   if world.keep_zoid:
     gui.borderOutsideOfRect( world.worldsurf, world.border_color, world.border_thickness, world.keptsurf_rect)
 
@@ -179,6 +181,8 @@ def draw_scores( world ):
     gui.textSurface(str( world.level ), world.scores_font, ( 210, 210, 210 ), world.level_left, world.worldsurf, "midright" )
 
   world.newscoreText = newscoreText
+  if not world.bar:
+    return
   world.metabarSfc.fill( world.bg_color )
   world.metabarSfc.blit( world.scorebar, world.scorebarRect )
   cent = (world.metabarHeight-30) / 100
@@ -212,13 +216,13 @@ def draw_curr_zoid( world ):
 
   if world.hint_toggle and world.solved:
     if not world.hint_context:
-      gui.blocks(world, world.curr_zoid.get_shape(rot = world.solved_rot), world.gamesurf, world.gamesurf_rect, world.solved_col * world.side, ( world.game_ht - world.solved_row) * world.side, alpha = world.ghost_alpha, gray = world.gray_zoid )
+      gui.blocks(world, world.curr_zoid.get_shape(rot = world.solved_rot), world.gamesurf, world.gamesurf_rect, world.solved_col * world.side, ( world.game_ht - world.solved_row) * world.side, outline = True)
 
   if world.hint_context and world.solved:
     hint_col_agree = abs(world.solved_col - world.curr_zoid.col) <= world.hint_context_col_tol
     hint_agree = world.solved_rot == world.curr_zoid.rot and hint_col_agree
     if hint_agree:
-      gui.blocks(world, world.curr_zoid.get_shape(rot = world.solved_rot), world.gamesurf, world.gamesurf_rect, world.solved_col * world.side, ( world.game_ht - world.solved_row) * world.side, alpha = world.ghost_alpha, gray = world.gray_zoid )
+      gui.blocks(world, world.curr_zoid.get_shape(rot = world.solved_rot), world.gamesurf, world.gamesurf_rect, world.solved_col * world.side, ( world.game_ht - world.solved_row) * world.side, outline = True)
 
 
 #draw the next zoid inside the next box

@@ -2,6 +2,8 @@ import requests
 import boto3
 import os
 import json
+from pathlib import Path
+import paths
 
 # base_url = "http://192.168.1.3:5000"
 base_url = "http://18.116.114.15:5000"
@@ -37,10 +39,10 @@ def call_register(email,username,pw):
     except:
         return("not registered")
 
-def upload_latest_game_data(username):
+def upload_latest_game_data(username, log_directory=None):
     if(username!=""):
         try:
-            file = open("secret_keys.txt")
+            file = open(paths.app_directory() / "secret_keys.txt")
             keys = file.read().strip().split("\n")
             file.close()
 
@@ -50,19 +52,17 @@ def upload_latest_game_data(username):
 
             s3_client = boto3.client('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_access_key)
 
-            data_directory = ".\data\\"
+            if log_directory is None:
+                data_directory = paths.app_directory() / "data"
+                latest_subdir = max((entry for entry in data_directory.iterdir() if entry.is_dir()),
+                                    key=lambda entry: entry.stat().st_mtime)
+            else:
+                latest_subdir = Path(log_directory)
 
-            content = os.listdir(data_directory)
-            new_content = []
-            for i in range(0, len(content)):
-                new_content.append(data_directory + content[i])
-            latest_subdir = max(new_content, key=os.path.getmtime)
-
-            folder = latest_subdir.split('\\')[2]
-            data_files = [f for f in os.listdir(latest_subdir)]
-            for i in range(0, len(data_files)):
-                s3_client.upload_file(os.path.join(latest_subdir, data_files[i]), s3_bucket,
-                                      os.path.join(username + "/" + folder + "/" + data_files[i]))
+            for data_file in latest_subdir.iterdir():
+                if data_file.is_file():
+                    s3_client.upload_file(str(data_file), s3_bucket,
+                                          "/".join((username, latest_subdir.name, data_file.name)))
             print("game data successfully uploaded")
         except:
             print("game data not uploaded")

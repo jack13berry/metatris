@@ -24,7 +24,7 @@ def playStateHandler(world, event):
   #   logger.game_event(world,  "KEYPRESS", dir, world.buttons[event.button] )
 
   if event == events.btnSelectOn or event == events.btnEscapeOn:
-    world.state = states.Intro
+    world.leave_game()
 
   # elif event == events.btnSelectOn:
   #   world.input_slam()
@@ -135,7 +135,7 @@ def pauseStateHandler(world, event):
   elif event == events.btnStartOn:
     world.input_pause()
   elif event == events.btnSelectOn or event == events.btnEscapeOn:
-    world.state = states.Intro
+    world.leave_game()
 
 
 def gameoverStateHandler(world, event):

@@ -10,6 +10,7 @@ from threading import Thread
 from simulator import TetrisSimulator
 
 import states, events, logger, cnf, drawer, inputhandler, timing, api_calls
+import paths
 
 sep = os.path.sep
 
@@ -26,7 +27,7 @@ zoid_col_offset = {
 
 def after_game_file_upload_thread(self):
   print("after_game_file_upload_thread")
-  api_calls.upload_latest_game_data(self.username)
+  api_calls.upload_latest_game_data(self.username, self.logname)
 
 class World( object ):
 
@@ -61,7 +62,7 @@ class World( object ):
     self.metascore = 0
     self.metaticks = 0
 
-    self.LOG_VERSION = 3.1
+    self.LOG_VERSION = 3.3
 
     #token names for latency logging
     self.evt_token_names = [
@@ -87,14 +88,11 @@ class World( object ):
 
     self.session = self.args.logfile
 
-    self.config = {}
-    self.configs_to_write = []
-    self.rawConfDicts = {}
-    for configName in ["default", "user"]:
-      cnf.read(self, configName)
-
-    cnf.setAll(self)
-    self.render_scores = False
+    cnf.load(self, getattr(args, "config", "default"))
+    self.unlimited_games = self.continues == 0
+    self.blockStartTime = None
+    self.time_limit_reached = False
+    self.game_active = False
     # events.init(self)
 
     self.timing = getattr(timing, self.timingSetup)
@@ -209,9 +207,6 @@ class World( object ):
     # Starting board
     self.initialize_board()
 
-    # Determine Fixed or Random Seeds
-    self.fixed_seeds = True if 'random_seeds' in self.config else False
-
     # seven-bag of zoids
     self.seven_bag = random.sample( range( 0, len(self.zoids) ), len(self.zoids) )
 
@@ -290,15 +285,15 @@ class World( object ):
 
     # Initialize image graphics
 
-    self.logo = pygame.image.load( "media" + sep + "logo.png" )
+    self.logo = pygame.image.load(paths.resource("media", "logo.png"))
     self.logo = pygame.transform.scale(self.logo, (400, 300))
     self.minilogo = pygame.transform.scale(self.logo, (200, 150))
-    self.gclogo = pygame.image.load( "media" + sep + "gclogo.png" )
+    self.gclogo = pygame.image.load(paths.resource("media", "gclogo.png"))
     self.gclogo = pygame.transform.scale(self.gclogo, (368, 72))
 
-    self.scorebarsrc = pygame.image.load( "media" + sep + "scorebar.png" )
+    self.scorebarsrc = pygame.image.load(paths.resource("media", "scorebar.png"))
 
-    gameicon = pygame.image.load( "media" + sep + "metatris.ico" )
+    gameicon = pygame.image.load(paths.resource("media", "metatris.ico"))
     pygame.display.set_icon(gameicon)
 
 
@@ -307,8 +302,8 @@ class World( object ):
 
     # Fonts (intro: 36; scores: 48; end: 68; pause: 102)
     # ratios divided by default HEIGHT: .04, .053, .075, .113
-    fontPath = sep.join(["media", "fonts", "Montserrat", "Montserrat-Medium.ttf"])
-    fontBPath = sep.join(["media", "fonts", "Montserrat", "Montserrat-Black.ttf"])
+    fontPath = paths.resource("media", "fonts", "Montserrat", "Montserrat-Medium.ttf")
+    fontBPath = paths.resource("media", "fonts", "Montserrat", "Montserrat-Black.ttf")
     self.intro_font = pygame.font.Font( fontPath, int(.04 * self.worldsurf_rect.height) )
     self.authInfoFont = pygame.font.Font( fontPath, int(.040 * self.worldsurf_rect.height) )
     self.authDigitFont = pygame.font.Font( fontPath, int(.100 * self.worldsurf_rect.height) )
@@ -391,6 +386,10 @@ class World( object ):
     return self.email
 
   def setup( self ):
+    if self.blockStartTime is None:
+      self.blockStartTime = self.moment
+    self.game_active = True
+    cnf.write(self)
     self.initialize_board()
 
     #increment game number
@@ -510,7 +509,7 @@ class World( object ):
     self.gameStartTime = self.moment
 
     #restart the normal music
-    pygame.mixer.music.load( "media" + sep + "music" + sep + self.song )
+    pygame.mixer.music.load(paths.resource("media", "music", self.song))
     pygame.mixer.music.play( -1 )
     self.danger_mode = False
 
@@ -529,7 +528,7 @@ class World( object ):
     for sound in ['rotate','trans','clear1','clear4','crash','levelup',
       'thud','pause','slam','keep','solved1', 'uiaction']:
       self.sounds[sound] = pygame.mixer.Sound(
-        sep.join(['media', 'sounds', 'default', sound]) + ".wav"
+        paths.resource('media', 'sounds', 'default', sound + ".wav")
       )
       self.sounds[sound].set_volume( self.sfx_vol )
 
@@ -548,7 +547,7 @@ class World( object ):
 
 
   def get_controller( self ):
-    f = open("controllers" + sep + self.controller + ".control")
+    f = open(paths.resource("controllers", self.controller + ".control"))
     lines = f.readlines()
     f.close()
     return json.loads(lines[0].strip())
@@ -568,7 +567,7 @@ class World( object ):
 
   #initializes a board based on arguments
   def initialize_board( self ):
-    f = open("boards" + sep + self.boardname + ".board")
+    f = open(paths.resource("boards", self.boardname + ".board"))
     lines = ""
     for l in f.readlines():
       lines += l.strip()
@@ -708,8 +707,17 @@ class World( object ):
 
 
   def input_continue( self ):
-    if self.continues != 0 and self.gameover_anim_tick > self.gameover_tick_max:
+    if (not self.time_limit_reached and (self.unlimited_games or self.continues > 0)
+        and self.gameover_anim_tick > self.gameover_tick_max):
       self.state = states.Setup
+
+
+  def leave_game(self):
+    if self.game_active:
+      logger.gameresults(self, complete=False)
+      self.game_active = False
+    pygame.mixer.music.stop()
+    self.state = states.Intro
 
 
   def input_solve( self ):
@@ -1071,11 +1079,15 @@ class World( object ):
 
 
   #game over detected, change state
-  def game_over( self ):
+  def game_over( self, complete=True ):
+    if not self.game_active:
+      return
+    self.game_active = False
     print("game over")
     logger.game_event(self,  "GAME", "END", self.game_number )
-    logger.gameresults(self, complete = True)
-    self.continues -= 1
+    logger.gameresults(self, complete=complete)
+    if self.continues > 0:
+      self.continues -= 1
     self.state = states.Gameover
     if self.episode_number == self.max_eps - 1:
       self.sounds['pause'].play()
@@ -1120,13 +1132,13 @@ class World( object ):
   def quit( self ):
     # mond.quit()
     print("quit")
-    t = Thread(target=after_game_file_upload_thread, args=(self,))
-    t.start()
-
-    if self.game_number > 0 and not self.state == states.Gameover:
+    if self.game_active:
       logger.gameresults(self, complete=False)
+      self.game_active = False
     self.criterion_score()
     logger.close_files(self)
+    t = Thread(target=after_game_file_upload_thread, args=(self,))
+    t.start()
     # reactor.stop()
     self.running = False
 
@@ -1147,6 +1159,18 @@ class World( object ):
 
 
   def process_game_logic( self ):
+    if self.blockStartTime is not None and self.time_limit > 0:
+      if not self.time_limit_reached and self.moment >= self.blockStartTime + self.time_limit:
+        self.time_limit_reached = True
+        logger.game_event(self, "TIME_LIMIT_REACHED", self.time_limit)
+        self.game_over(complete=False)
+        self.state = states.Gameover
+        self.gameover_anim_tick = self.gameover_tick_max + 1
+        pygame.mixer.music.stop()
+      if self.time_limit_reached and self.state == states.Setup:
+        self.state = states.Gameover
+    if self.time_limit_reached:
+      return
     #lc counter and are counter start at zero and automatically count backward
     if self.state == states.Play:
       #for i in range( 0, self.ticks_per_frame ):

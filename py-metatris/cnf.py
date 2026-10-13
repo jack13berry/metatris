@@ -1,8 +1,10 @@
 import os
 
 import drawer
+import paths
 
 sep = os.path.sep
+CONFIG_DIR = str(paths.app_directory() / "configs")
 
 try:
   import pycogworks.crypto
@@ -13,6 +15,9 @@ except ImportError:
 
 
 def write( world ):
+  world.configfile.seek(0)
+  world.configfile.truncate()
+  world.configfile.write("config_name = " + world.config_name + "\n")
   for varname in world.configs_to_write:
     if type(getattr(world, varname)) is list or type(getattr(world, varname)) is tuple:
       out = []
@@ -26,47 +31,70 @@ def write( world ):
       prefix = "#"
 
     world.configfile.write(prefix + varname + " = " + out + "\n")
+  world.configfile.flush()
 
 
 def updateUserConfig(world, key, val):
+  if "user" not in world.rawConfDicts:
+    world.rawConfDicts["user"] = read_file("user") if "user" in available_configs() else {}
   userconf = world.rawConfDicts["user"]
   userconf[key] = val
 
-  fl = open("configs" + sep + "user.config", "w")
-  for (k, v) in userconf.items():
-    fl.write(k + " = " + str(v) + "\n")
-  fl.close()
+  with open(os.path.join(CONFIG_DIR, "user.config"), "w", encoding="utf-8") as fl:
+    for (k, v) in userconf.items():
+      fl.write(k + " = " + str(v) + "\n")
 
   setattr(world, key, val)
+  world.config[key] = str(val)
+  write(world)
   drawer.setupLayout(world)
   drawer.setupColors(world)
   world.updateVolumes()
 
 
-def read(world, flname):
-  flpath = "configs" + sep + flname + ".config"
-  if not os.path.isfile(flpath):
-    print("Config file '%s' does not exist" % flpath)
-    world.rawConfDicts[flname] = {}
-    return
+def available_configs():
+  names = [os.path.splitext(entry.name)[0] for entry in os.scandir(CONFIG_DIR)
+           if entry.is_file() and entry.name.endswith(".config")]
+  return sorted(names, key=lambda name: (name != "default", name.casefold(), name))
 
-  fl = open(flpath)
-  lines = fl.readlines()
-  fl.close()
 
+def read_file(name):
+  if os.path.basename(name) != name:
+    raise ValueError("Config name must be a filename inside the configs folder")
+  path = os.path.join(CONFIG_DIR, name + ".config")
   confdict = {}
+  with open(path, encoding="utf-8") as fl:
+    for number, rawline in enumerate(fl, 1):
+      line = rawline.split("#", 1)[0].strip()
+      if not line:
+        continue
+      key, separator, value = line.partition("=")
+      if not separator or not key.strip():
+        raise ValueError("%s:%d: expected setting = value" % (path, number))
+      confdict[key.strip()] = value.strip().strip("\"'")
+  return confdict
 
-  for line in [rawline.strip().split("#") for rawline in lines]:
-    if line[0] == '':
-      continue
 
-    line = line[0].split("=")
-    key = line[0].strip()
-    val = line[1].strip()
-    world.config[key] = val
-    confdict[key] = val
+def read(world, name):
+  values = read_file(name)
+  world.config.update(values)
+  world.rawConfDicts[name] = values
 
-  world.rawConfDicts[flname] = confdict
+
+def load(world, name="default"):
+  world.config = {}
+  world.configs_to_write = []
+  world.rawConfDicts = {}
+  read(world, "default")
+  if name != "default":
+    read(world, name)
+  if hasattr(world, "args"):
+    for key, value in vars(world.args).items():
+      if value is not None and key not in ("config", "logfile", "boardstats", "self_test"):
+        world.config[key] = str(value)
+  world.config_name = name
+  setAll(world)
+  world.logdir = paths.writable_path(world.logdir)
 
 
 def set_var( world, name, default, type ):
@@ -74,15 +102,15 @@ def set_var( world, name, default, type ):
   if name in world.config:
     val = []
     if type == 'float' or type == 'int':
-      val = eval(type)(world.config[name])
+      val = int(world.config[name]) if type == 'int' else float(world.config[name])
     elif type == 'bool':
       entry = world.config[name].lower()
-      val = ( entry == 'true') or (entry == 't') or (entry == 'yes') or (entry == 'y')
+      val = entry in ('true', 't', 'yes', 'y', '1', 'on')
     elif type == 'string':
       val = world.config[name]
-    elif type == 'int_list' or 'color':
-      list = world.config[name].split(",")
-      for i in list:
+    elif type in ('int_list', 'color'):
+      entries = world.config[name].split(",")
+      for i in entries:
         val.append(int(i.strip()))
       if type == 'color':
         val = tuple(val)
@@ -95,6 +123,8 @@ def set_var( world, name, default, type ):
 def setAll(world):
   # Added
   set_var(world, 'render_scores', False, 'bool')
+  set_var(world, 'bar', True, 'bool')
+  set_var(world, 'time_limit', -1, 'float')
 
   set_var(world, 'logdir', 'data', 'string')
   set_var(world, 'SID', 'Test', 'string')
@@ -261,7 +291,7 @@ def setAll(world):
   set_var(world, 'ax_cue', 'O', 'string')
   set_var(world, 'ax_target', 'I', 'string')
 
-  # set_var(world, 'fixed_seeds', False, 'bool')
+  set_var(world, 'fixed_seeds', 'random_seeds' in world.config, 'bool')
   set_var(world, 'random_seeds', [int(world.startTime * 10000000000000.0)], 'int_list')
   set_var(world, 'permute_seeds', False, 'bool')
   set_var(world, 'shuffle_seed', int(world.startTime * 10000000000000.0), 'int')
