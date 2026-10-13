@@ -1,0 +1,38 @@
+{
+  "built_on": "2026-10-11",
+  "artifacts": [
+    {
+      "platform": "Linux x86_64",
+      "file": "linux-x86_64/metatris",
+      "bytes": 74271664,
+      "sha256": "009c3a0c43c00557709288b68463bcccbb351e4eb7eddd521577a063e616dd5c"
+    },
+    {
+      "platform": "Windows x86_64",
+      "file": "windows-x86_64/metatris.exe",
+      "bytes": 64948059,
+      "sha256": "3685ec939652984e72b0f1a3c499ddc5bf53b165310d696d1b5dcf9eb33bf9ea"
+    }
+  ],
+  "automated_checks": {
+    "tests_per_environment": 28,
+    "passed": [
+      "fedora44",
+      "ubuntu20.04",
+      "ubuntu22.04",
+      "windows-wine11"
+    ]
+  },
+  "limitations": [
+    "Tests use dummy SDL video/audio drivers.",
+    "Native Windows hardware, physical controllers, and audible sound were not tested.",
+    "The interactive GUI smoke test was inconclusive on the virtual display.",
+    "Authenticated network services were not contacted."
+  ],
+  "log_version": 3.3,
+  "fixes": [
+    "Correct hole, depth, column-transition and column-diversity metrics",
+    "Preserve a zero best controller score",
+    "Compare study timers against the absolute deadline"
+  ]
+}
