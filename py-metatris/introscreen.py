@@ -29,7 +29,7 @@ def handleInput(world, event):
   elif event == events.btnSelectOn or event == events.btnEscapeOn :
     world.running = False
 
-  elif (event>=1000):
+  elif event == events.keyBack or events.keyTextStart <= event < events.keyTextStart + len(events.textCharacters):
     handleInputtext(world, event)
 
   else:
@@ -43,8 +43,7 @@ def handleInputtext(world, event):
   global password_text
   global email_text
 
-  #backsapce
-  if(event==1000):
+  if event == events.keyBack:
     if (world.focused == "signin.username"):
       username_text = username_text[:-1]
     elif (world.focused == "signin.pw"):
@@ -54,9 +53,7 @@ def handleInputtext(world, event):
     return
 
 
-  char=""
-  allChars = "abcdefghijklmnopqrstuvwxyz0123456789.@"
-  char = allChars[event-1001]
+  char = events.textCharacters[event - events.keyTextStart]
   if(world.focused == "signin.username"):
     username_text += char
   elif (world.focused == "signin.pw"):
