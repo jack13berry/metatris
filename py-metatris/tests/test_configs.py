@@ -182,6 +182,10 @@ class ConfigTests(unittest.TestCase):
     self.assertEqual(choice, picker.names[10])
     self.assertFalse(picker.handle_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE)))
 
+  def test_picker_usb_gamepad_b_exits(self):
+    picker = configselect.ConfigPicker()
+    self.assertIs(picker.handle_event(pygame.event.Event(pygame.JOYBUTTONDOWN, button=2)), False)
+
 
 class StudyProfileTests(unittest.TestCase):
   def test_study_profiles_have_common_settings_and_distinct_aids(self):
@@ -327,6 +331,90 @@ class GameConfigIntegrationTests(unittest.TestCase):
     self.assertEqual(world.curr_zoid.rot, 0)
     self.assertEqual(events.mappedBtnNames["Rotate CW"], "A")
     self.assertEqual(events.mappedBtnNames["Rotate CCW"], "B")
+
+    for piece_type in ("T", "J", "L"):
+      world.curr_zoid = piece = Zoid(piece_type, world)
+      piece.row = 15
+      for rotation in range(piece.rots):
+        for event, direction in ((a_event, 1), (b_event, -1)):
+          with self.subTest(piece=piece_type, rotation=rotation, direction=direction):
+            piece.rot = rotation
+            shape = piece.get_shape()
+            expected = ([list(column) for column in zip(*shape[::-1])] if direction == 1
+                        else [list(column) for column in zip(*shape)][::-1])
+            inputhandler.playStateHandler(world, event)
+            self.assertEqual(piece.get_shape(), expected)
+            self.assertEqual((piece.col, piece.row), (3, 15))
+
+  def test_controller_b_rotates_once_per_press_and_wraps_around(self):
+    world = self.make_world()
+    self.start_game(world)
+    events.init(world)
+    pygame.event.clear()
+    for piece_type in Zoid.set_tetris:
+      world.curr_zoid = piece = Zoid(piece_type, world)
+      piece.row = 15
+      world.rots = 0
+      for expected_rotation in range(piece.rots - 1, -1, -1):
+        with self.subTest(piece=piece_type, rotation=expected_rotation):
+          for event_type in (pygame.JOYBUTTONDOWN, pygame.JOYBUTTONUP):
+            pygame.event.post(pygame.event.Event(event_type, button=world.JOY_B))
+          for event in events.readAll(world):
+            inputhandler.playStateHandler(world, event)
+          self.assertEqual(piece.rot, expected_rotation)
+      self.assertEqual(world.rots, piece.rots)
+
+  def test_usb_gamepad_b_rotates_the_reported_l_piece_counterclockwise(self):
+    world = self.make_world()
+    self.start_game(world)
+    events.init(world)
+    world.curr_zoid = piece = Zoid("L", world)
+    piece.row, piece.rot = 15, 1
+    initial_shape = piece.get_shape()
+    self.assertEqual(initial_shape, [[7, 7, 0], [0, 7, 0], [0, 7, 0]])
+
+    for event_type, expected_event in ((pygame.JOYBUTTONDOWN, events.btnRotateCcwOn),
+                                        (pygame.JOYBUTTONUP, events.btnRotateCcwOff)):
+      event = events.map(world, pygame.event.Event(event_type, button=2))
+      self.assertEqual(event, expected_event)
+      inputhandler.playStateHandler(world, event)
+    self.assertEqual(piece.get_shape(), [[0, 0, 0], [7, 7, 7], [7, 0, 0]])
+    self.assertEqual(piece.rot, 0)
+    self.assertEqual(world.rots, 1)
+
+    a_event = events.map(world, pygame.event.Event(pygame.JOYBUTTONDOWN, button=1))
+    inputhandler.playStateHandler(world, a_event)
+    self.assertEqual(piece.get_shape(), initial_shape)
+
+  def test_controller_b_kicks_away_from_walls_and_stacked_blocks(self):
+    world = self.make_world()
+    self.start_game(world)
+    events.init(world)
+    b_event = events.map(world, pygame.event.Event(pygame.JOYBUTTONDOWN, button=world.JOY_B))
+    for rotation, column, expected_column in ((3, -1, 0), (1, 8, 7), (0, 3, 2)):
+      with self.subTest(rotation=rotation, column=column):
+        world.board = [[0] * world.game_wd for _ in range(world.game_ht)]
+        if rotation == 0:
+          world.board[5][4] = 1
+        world.curr_zoid = piece = Zoid("T", world)
+        piece.rot, piece.col, piece.row = rotation, column, 15
+        self.assertFalse(piece.collide(piece.col, piece.row, piece.rot, world.board))
+        inputhandler.playStateHandler(world, b_event)
+        self.assertEqual(piece.rot, (rotation - 1) % piece.rots)
+        self.assertEqual((piece.col, piece.row), (expected_column, 15))
+        self.assertFalse(piece.collide(piece.col, piece.row, piece.rot, world.board))
+
+  def test_controller_b_preserves_the_piece_when_rotation_is_blocked(self):
+    world = self.make_world()
+    self.start_game(world)
+    events.init(world)
+    world.board[5][3:6] = [1, 1, 1]
+    world.curr_zoid = piece = Zoid("T", world)
+    piece.row = 15
+    self.assertFalse(piece.collide(piece.col, piece.row, piece.rot, world.board))
+    b_event = events.map(world, pygame.event.Event(pygame.JOYBUTTONDOWN, button=world.JOY_B))
+    inputhandler.playStateHandler(world, b_event)
+    self.assertEqual((piece.rot, piece.col, piece.row), (0, 3, 15))
 
   def test_unlimited_continues_preserve_block_timer_and_advance_seeds(self):
     world = self.make_world()

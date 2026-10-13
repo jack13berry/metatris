@@ -160,11 +160,11 @@ def init(world):
   btn.add("off" + str(world.JOY_A),      btnRotateCwOff)
   btn.add("on" + str(world.JOY_A),       btnRotateCwOn)
 
-  btn.add("off2",                       btnRotateCwOff)
-  btn.add("on2",                        btnRotateCwOn)
-
   btn.add("off" + str(world.JOY_B),      btnRotateCcwOff)
   btn.add("on" + str(world.JOY_B),       btnRotateCcwOn)
+
+  btn.add("off2",                       btnRotateCcwOff)
+  btn.add("on2",                        btnRotateCcwOn)
 
   mappedBtnNames["Rotate CW"] = "A"
   mappedBtnNames["Rotate CCW"] = "B"

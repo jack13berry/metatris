@@ -38,7 +38,7 @@ class ConfigPicker:
     elif event.type == pygame.JOYBUTTONDOWN:
       if event.button in (1, 9):  # A or Start on the supported NES controllers.
         return self.names[self.index]
-      if event.button in (0, 8):
+      if event.button in (0, 2, 8):
         return False
     elif event.type == pygame.JOYHATMOTION:
       if event.value[1]:

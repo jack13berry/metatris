@@ -4,18 +4,18 @@
     {
       "platform": "Linux x86_64",
       "file": "linux-x86_64/metatris",
-      "bytes": 73494888,
-      "sha256": "0d978fefc8612edd23c3edb7b0043c83e3f09f58d30e29687e619081506afd30"
+      "bytes": 73498368,
+      "sha256": "db0e0a5acd67b5adf200d1ba6556a59a7b9b68bd97123f41d1a3a5dd0239b81f"
     },
     {
       "platform": "Windows x86_64",
       "file": "windows-x86_64/metatris.exe",
-      "bytes": 64985890,
-      "sha256": "2c01ad77a436daddd49bd67603a4c3795813526e809012aa7113b3a0cc9dc98d"
+      "bytes": 64989337,
+      "sha256": "834851cbf3c649bf702acd90d7f26a3d239b05e1869e5cfe8b57e390f2d9d943"
     }
   ],
   "automated_checks": {
-    "tests_per_environment": 36,
+    "tests_per_environment": 41,
     "passed": [
       "fedora44",
       "ubuntu20.04",
@@ -24,9 +24,9 @@
     ]
   },
   "limitations": [
-    "Tests use dummy SDL video/audio drivers.",
-    "Native Windows hardware, physical controllers, and audible sound were not tested.",
-    "Interactive GUI operation was not manually verified.",
+    "Automated tests use dummy SDL video/audio drivers and injected input events.",
+    "Native Windows hardware and audible sound were not tested.",
+    "Interactive GUI operation of the rebuilt executables was not manually verified.",
     "Authenticated network services were not contacted."
   ],
   "log_version": 3.3,
@@ -35,7 +35,14 @@
     "Preserve a zero best controller score",
     "Compare study timers against the absolute deadline",
     "Use keyboard text for Shift, underscores and uppercase account input",
-    "Keep account text mappings separate from game controls"
+    "Keep account text mappings separate from game controls",
+    "Map USB Gamepad B button index 2 to counterclockwise rotation",
+    "Recognize USB Gamepad B button index 2 in the configuration picker"
   ],
-  "input_fix_commit": "063dc8dbdb867dbd00de078195c0ca489fce9835"
+  "input_fix_commit": "063dc8dbdb867dbd00de078195c0ca489fce9835",
+  "controller_input_verification": {
+    "device": "USB Gamepad",
+    "physical_b_button_index": 2,
+    "regression_test": "test_usb_gamepad_b_rotates_the_reported_l_piece_counterclockwise"
+  }
 }
