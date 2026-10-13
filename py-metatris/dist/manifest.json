@@ -1,21 +1,21 @@
 {
-  "built_on": "2026-10-11",
+  "built_on": "2026-10-13",
   "artifacts": [
     {
       "platform": "Linux x86_64",
       "file": "linux-x86_64/metatris",
-      "bytes": 74271664,
-      "sha256": "009c3a0c43c00557709288b68463bcccbb351e4eb7eddd521577a063e616dd5c"
+      "bytes": 73494888,
+      "sha256": "0d978fefc8612edd23c3edb7b0043c83e3f09f58d30e29687e619081506afd30"
     },
     {
       "platform": "Windows x86_64",
       "file": "windows-x86_64/metatris.exe",
-      "bytes": 64948059,
-      "sha256": "3685ec939652984e72b0f1a3c499ddc5bf53b165310d696d1b5dcf9eb33bf9ea"
+      "bytes": 64985890,
+      "sha256": "2c01ad77a436daddd49bd67603a4c3795813526e809012aa7113b3a0cc9dc98d"
     }
   ],
   "automated_checks": {
-    "tests_per_environment": 28,
+    "tests_per_environment": 36,
     "passed": [
       "fedora44",
       "ubuntu20.04",
@@ -26,13 +26,16 @@
   "limitations": [
     "Tests use dummy SDL video/audio drivers.",
     "Native Windows hardware, physical controllers, and audible sound were not tested.",
-    "The interactive GUI smoke test was inconclusive on the virtual display.",
+    "Interactive GUI operation was not manually verified.",
     "Authenticated network services were not contacted."
   ],
   "log_version": 3.3,
   "fixes": [
     "Correct hole, depth, column-transition and column-diversity metrics",
     "Preserve a zero best controller score",
-    "Compare study timers against the absolute deadline"
-  ]
+    "Compare study timers against the absolute deadline",
+    "Use keyboard text for Shift, underscores and uppercase account input",
+    "Keep account text mappings separate from game controls"
+  ],
+  "input_fix_commit": "063dc8dbdb867dbd00de078195c0ca489fce9835"
 }
