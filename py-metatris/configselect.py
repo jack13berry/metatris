@@ -5,6 +5,7 @@ import gui
 import paths
 
 STUDY_ORDER = ("normal", "lagging", "leading", "prescriptive")
+CANVAS = (800, 600)
 
 
 def picker_names():
@@ -26,6 +27,7 @@ class ConfigPicker:
     self.index = self.names.index(initial) if initial in self.names else 0
     self.axis_states = {}
     self.row_rects = []
+    self.offset = (0, 0)  # where the picker canvas sits on the screen
 
   def move(self, direction):
     self.index = (self.index + direction) % len(self.names)
@@ -61,8 +63,9 @@ class ConfigPicker:
         self.move(direction)
       self.axis_states[key] = direction
     elif event.type == pygame.MOUSEBUTTONDOWN:
+      pos = (event.pos[0] - self.offset[0], event.pos[1] - self.offset[1])
       for index, rect in self.row_rects:
-        if event.button == 1 and rect.collidepoint(event.pos):
+        if event.button == 1 and rect.collidepoint(pos):
           self.index = index
           return self.names[index]
     elif event.type == pygame.MOUSEWHEEL:
@@ -95,9 +98,14 @@ class ConfigPicker:
     gui.textSurface("Esc / B: exit", font, (190, 190, 190), (400, 578), screen)
 
 
-def choose(initial=None):
+def choose(initial=None, fullscreen=False):
   picker = ConfigPicker(initial)
-  screen = pygame.display.set_mode((800, 600))
+  if fullscreen:
+    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+  else:
+    screen = pygame.display.set_mode(CANVAS)
+  canvas = pygame.Surface(CANVAS)
+  picker.offset = ((screen.get_width() - CANVAS[0]) // 2, (screen.get_height() - CANVAS[1]) // 2)
   pygame.display.set_caption("Metatris - Configuration")
   font_path = paths.resource("media", "fonts", "Montserrat", "Montserrat-Medium.ttf")
   title_font = pygame.font.Font(font_path, 30)
@@ -111,6 +119,8 @@ def choose(initial=None):
       result = picker.handle_event(event)
       if result is not None:
         return result or None
-    picker.draw(screen, title_font, font)
+    picker.draw(canvas, title_font, font)
+    screen.fill((26, 26, 26))
+    screen.blit(canvas, picker.offset)
     pygame.display.flip()
     clock.tick(60)

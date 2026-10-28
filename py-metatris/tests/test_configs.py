@@ -191,6 +191,18 @@ class ConfigTests(unittest.TestCase):
     self.assertEqual(picker.names, ["normal", "lagging", "leading", "prescriptive", "extra"])
     self.assertEqual(picker.index, 0)
 
+  def test_picker_clicks_account_for_a_centered_canvas(self):
+    for name in ("normal", "lagging"):
+      (self.directory / (name + ".config")).write_text("")
+    pygame.font.init()
+    picker = configselect.ConfigPicker()
+    picker.draw(pygame.Surface(configselect.CANVAS), pygame.font.Font(None, 30), pygame.font.Font(None, 18))
+    picker.offset = (560, 240)
+    lagging_row = picker.row_rects[1][1]
+    click = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1,
+                               pos=(lagging_row.centerx + 560, lagging_row.centery + 240))
+    self.assertEqual(picker.handle_event(click), "lagging")
+
   def test_picker_usb_gamepad_b_exits(self):
     picker = configselect.ConfigPicker()
     self.assertIs(picker.handle_event(pygame.event.Event(pygame.JOYBUTTONDOWN, button=2)), False)
@@ -230,6 +242,18 @@ class StudyProfileTests(unittest.TestCase):
     for index, stage_seeds in enumerate(seeds):
       for other in seeds[index + 1:]:
         self.assertTrue(stage_seeds.isdisjoint(other))
+
+  def test_bundled_profiles_start_fullscreen(self):
+    self.assertTrue(cnf.default_fullscreen())
+    for name in ("default", "normal", "lagging", "leading", "prescriptive"):
+      world = SimpleNamespace(startTime=1.0)
+      cnf.load(world, name)
+      self.assertTrue(world.fullscreen, name)
+
+  def test_fullscreen_flag_accepts_true_and_false(self):
+    self.assertTrue(cnf.is_true("True"))
+    self.assertFalse(cnf.is_true("false"))
+    self.assertFalse(cnf.is_true("0"))
 
   def test_only_the_four_study_profiles_are_bundled(self):
     bundled = [name for name in cnf.available_configs() if name != "user"]

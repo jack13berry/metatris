@@ -37,6 +37,11 @@ in `configs/` by name: `normal`, `lagging`, `leading` and `prescriptive` first,
 then any others. `default` is not listed, and `normal` is selected initially. Use Up/Down and
 Enter, or the controller D-pad and A/Start. B/Esc exits the picker.
 
+The picker and the game open fullscreen (`fullscreen = True` in `default.config`).
+Run with `-F false` for a window, for example `python main.py -F false`.
+A `configs/default.config` created by an earlier version keeps its old
+`fullscreen = False`; delete it so the new default is copied on the next launch.
+
 Every selection starts with `configs/default.config` and applies the selected
 file on top. A new profile needs only the settings it changes:
 

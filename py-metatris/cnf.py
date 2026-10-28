@@ -97,6 +97,14 @@ def load(world, name="default"):
   world.logdir = paths.writable_path(world.logdir)
 
 
+def is_true(text):
+  return text.strip().lower() in ('true', 't', 'yes', 'y', '1', 'on')
+
+
+def default_fullscreen():
+  return is_true(read_file("default").get("fullscreen", "false"))
+
+
 def set_var( world, name, default, type ):
   setattr(world, name, default)
   if name in world.config:
@@ -104,8 +112,7 @@ def set_var( world, name, default, type ):
     if type == 'float' or type == 'int':
       val = int(world.config[name]) if type == 'int' else float(world.config[name])
     elif type == 'bool':
-      entry = world.config[name].lower()
-      val = entry in ('true', 't', 'yes', 'y', '1', 'on')
+      val = is_true(world.config[name])
     elif type == 'string':
       val = world.config[name]
     elif type in ('int_list', 'color'):

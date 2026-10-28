@@ -62,8 +62,8 @@ def main():
 
   parser.add_argument( '-F', '--fullscreen',
     action = "store", dest = "fullscreen",
-    type = bool,
-    help = 'Run in fullscreen mode.' )
+    type = cnf.is_true,
+    help = 'Run in fullscreen mode (true/false); default.config turns it on.' )
 
   parser.add_argument( '-s', '--song',
     action = "store", dest = "song",
@@ -127,7 +127,8 @@ def main():
     return run()
   initialize_pygame()
   if args.config is None:
-    args.config = configselect.choose()
+    fullscreen = cnf.default_fullscreen() if args.fullscreen is None else args.fullscreen
+    args.config = configselect.choose(fullscreen=fullscreen)
     if args.config is None:
       pygame.quit()
       return
