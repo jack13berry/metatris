@@ -20,6 +20,7 @@ import pygame
 
 import cnf
 import configselect
+import drawer
 import events
 import inputhandler
 import introscreen
@@ -706,6 +707,28 @@ class GameConfigIntegrationTests(unittest.TestCase):
     world.moment += 60
     world.process_game_logic()
     self.assertEqual(world.state, states.Gameover)
+
+  def test_menus_keep_their_layout_and_scale_to_a_large_screen(self):
+    world = self.make_world()
+    screen_font = world.scores_font
+    world.worldsurf = pygame.Surface((1920, 1080))
+    world.worldsurf_rect = world.worldsurf.get_rect()
+    world.state = states.Intro
+    drawn = {}
+    def draw(world):
+      drawn["size"] = world.worldsurf.get_size()
+      drawn["font"] = world.scores_font
+      world.worldsurf.fill((255, 0, 0))
+    drawer.drawMenu(world, draw)
+    self.assertEqual(drawn["size"], drawer.MENU_SIZE)
+    self.assertIs(drawn["font"], world.menu_fonts["scores_font"])
+    self.assertIs(world.scores_font, screen_font)
+    self.assertEqual(world.worldsurf.get_size(), (1920, 1080))
+    # 800x600 scaled by 1.8 fills the height and is centered horizontally.
+    self.assertEqual(world.worldsurf.get_at((960, 540))[:3], (255, 0, 0))
+    self.assertEqual(world.worldsurf.get_at((241, 1))[:3], (255, 0, 0))
+    self.assertEqual(world.worldsurf.get_at((238, 540))[:3], world.bg_color)
+    self.assertEqual(drawer.menuScreen(states.Play), None)
 
   def test_any_key_controller_button_or_click_counts_on_instruction_screen(self):
     world = self.make_world()

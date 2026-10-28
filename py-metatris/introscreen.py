@@ -172,7 +172,7 @@ def draw( world ):
   gclogo_rect.centerx = r.centerx
   world.worldsurf.blit( world.gclogo, gclogo_rect )
 
-  gui.simpleText(world, "Config: " + world.config_name, r.centerx, r.bottom - 120,
+  gui.simpleText(world, "Config: " + world.config_name, r.centerx, r.bottom - 138,
                  color=(200, 200, 200))
 
   if(not signin_screen):

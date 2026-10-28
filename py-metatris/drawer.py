@@ -1,9 +1,64 @@
 import pygame, platform, numpy
 # import time
 
-import states, gui
+import states, gui, paths
 import introscreen, playscreen, configscreen, authscreen, perfscreen, session
 from zoid import Zoid
+
+# Menu screens are laid out in pixels for this size, then scaled to fit the window.
+MENU_SIZE = (800, 600)
+# Font sizes as a share of the surface height, and whether the font is bold.
+FONT_RATIOS = {
+  "intro_font": (.04, False),
+  "authInfoFont": (.04, False),
+  "authDigitFont": (.1, False),
+  "instantScoreFont": (.04, False),
+  "inBoardScoreFont": (.1, True),
+  "scores_font": (.033, False),
+  "end_font": (.055, False),
+  "pause_font": (.083, False),
+}
+
+
+def makeFonts(height):
+  folder = ("media", "fonts", "Montserrat")
+  regular = paths.resource(*folder, "Montserrat-Medium.ttf")
+  bold = paths.resource(*folder, "Montserrat-Black.ttf")
+  return {name: pygame.font.Font(bold if isBold else regular, int(ratio * height))
+          for name, (ratio, isBold) in FONT_RATIOS.items()}
+
+
+def menuScreen(state):
+  if state == states.Intro:
+    return introscreen.draw
+  if state == states.Perf:
+    return perfscreen.draw
+  if state == states.Auth:
+    return authscreen.draw
+  if state >= states.Config:
+    return configscreen.draw
+  return None
+
+
+def drawMenu(world, draw):
+  """Draw a fixed-layout menu on the menu canvas, then scale it onto the window."""
+  surf, rect = world.worldsurf, world.worldsurf_rect
+  fonts = {name: getattr(world, name) for name in world.menu_fonts}
+  world.worldsurf, world.worldsurf_rect = world.menusurf, world.menusurf.get_rect()
+  for name, font in world.menu_fonts.items():
+    setattr(world, name, font)
+  try:
+    draw(world)
+  finally:
+    world.worldsurf, world.worldsurf_rect = surf, rect
+    for name, font in fonts.items():
+      setattr(world, name, font)
+  scale = min(rect.width / MENU_SIZE[0], rect.height / MENU_SIZE[1])
+  menu = world.menusurf
+  if scale != 1:
+    menu = pygame.transform.smoothscale(menu, (int(MENU_SIZE[0] * scale), int(MENU_SIZE[1] * scale)))
+  surf.fill(world.bg_color)
+  surf.blit(menu, menu.get_rect(center=(rect.width // 2, rect.height // 2)))
 
 
 def setupOSWindow(world, w=0, h=0):
@@ -205,10 +260,9 @@ def generate_block( world, size, lvl, type ):
 
 #main draw updater
 def drawTheWorld( world ):
-  if world.state == states.Intro:
-    introscreen.draw(world)
-  if world.state == states.Perf:
-    perfscreen.draw(world)
+  menu = menuScreen(world.state)
+  if menu:
+    drawMenu(world, menu)
   elif world.state == states.Instructions:
     session.draw(world)
   elif world.state == states.Play:
@@ -222,10 +276,6 @@ def drawTheWorld( world ):
     playscreen.drawGameOver(world)
   elif world.state == states.Aar:
     playscreen.draw_AAR(world)
-  elif world.state == states.Auth:
-    authscreen.draw(world)
-  elif world.state >= states.Config:
-    configscreen.draw(world)
 
   world.screen.blit( world.worldsurf, world.worldsurf_rect )
   # t1 = time.perf_counter()*1000

@@ -301,18 +301,11 @@ class World( object ):
     drawer.setupOSWindow(self)
     drawer.setupColors(self)
 
-    # Fonts (intro: 36; scores: 48; end: 68; pause: 102)
-    # ratios divided by default HEIGHT: .04, .053, .075, .113
-    fontPath = paths.resource("media", "fonts", "Montserrat", "Montserrat-Medium.ttf")
-    fontBPath = paths.resource("media", "fonts", "Montserrat", "Montserrat-Black.ttf")
-    self.intro_font = pygame.font.Font( fontPath, int(.04 * self.worldsurf_rect.height) )
-    self.authInfoFont = pygame.font.Font( fontPath, int(.040 * self.worldsurf_rect.height) )
-    self.authDigitFont = pygame.font.Font( fontPath, int(.100 * self.worldsurf_rect.height) )
-    self.instantScoreFont = pygame.font.Font( fontPath, int(.040 * self.worldsurf_rect.height) )
-    self.inBoardScoreFont = pygame.font.Font( fontBPath, int(.10 * self.worldsurf_rect.height) )
-    self.scores_font = pygame.font.Font( fontPath, int(.033 * self.worldsurf_rect.height) )
-    self.end_font = pygame.font.Font( fontPath, int(.055 * self.worldsurf_rect.height) )
-    self.pause_font = pygame.font.Font( fontPath, int(.083 * self.worldsurf_rect.height) )
+    for name, font in drawer.makeFonts(self.worldsurf_rect.height).items():
+      setattr(self, name, font)
+    # Menu screens draw on a fixed-size canvas with fonts to match, then scale up.
+    self.menusurf = pygame.Surface(drawer.MENU_SIZE)
+    self.menu_fonts = drawer.makeFonts(drawer.MENU_SIZE[1])
 
     drawer.setupLayout(self)
 
