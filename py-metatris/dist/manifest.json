@@ -4,18 +4,18 @@
     {
       "platform": "Linux x86_64",
       "file": "linux-x86_64/metatris",
-      "bytes": 73509272,
-      "sha256": "e826d82f3cdfa837e267710be6e9c90af7e4fc8cd3446feeee215144d9830494"
+      "bytes": 73510672,
+      "sha256": "7609842f337ce678502ae1807e289d50f4ddc684d68787396f3586d89a519daf"
     },
     {
       "platform": "Windows x86_64",
       "file": "windows-x86_64/metatris.exe",
-      "bytes": 65001375,
-      "sha256": "6956c29bd92a61b6d1e12ea7801e54b1a7b1a464ca88000dd8b82176882439c4"
+      "bytes": 65003002,
+      "sha256": "17bf83715172725cecb3be0fdd6fb300ddfca6a34077e6f7aa4f15eadcbebf65"
     }
   ],
   "automated_checks": {
-    "tests_per_environment": 50,
+    "tests_per_environment": 53,
     "passed": [
       "fedora44",
       "ubuntu20.04",
@@ -45,7 +45,8 @@
     "Picker lists study profiles first, without .config, and hides default",
     "Only Esc leaves a game; Space and controller Select no longer exit",
     "Clear staged build assets so removed configs are not bundled",
-    "A lost game in a timed stage restarts by itself after 2.5 seconds until time runs out"
+    "A lost game in a timed stage restarts by itself after 2.5 seconds until time runs out",
+    "Open the config picker and the game fullscreen by default; -F false runs in a window"
   ],
   "input_fix_commit": "063dc8dbdb867dbd00de078195c0ca489fce9835",
   "controller_input_verification": {
