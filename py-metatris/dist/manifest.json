@@ -1,21 +1,21 @@
 {
-  "built_on": "2026-10-13",
+  "built_on": "2026-10-28",
   "artifacts": [
     {
       "platform": "Linux x86_64",
       "file": "linux-x86_64/metatris",
-      "bytes": 73498368,
-      "sha256": "db0e0a5acd67b5adf200d1ba6556a59a7b9b68bd97123f41d1a3a5dd0239b81f"
+      "bytes": 73509272,
+      "sha256": "e826d82f3cdfa837e267710be6e9c90af7e4fc8cd3446feeee215144d9830494"
     },
     {
       "platform": "Windows x86_64",
       "file": "windows-x86_64/metatris.exe",
-      "bytes": 64989337,
-      "sha256": "834851cbf3c649bf702acd90d7f26a3d239b05e1869e5cfe8b57e390f2d9d943"
+      "bytes": 65001375,
+      "sha256": "6956c29bd92a61b6d1e12ea7801e54b1a7b1a464ca88000dd8b82176882439c4"
     }
   ],
   "automated_checks": {
-    "tests_per_environment": 41,
+    "tests_per_environment": 50,
     "passed": [
       "fedora44",
       "ubuntu20.04",
@@ -37,12 +37,46 @@
     "Use keyboard text for Shift, underscores and uppercase account input",
     "Keep account text mappings separate from game controls",
     "Map USB Gamepad B button index 2 to counterclockwise rotation",
-    "Recognize USB Gamepad B button index 2 in the configuration picker"
+    "Recognize USB Gamepad B button index 2 in the configuration picker",
+    "Rename study profiles to normal, lagging, leading and prescriptive; remove practice, baseline and test profiles",
+    "Run practice, baseline and playing stages in one session with an instruction screen before each",
+    "Show each profile's aid only in the playing stage",
+    "Change the board frame color with the bar only in the lagging profile",
+    "Picker lists study profiles first, without .config, and hides default",
+    "Only Esc leaves a game; Space and controller Select no longer exit",
+    "Clear staged build assets so removed configs are not bundled",
+    "A lost game in a timed stage restarts by itself after 2.5 seconds until time runs out"
   ],
   "input_fix_commit": "063dc8dbdb867dbd00de078195c0ca489fce9835",
   "controller_input_verification": {
     "device": "USB Gamepad",
     "physical_b_button_index": 2,
     "regression_test": "test_usb_gamepad_b_rotates_the_reported_l_piece_counterclockwise"
+  },
+  "bundled_profiles": [
+    "normal",
+    "lagging",
+    "leading",
+    "prescriptive",
+    "default"
+  ],
+  "session": {
+    "stages": [
+      {
+        "name": "practice",
+        "seconds": 60
+      },
+      {
+        "name": "baseline",
+        "seconds": 360
+      },
+      {
+        "name": "playing",
+        "seconds": 1680
+      }
+    ],
+    "aid_stages": [
+      "playing"
+    ]
   }
 }
