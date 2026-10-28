@@ -22,7 +22,9 @@ def main():
              "--specpath", str(work), "--paths", str(source)]
   for directory in ("boards", "configs", "controllers", "media"):
     staged = assets / directory
-    shutil.copytree(source / directory, staged, dirs_exist_ok=True,
+    # Start clean so files removed from the source are not bundled from an earlier build.
+    shutil.rmtree(staged, ignore_errors=True)
+    shutil.copytree(source / directory, staged,
                     ignore=shutil.ignore_patterns("user.config", "__pycache__"))
     command.extend(["--add-data", str(staged) + ":" + directory])
   if sys.platform == "win32":

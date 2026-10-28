@@ -1,6 +1,6 @@
 import pygame
 
-import gui, states, events, configscreen, api_calls, perfscreen
+import gui, states, events, configscreen, api_calls, perfscreen, session
 from threading import Thread
 
 upDownElementsSignin = ["signin.registeraccount", "signin.signin", "signin.pw","signin.username"]
@@ -26,7 +26,7 @@ def handleInput(world, event):
   elif event == events.btnUpOn or event == events.btnDownOn:
     changeFocusUpDown(world, event)
 
-  elif event == events.btnSelectOn or event == events.btnEscapeOn :
+  elif event == events.btnEscapeOn:
     world.running = False
 
   elif event == events.keyBack or events.keyTextStart <= event < events.keyTextStart + len(events.textCharacters):
@@ -130,7 +130,7 @@ def moveForward(world):
   global email_text
 
   if world.focused == "intro.play":
-    world.state = states.Setup
+    session.begin(world)
   elif world.focused == "intro.settings":
     configscreen.enter(world)
   elif world.focused == "intro.performance":

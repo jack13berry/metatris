@@ -2,7 +2,7 @@ import pygame, platform, numpy
 # import time
 
 import states, gui
-import introscreen, playscreen, configscreen, authscreen, perfscreen
+import introscreen, playscreen, configscreen, authscreen, perfscreen, session
 from zoid import Zoid
 
 
@@ -209,6 +209,8 @@ def drawTheWorld( world ):
     introscreen.draw(world)
   if world.state == states.Perf:
     perfscreen.draw(world)
+  elif world.state == states.Instructions:
+    session.draw(world)
   elif world.state == states.Play:
     world.bg_color = world.tetris_flash_colors[world.tetris_flash_tick % 2]
     if world.tetris_flash_tick > 0:

@@ -1,6 +1,6 @@
 import pygame
 import states, events, logger
-import introscreen, configscreen, perfscreen
+import introscreen, configscreen, perfscreen, session
 
 
 def aarStateHandler(world, event):
@@ -23,7 +23,8 @@ def playStateHandler(world, event):
   #   dir = "PRESS" if event.type == pygame.JOYBUTTONDOWN else "RELEASE"
   #   logger.game_event(world,  "KEYPRESS", dir, world.buttons[event.button] )
 
-  if event == events.btnSelectOn or event == events.btnEscapeOn:
+  # Only Esc leaves a game; Space/Select is too easy to hit by accident.
+  if event == events.btnEscapeOn:
     world.leave_game()
 
   # elif event == events.btnSelectOn:
@@ -134,12 +135,12 @@ def pauseStateHandler(world, event):
     world.input_pause()
   elif event == events.btnStartOn:
     world.input_pause()
-  elif event == events.btnSelectOn or event == events.btnEscapeOn:
+  elif event == events.btnEscapeOn:
     world.leave_game()
 
 
 def gameoverStateHandler(world, event):
-  if event == events.btnSelectOn or event == events.btnEscapeOn:
+  if event == events.btnEscapeOn:
     world.state = states.Intro
 
   elif event == events.btnStartOn:
@@ -150,6 +151,7 @@ def gameoverStateHandler(world, event):
 HANDLERS = {
   states.Intro:        introscreen.handleInput,
   states.Perf:         perfscreen.handleInput,
+  states.Instructions: session.handleInput,
   states.Aar:          aarStateHandler,
   states.Play:         playStateHandler,
   states.Pause:        pauseStateHandler,

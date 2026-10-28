@@ -125,6 +125,8 @@ def setAll(world):
   set_var(world, 'render_scores', False, 'bool')
   set_var(world, 'bar', True, 'bool')
   set_var(world, 'time_limit', -1, 'float')
+  set_var(world, 'session_stages', '', 'string')
+  set_var(world, 'aid_stages', '', 'string')
 
   set_var(world, 'logdir', 'data', 'string')
   set_var(world, 'SID', 'Test', 'string')

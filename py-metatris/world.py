@@ -9,7 +9,7 @@ from zoid import Zoid
 from threading import Thread
 from simulator import TetrisSimulator
 
-import states, events, logger, cnf, drawer, inputhandler, timing, api_calls
+import states, events, logger, cnf, drawer, inputhandler, timing, api_calls, session
 import paths
 
 sep = os.path.sep
@@ -221,6 +221,7 @@ class World( object ):
     self.seed_order = range(0,len(self.random_seeds))
     if self.permute_seeds:
       self.seed_order = self.seed_shuffler.sample(self.seed_order, len(self.seed_order))
+    session.init(self)
 
     self.curr_zoid = []
     self.next_zoid = []
@@ -398,7 +399,8 @@ class World( object ):
     if self.fixed_seeds:
       # print(self.seed_order)
       # print(self.random_seeds)
-      seed = self.random_seeds[self.seed_order[(self.game_number-1)%len(self.random_seeds)]]
+      stage_game = self.game_number - self.stage_first_game - 1
+      seed = self.random_seeds[self.seed_order[stage_game % len(self.random_seeds)]]
       # print(seed)
     else:
       seed = int(self.moment * 10000000000000.0)
@@ -1083,6 +1085,7 @@ class World( object ):
     if not self.game_active:
       return
     self.game_active = False
+    self.gameover_time = self.moment
     print("game over")
     logger.game_event(self,  "GAME", "END", self.game_number )
     logger.gameresults(self, complete=complete)
@@ -1167,10 +1170,16 @@ class World( object ):
         self.state = states.Gameover
         self.gameover_anim_tick = self.gameover_tick_max + 1
         pygame.mixer.music.stop()
+        if self.stages:
+          session.end_stage(self)
       if self.time_limit_reached and self.state == states.Setup:
         self.state = states.Gameover
     if self.time_limit_reached:
       return
+    # Within a timed stage, a lost game restarts by itself until time runs out.
+    if (self.state == states.Gameover and self.stages
+        and self.moment >= self.gameover_time + session.RESTART_DELAY):
+      self.state = states.Setup
     #lc counter and are counter start at zero and automatically count backward
     if self.state == states.Play:
       #for i in range( 0, self.ticks_per_frame ):

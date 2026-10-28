@@ -27,6 +27,7 @@ reqWinResize    = 971
 reqPause        = 990
 reqResume       = 991
 reqPauseResume  = 992
+anyPress        = 995
 reqQuit         = 999
 
 keyBack = 1000
@@ -246,6 +247,10 @@ def readAll(world):
 
 
 def map(world, event):
+  if world.state == states.Instructions and event.type in (
+      pygame.KEYDOWN, pygame.JOYBUTTONDOWN, pygame.MOUSEBUTTONDOWN):
+    return anyPress
+
   if event.type not in world.eventMap:
     # print("UnknownEvent:", event.type)
     return None

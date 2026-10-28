@@ -4,15 +4,26 @@ import cnf
 import gui
 import paths
 
+STUDY_ORDER = ("normal", "lagging", "leading", "prescriptive")
+
+
+def picker_names():
+  """Configs to offer: study profiles in study order, then any others.
+  default is hidden unless it is the only config."""
+  names = cnf.available_configs()
+  if "default" not in names:
+    raise ValueError("configs/default.config is required")
+  names = [name for name in names if name != "default"] or ["default"]
+  return sorted(names, key=lambda name: STUDY_ORDER.index(name) if name in STUDY_ORDER
+                else len(STUDY_ORDER))
+
 
 class ConfigPicker:
   rows_per_page = 8
 
-  def __init__(self, initial="default"):
-    self.names = cnf.available_configs()
-    if "default" not in self.names:
-      raise ValueError("configs/default.config is required")
-    self.index = self.names.index(initial)
+  def __init__(self, initial=None):
+    self.names = picker_names()
+    self.index = self.names.index(initial) if initial in self.names else 0
     self.axis_states = {}
     self.row_rects = []
 
@@ -62,7 +73,7 @@ class ConfigPicker:
     screen.fill((26, 26, 26))
     gui.textSurface("Select a configuration", title_font, (240, 240, 240),
                     (400, 55), screen)
-    gui.textSurface("Default is selected until you choose another profile.", font,
+    gui.textSurface("Choose the participant's condition.", font,
                     (190, 190, 190), (400, 100), screen)
     first = (self.index // self.rows_per_page) * self.rows_per_page
     self.row_rects = []
@@ -73,7 +84,7 @@ class ConfigPicker:
       if index == self.index:
         pygame.draw.rect(screen, (120, 200, 50), rect, border_radius=4)
         color = (26, 26, 26)
-      label = self.names[index] + ".config"
+      label = self.names[index]
       while font.size(label)[0] > rect.width - 30:
         label = label[:-4] + "..."
       gui.textSurface(label, font, color, rect.center, screen)
@@ -84,7 +95,7 @@ class ConfigPicker:
     gui.textSurface("Esc / B: exit", font, (190, 190, 190), (400, 578), screen)
 
 
-def choose(initial="default"):
+def choose(initial=None):
   picker = ConfigPicker(initial)
   screen = pygame.display.set_mode((800, 600))
   pygame.display.set_caption("Metatris - Configuration")

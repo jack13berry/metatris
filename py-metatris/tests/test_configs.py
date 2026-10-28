@@ -22,9 +22,11 @@ import cnf
 import configselect
 import events
 import inputhandler
+import introscreen
 import logger
 import paths
 import playscreen
+import session
 import states
 from world import World
 from zoid import Zoid
@@ -169,7 +171,7 @@ class ConfigTests(unittest.TestCase):
     for number in range(20):
       (self.directory / ("profile_%02d.config" % number)).write_text("")
     picker = configselect.ConfigPicker()
-    self.assertEqual(picker.names[picker.index], "default")
+    self.assertEqual(picker.names[picker.index], "profile_00")
     picker.handle_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_PAGEDOWN))
     self.assertEqual(picker.index, 8)
     picker.handle_event(pygame.event.Event(pygame.JOYHATMOTION, value=(0, -1)))
@@ -182,6 +184,13 @@ class ConfigTests(unittest.TestCase):
     self.assertEqual(choice, picker.names[10])
     self.assertFalse(picker.handle_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE)))
 
+  def test_picker_lists_study_profiles_first_and_hides_default(self):
+    for name in ("prescriptive", "extra", "leading", "normal", "lagging"):
+      (self.directory / (name + ".config")).write_text("")
+    picker = configselect.ConfigPicker()
+    self.assertEqual(picker.names, ["normal", "lagging", "leading", "prescriptive", "extra"])
+    self.assertEqual(picker.index, 0)
+
   def test_picker_usb_gamepad_b_exits(self):
     picker = configselect.ConfigPicker()
     self.assertIs(picker.handle_event(pygame.event.Event(pygame.JOYBUTTONDOWN, button=2)), False)
@@ -189,15 +198,15 @@ class ConfigTests(unittest.TestCase):
 
 class StudyProfileTests(unittest.TestCase):
   def test_study_profiles_have_common_settings_and_distinct_aids(self):
-    durations = {"practice": 90, "baseline": 300, "acq_normal": 1800,
-                 "acq_bar": 1800, "acq_cue": 1800, "acq_prescriptive": 1800, "test": 600}
-    seed_sets = {}
-    for name, duration in durations.items():
+    stage_settings = {}
+    for name in ("normal", "leading", "lagging", "prescriptive"):
       with self.subTest(name=name):
         world = SimpleNamespace(startTime=1.0)
         cnf.load(world, name)
-        self.assertEqual(world.game_type, name)
-        self.assertEqual(world.time_limit, duration)
+        self.assertEqual(session.names(world.session_stages), ["practice", "baseline", "playing"])
+        self.assertEqual(session.names(world.aid_stages), ["playing"])
+        self.assertEqual([float(world.config[stage + "_time"]) for stage in ("practice", "baseline", "playing")],
+                         [60, 360, 1680])
         self.assertEqual(world.starting_level, 0)
         self.assertEqual(world.continues, 0)
         self.assertTrue(world.render_scores)
@@ -205,19 +214,26 @@ class StudyProfileTests(unittest.TestCase):
         self.assertFalse(world.permute_seeds)
         for setting in ("hint_button", "ghost_zoid", "AAR", "solve_button", "auto_solve", "spotlight"):
           self.assertFalse(getattr(world, setting), setting)
-        self.assertEqual(world.bar, name == "acq_bar")
-        self.assertEqual(world.hint_context, name == "acq_cue")
-        self.assertEqual(world.hint_zoid, name == "acq_prescriptive")
-        if name in ("acq_cue", "acq_prescriptive"):
+        self.assertEqual(world.bar, name == "lagging")
+        self.assertEqual(world.hint_context, name == "leading")
+        self.assertEqual(world.hint_zoid, name == "prescriptive")
+        if name in ("leading", "prescriptive"):
           self.assertEqual(world.controller, "score_506_dellacherie")
           self.assertFalse(world.sim_overhangs)
-        seed_sets[name] = world.random_seeds
-    for name in ("acq_bar", "acq_cue", "acq_prescriptive"):
-      self.assertEqual(seed_sets[name], seed_sets["acq_normal"])
-    distinct = [set(seed_sets[name]) for name in ("practice", "baseline", "acq_normal", "test")]
-    for index, seeds in enumerate(distinct):
-      for other in distinct[index + 1:]:
-        self.assertTrue(seeds.isdisjoint(other))
+        stage_settings[name] = {key: value for key, value in world.config.items()
+                                if key.endswith(("_time", "_seeds")) or key in ("practice_instructions",
+                                                                                "baseline_instructions")}
+    for name in ("leading", "lagging", "prescriptive"):
+      self.assertEqual(stage_settings[name], stage_settings["normal"])
+    seeds = [set(session.names(stage_settings["normal"][stage + "_seeds"]))
+             for stage in ("practice", "baseline", "playing")]
+    for index, stage_seeds in enumerate(seeds):
+      for other in seeds[index + 1:]:
+        self.assertTrue(stage_seeds.isdisjoint(other))
+
+  def test_only_the_four_study_profiles_are_bundled(self):
+    bundled = [name for name in cnf.available_configs() if name != "user"]
+    self.assertEqual(bundled, ["default", "lagging", "leading", "normal", "prescriptive"])
 
 
 class PortablePathTests(unittest.TestCase):
@@ -235,10 +251,10 @@ class PortablePathTests(unittest.TestCase):
     with tempfile.TemporaryDirectory() as directory:
       config_dir = Path(directory) / "configs"
       paths.initialize_configs(config_dir)
-      self.assertTrue((config_dir / "baseline.config").is_file())
-      (config_dir / "baseline.config").write_text("starting_level = 5\n")
+      self.assertTrue((config_dir / "normal.config").is_file())
+      (config_dir / "normal.config").write_text("starting_level = 5\n")
       paths.initialize_configs(config_dir)
-      self.assertEqual((config_dir / "baseline.config").read_text(), "starting_level = 5\n")
+      self.assertEqual((config_dir / "normal.config").read_text(), "starting_level = 5\n")
 
   def test_relative_data_directory_uses_app_home(self):
     with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {"METATRIS_HOME": directory}):
@@ -273,10 +289,14 @@ class GameConfigIntegrationTests(unittest.TestCase):
       return values
     self.enterContext(patch.object(cnf, "read_file", side_effect=read_with_logdir))
 
-  def make_world(self, profile="baseline", session="test"):
+  def make_world(self, profile="normal", session="test"):
     world = World(argparse.Namespace(config=profile, logfile=session, boardstats=False))
     self.addCleanup(world.quit)
     return world
+
+  def enter_stage(self, world, stage):
+    world.stage_index = world.stages.index(stage)
+    session.show_instructions(world)
 
   def start_game(self, world):
     world.state = states.Setup
@@ -300,7 +320,8 @@ class GameConfigIntegrationTests(unittest.TestCase):
     with tempfile.TemporaryDirectory() as directory:
       try:
         os.chdir(directory)
-        world = self.make_world("acq_prescriptive")
+        world = self.make_world("prescriptive")
+        self.enter_stage(world, "playing")
         self.start_game(world)
         playscreen.draw(world)
         self.assertTrue(world.solved)
@@ -309,9 +330,9 @@ class GameConfigIntegrationTests(unittest.TestCase):
 
   def test_command_line_settings_override_the_selected_profile(self):
     world = SimpleNamespace(startTime=1.0, args=argparse.Namespace(
-      config="baseline", SID="Participant_42", logdir=self.logdir, gravity=1,
+      config="normal", SID="Participant_42", logdir=self.logdir, gravity=1,
       logfile="test", boardstats=False, self_test=False))
-    cnf.load(world, "baseline")
+    cnf.load(world, "normal")
     self.assertEqual(world.SID, "Participant_42")
     self.assertEqual(world.logdir, self.logdir)
     self.assertTrue(world.gravity)
@@ -420,7 +441,7 @@ class GameConfigIntegrationTests(unittest.TestCase):
     world = self.make_world()
     self.start_game(world)
     start = world.blockStartTime
-    self.assertEqual(world.seeds_used, ["2101"])
+    self.assertEqual(world.seeds_used, ["1101"])
     world.game_over()
     world.gameover_anim_tick = world.gameover_tick_max + 1
     world.input_continue()
@@ -428,14 +449,14 @@ class GameConfigIntegrationTests(unittest.TestCase):
     world.moment += 5
     world.process_game_logic()
     self.assertEqual(world.blockStartTime, start)
-    self.assertEqual(world.seeds_used, ["2101", "2102"])
+    self.assertEqual(world.seeds_used, ["1101", "1102"])
     world.moment = start + world.time_limit
     world.process_game_logic()
     self.assertTrue(world.time_limit_reached)
     self.assertFalse(world.game_active)
-    self.assertEqual(world.state, states.Gameover)
+    self.assertEqual(world.state, states.Instructions)
     world.input_continue()
-    self.assertEqual(world.state, states.Gameover)
+    self.assertEqual(world.state, states.Instructions)
     world.unifile.flush()
     rows = Path(world.unifile_path).read_text().splitlines()
     header = rows[0].split("\t")
@@ -444,19 +465,22 @@ class GameConfigIntegrationTests(unittest.TestCase):
     self.assertEqual(summaries[-1][header.index("completed")], "False")
 
   def test_time_limit_includes_pause_but_not_initial_menu(self):
-    world = self.make_world("practice")
+    world = self.make_world("normal")
     world.moment += 1000
     world.process_game_logic()
     self.assertFalse(world.time_limit_reached)
     self.start_game(world)
     world.state = states.Pause
-    world.moment = world.blockStartTime + 90
+    world.moment = world.blockStartTime + 59
+    world.process_game_logic()
+    self.assertFalse(world.time_limit_reached)
+    world.moment = world.blockStartTime + 60
     world.process_game_logic()
     self.assertTrue(world.time_limit_reached)
-    self.assertEqual(world.state, states.Gameover)
+    self.assertEqual(world.state, states.Instructions)
 
   def test_saved_logs_snapshots_scores_and_performance_identify_config(self):
-    world = self.make_world("acq_bar")
+    world = self.make_world("lagging")
     self.start_game(world)
     while not world.curr_zoid.collide(world.curr_zoid.col, world.curr_zoid.row - 1,
                                       world.curr_zoid.rot, world.board):
@@ -474,12 +498,12 @@ class GameConfigIntegrationTests(unittest.TestCase):
       self.assertGreater(len(rows), 1)
       for row in rows[1:]:
         self.assertEqual(len(row), len(header))
-        self.assertEqual(row[header.index("config_name")], "acq_bar")
-        self.assertEqual(row[header.index("game_type")], "acq_bar")
-    self.assertIn("config_name = acq_bar", Path(world.configfile_path).read_text())
-    self.assertIn("config_name: acq_bar", Path(world.histfile_path).read_text())
-    self.assertIn("Config: acq_bar", world.getperf())
-    self.assertIn("Game type: acq_bar", world.getperf())
+        self.assertEqual(row[header.index("config_name")], "lagging")
+        self.assertEqual(row[header.index("game_type")], "practice")
+    self.assertIn("config_name = lagging", Path(world.configfile_path).read_text())
+    self.assertIn("config_name: lagging", Path(world.histfile_path).read_text())
+    self.assertIn("Config: lagging", world.getperf())
+    self.assertIn("Game type: practice", world.getperf())
 
   def test_variable_length_logs_identify_config(self):
     world = self.make_world()
@@ -494,10 +518,10 @@ class GameConfigIntegrationTests(unittest.TestCase):
     world.unifile.flush()
     rows = Path(world.unifile_path).read_text().splitlines()
     for row in rows:
-      self.assertIn(":config_name\tbaseline", row)
+      self.assertIn(":config_name\tnormal", row)
 
   def test_saved_episode_records_real_holes_and_corrected_log_version(self):
-    world = self.make_world("acq_bar")
+    world = self.make_world("lagging")
     self.start_game(world)
     world.board = SimulatorFeatureTests().hole_board()
     world.curr_zoid = Zoid("O", world)
@@ -520,17 +544,33 @@ class GameConfigIntegrationTests(unittest.TestCase):
     self.assertEqual(version["evt_data1"], "3.3")
 
   def test_only_lagging_bar_profile_renders_performance_feedback(self):
-    normal = self.make_world("acq_normal", "normal")
+    normal = self.make_world("normal", "normal")
+    self.enter_stage(normal, "playing")
     self.start_game(normal)
     playscreen.draw(normal)
     self.assertEqual(normal.worldsurf.get_at(normal.metabarBox.center)[:3], normal.bg_color)
-    bar = self.make_world("acq_bar", "bar")
+    bar = self.make_world("lagging", "lagging")
+    self.enter_stage(bar, "playing")
     self.start_game(bar)
     playscreen.draw(bar)
     self.assertNotEqual(bar.worldsurf.get_at(bar.metabarBox.center)[:3], bar.bg_color)
 
+  def test_only_lagging_frame_follows_the_bar_color(self):
+    for name in ("normal", "leading", "prescriptive", "lagging"):
+      with self.subTest(name=name):
+        world = self.make_world(name, name)
+        self.enter_stage(world, "playing")
+        self.start_game(world)
+        with patch("playscreen.gui.borderOutsideOfRect") as border:
+          playscreen.draw(world)
+        frame_color = border.call_args_list[0].args[1]
+        expected = world.newscoreColor if name == "lagging" else world.border_color
+        self.assertEqual(frame_color, expected)
+        self.assertNotEqual(world.newscoreColor, world.border_color)
+
   def test_leading_outline_requires_recommended_column_and_rotation(self):
-    world = self.make_world("acq_cue")
+    world = self.make_world("leading")
+    self.enter_stage(world, "playing")
     self.start_game(world)
     world.curr_zoid.col = world.solved_col
     world.curr_zoid.rot = world.solved_rot
@@ -548,8 +588,120 @@ class GameConfigIntegrationTests(unittest.TestCase):
       playscreen.draw_curr_zoid(world)
       self.assertEqual(draw_blocks.call_count, 1)
 
+  def test_space_and_select_do_not_leave_the_game_but_esc_does(self):
+    world = self.make_world()
+    events.init(world)
+    space = events.map(world, pygame.event.Event(pygame.KEYDOWN, key=pygame.K_SPACE))
+    select = events.map(world, pygame.event.Event(pygame.JOYBUTTONDOWN, button=world.JOY_SELECT))
+    self.assertEqual((space, select), (events.btnSelectOn, events.btnSelectOn))
+    world.running = True
+    introscreen.handleInput(world, space)
+    self.assertTrue(world.running)
+    self.start_game(world)
+    for state in (states.Play, states.Pause, states.Gameover):
+      with self.subTest(state=state):
+        world.state = state
+        inputhandler.HANDLERS[state](world, space)
+        self.assertEqual(world.state, state)
+    world.state = states.Play
+    inputhandler.HANDLERS[states.Play](world, events.btnEscapeOn)
+    self.assertEqual(world.state, states.Intro)
+
+  def press_after_delay(self, world, event=events.anyPress):
+    world.moment += session.INPUT_DELAY
+    inputhandler.HANDLERS[world.state](world, event)
+
+  def test_session_shows_instructions_before_each_stage_and_aids_only_while_playing(self):
+    world = self.make_world("lagging")
+    world.focused = "intro.play"
+    introscreen.moveForward(world)
+    expected = [("practice", 60, "1101", False), ("baseline", 360, "2101", False),
+                ("playing", 1680, "3101", True)]
+    for index, (stage, duration, first_seed, aided) in enumerate(expected):
+      with self.subTest(stage=stage):
+        self.assertEqual(world.state, states.Instructions)
+        self.assertEqual((world.game_type, world.time_limit, world.bar), (stage, duration, aided))
+        session.draw(world)
+        inputhandler.HANDLERS[world.state](world, events.anyPress)
+        self.assertEqual(world.state, states.Instructions)
+        self.press_after_delay(world, events.btnDownOn if index else events.anyPress)
+        self.assertEqual(world.state, states.Setup)
+        world.process_game_logic()
+        self.assertEqual(world.state, states.Play)
+        self.assertEqual(world.seeds_used[-1], first_seed)
+        playscreen.draw(world)
+        world.moment = world.blockStartTime + duration
+        world.process_game_logic()
+    self.assertTrue(session.complete(world))
+    self.assertEqual(world.state, states.Instructions)
+    session.draw(world)
+    self.press_after_delay(world)
+    self.assertEqual(world.state, states.Instructions)
+    world.unifile.flush()
+    lines = Path(world.unifile_path).read_text().splitlines()
+    header = lines[0].split("\t")
+    stage_events = [(row["evt_data1"], row["evt_data2"])
+                    for row in (dict(zip(header, line.split("\t"))) for line in lines[1:])
+                    if row["evt_id"] == "STAGE"]
+    self.assertEqual(stage_events, [(edge, stage) for stage in ("practice", "baseline", "playing")
+                                    for edge in ("BEGIN", "END")])
+
+  def test_lost_game_restarts_by_itself_until_the_stage_time_runs_out(self):
+    world = self.make_world("normal")
+    self.start_game(world)
+    start = world.blockStartTime
+    world.game_over()
+    self.assertEqual(world.state, states.Gameover)
+    world.moment += session.RESTART_DELAY - 0.1
+    world.process_game_logic()
+    self.assertEqual(world.state, states.Gameover)
+    world.gameover_anim_tick = world.gameover_tick_max + 1
+    with patch("playscreen.gui.textSurface") as text:
+      playscreen.drawGameOver(world)
+    shown = [call.args[0] for call in text.call_args_list]
+    self.assertIn("Starting a new game...", shown)
+    self.assertNotIn("Press START", shown)
+    world.moment += 0.1
+    world.process_game_logic()
+    self.assertEqual(world.state, states.Play)
+    self.assertEqual(world.seeds_used, ["1101", "1102"])
+    self.assertEqual(world.blockStartTime, start)
+    world.moment += 5
+    world.game_over()
+    world.moment = start + world.time_limit
+    world.process_game_logic()
+    self.assertEqual(world.state, states.Instructions)
+    world.moment += session.RESTART_DELAY
+    world.process_game_logic()
+    self.assertEqual(world.state, states.Instructions)
+
+  def test_profiles_without_stages_still_ask_before_a_new_game(self):
+    world = self.make_world("default")
+    self.start_game(world)
+    world.game_over()
+    world.moment += 60
+    world.process_game_logic()
+    self.assertEqual(world.state, states.Gameover)
+
+  def test_any_key_controller_button_or_click_counts_on_instruction_screen(self):
+    world = self.make_world()
+    events.init(world)
+    session.show_instructions(world)
+    for event in (pygame.event.Event(pygame.KEYDOWN, key=pygame.K_a),
+                  pygame.event.Event(pygame.JOYBUTTONDOWN, button=5),
+                  pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1)):
+      self.assertEqual(events.map(world, event), events.anyPress)
+    self.assertIsNone(events.map(world, pygame.event.Event(pygame.KEYUP, key=pygame.K_a)))
+
+  def test_profiles_without_stages_start_playing_directly(self):
+    world = self.make_world("default")
+    world.focused = "intro.play"
+    introscreen.moveForward(world)
+    self.assertEqual(world.state, states.Setup)
+
   def test_prescriptive_outline_is_visible_before_moving_piece(self):
-    world = self.make_world("acq_prescriptive")
+    world = self.make_world("prescriptive")
+    self.enter_stage(world, "playing")
     self.start_game(world)
     with patch("playscreen.gui.blocks") as draw_blocks:
       playscreen.draw_curr_zoid(world)

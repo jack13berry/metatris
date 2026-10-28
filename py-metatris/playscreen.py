@@ -92,6 +92,9 @@ def drawGameOver( world ):
     elif world.continues == 0:
       msg1 = ""
       msg2 = ""
+    if world.stages and not world.time_limit_reached:
+      msg1 = "Starting a new game..."
+      msg2 = msg3 = ""
     gui.textSurface(msg0, world.end_font, col, ( world.gamesurf_rect.centerx, world.gamesurf_rect.centery - offset ), world.worldsurf )
     gui.textSurface(msg1, world.scores_font, world.end_text_color, ( world.gamesurf_rect.centerx, world.gamesurf_rect.centery + offset ), world.worldsurf )
     if int((tick - world.gameover_tick_max) / (world.fps * 2))% 3 < 2:
@@ -140,9 +143,11 @@ def draw_AAR(world):
 
 
 def draw_borders( world ):
-  gui.borderOutsideOfRect(world.worldsurf, world.border_color, world.border_thickness, world.gamesurf_rect)
+  # The frame follows the performance bar's color only when the bar is shown.
+  frame_color = world.newscoreColor if world.bar else world.border_color
+  gui.borderOutsideOfRect(world.worldsurf, frame_color, world.border_thickness, world.gamesurf_rect)
   if world.look_ahead > 0:
-    gui.borderOutsideOfRect( world.worldsurf, world.border_color, world.border_thickness, world.nextsurf_rect)
+    gui.borderOutsideOfRect( world.worldsurf, frame_color, world.border_thickness, world.nextsurf_rect)
   if world.keep_zoid:
     gui.borderOutsideOfRect( world.worldsurf, world.border_color, world.border_thickness, world.keptsurf_rect)
 
