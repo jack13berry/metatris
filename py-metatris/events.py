@@ -27,14 +27,14 @@ reqWinResize    = 971
 reqPause        = 990
 reqResume       = 991
 reqPauseResume  = 992
-anyPress        = 995
 reqQuit         = 999
 
+keyPaste = 997
 keyBack = 1000
 keyTextStart = 1001
-textCharacters = "abcdefghijklmnopqrstuvwxyz0123456789.@_ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+textCharacters = "abcdefghijklmnopqrstuvwxyz0123456789.@_ABCDEFGHIJKLMNOPQRSTUVWXYZ-"
 textEventCodes = {char: keyTextStart + index for index, char in enumerate(textCharacters)}
-textFields = {"signin.username", "signin.pw", "register.email"}
+textFields = {"intro.id"}
 textNavigationKeys = {pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN,
                       pygame.K_RETURN, pygame.K_ESCAPE}
 
@@ -90,6 +90,10 @@ class KeyboardKey():
 
   def map(group, world, event):
     if world.state == states.Intro and world.focused in textFields and event.type == pygame.KEYDOWN:
+      mod = getattr(event, "mod", 0)
+      if ((event.key == pygame.K_v and mod & (pygame.KMOD_CTRL | pygame.KMOD_META))
+          or (event.key == pygame.K_INSERT and mod & pygame.KMOD_SHIFT)):
+        return keyPaste
       if event.key == pygame.K_BACKSPACE:
         return keyBack
       if event.key not in textNavigationKeys:
@@ -247,10 +251,6 @@ def readAll(world):
 
 
 def map(world, event):
-  if world.state == states.Instructions and event.type in (
-      pygame.KEYDOWN, pygame.JOYBUTTONDOWN, pygame.MOUSEBUTTONDOWN):
-    return anyPress
-
   if event.type not in world.eventMap:
     # print("UnknownEvent:", event.type)
     return None

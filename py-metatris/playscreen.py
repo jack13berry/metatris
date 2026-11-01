@@ -1,7 +1,11 @@
+import math
+
 import pygame
 
 import gui, states
 from zoid import Zoid
+
+TIMER_TEMPLATE = "Time left: 00:00"  # widest text, so a shorter time leaves no stale pixels
 
 def draw( world ):
   world.gamesurf.fill( world.bg_color )
@@ -24,6 +28,7 @@ def draw( world ):
     draw_kept_zoid(world)
 
   gui.textSurface("Game %d" % world.game_number, world.intro_font, ( 196, 196, 196 ), ( 120, 60 ), world.worldsurf )
+  draw_timer(world)
 
 
 def drawPaused( world ):
@@ -36,7 +41,13 @@ def drawPaused( world ):
 
   draw_scores(world)
   draw_borders(world)
-  gui.textSurface("PAUSED", world.pause_font, ( 210, 210, 210 ), world.worldsurf_rect.center, world.worldsurf )
+  board = world.gamesurf_rect
+  gui.textSurface("PAUSED", world.pause_font, ( 210, 210, 210 ), board.center, world.worldsurf )
+  y = board.centery + world.pause_font.get_linesize()
+  for line in ("The clock is stopped.", "Press START (Enter)", "to resume."):
+    gui.textSurface(line, world.scores_font, ( 210, 210, 210 ), ( board.centerx, y ), world.worldsurf )
+    y += world.scores_font.get_linesize()
+  draw_timer(world)
 
 
 #draw gameover animation and message
@@ -101,7 +112,31 @@ def drawGameOver( world ):
       gui.textSurface(msg2, world.scores_font, world.end_text_color, ( world.gamesurf_rect.centerx, world.gamesurf_rect.centery + (2 * offset) ), world.worldsurf )
       gui.textSurface(msg3, world.scores_font, world.end_text_color, ( world.gamesurf_rect.centerx, world.gamesurf_rect.centery + (3 * offset) ), world.worldsurf )
 
+  draw_timer(world)
   world.gameover_anim_tick += world.ticks_per_frame
+
+
+def time_left( world ):
+  """Seconds left in the current timed stage; the clock is stopped while paused."""
+  if world.blockStartTime is None:
+    return world.time_limit
+  now = world.pause_started if world.state == states.Pause else world.moment
+  return max(0, world.blockStartTime + world.time_limit - now)
+
+
+#draw the stage clock in the bottom right corner
+def draw_timer( world ):
+  if not world.stages or world.time_limit <= 0:
+    return
+  minutes, seconds = divmod(math.ceil(time_left(world)), 60)
+  font = world.scores_font
+  r = world.worldsurf.get_rect()
+  box = pygame.Rect((0, 0), font.size(TIMER_TEMPLATE))
+  box.bottomright = (r.right - 20, r.bottom - 20)
+  # The game over screen draws over the last frame, so clear the old time first.
+  world.worldsurf.fill(world.bg_color, box)
+  gui.textSurface("Time left: %d:%02d" % (minutes, seconds), font, ( 210, 210, 210 ),
+    box.midright, world.worldsurf, "midright" )
 
 
 def draw_AAR_zoids( world ):

@@ -1,4 +1,4 @@
-import os, platform, json
+import os, platform, json, shutil
 import api_calls
 from threading import Thread
 
@@ -95,6 +95,14 @@ def close_files( world ):
   """
   world.logfile.close()
   """
+
+def discard( world ):
+  """Close and delete logs that never recorded a game, such as the launch placeholder."""
+  for name in ("histfile", "configfile", "unifile", "scorefile", "epfile", "gamefile"):
+    if hasattr(world, name):
+      getattr(world, name).close()
+  shutil.rmtree(world.logname, ignore_errors=True)
+
 
 def universal_header( world ):
   # print("logger.universal_header", world.moment)

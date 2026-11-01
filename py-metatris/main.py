@@ -126,15 +126,29 @@ def main():
     from selftest import run
     return run()
   initialize_pygame()
-  if args.config is None:
-    fullscreen = cnf.default_fullscreen() if args.fullscreen is None else args.fullscreen
-    args.config = configselect.choose(fullscreen=fullscreen)
+  given_config = args.config
+  picked = None
+  while True:
     if args.config is None:
-      pygame.quit()
+      pygame.mouse.set_visible(True)
+      fullscreen = cnf.default_fullscreen() if args.fullscreen is None else args.fullscreen
+      args.config = configselect.choose(picked, fullscreen=fullscreen)
+      if args.config is None:
+        pygame.quit()
+        return
+      picked = args.config
+      # Drop presses left over from the picker so they cannot act on the home screen.
+      pygame.event.clear()
+    pygame.mouse.set_visible(False)
+    w = World( args )
+    w.run()
+    if not w.restart:
       return
-  pygame.mouse.set_visible(False)
-  w = World( args )
-  w.run()
+    # Next participant: a fresh session, picking the profile again unless -c named one.
+    args.config = given_config
+    args.SID = None
+    args.logfile = date_time_filename()
+    pygame.event.clear()
 
 if __name__ == '__main__':
   sys.exit(main())

@@ -1,162 +1,70 @@
 import pygame
 
-import gui, states, events, configscreen, api_calls, perfscreen, session
-from threading import Thread
+import gui, states, events, session
 
-upDownElementsSignin = ["signin.registeraccount", "signin.signin", "signin.pw","signin.username"]
-upDownElementsSigninIndex= -1
-upDownElementsRegiser = ["register.signinaccount", "register.register", "signin.pw","signin.username","register.email"]
-upDownElementsRegiserIndex= -1
-username_text =""
-password_text =""
-email_text =""
-signin_screen = True
-status_text=""
+MAX_ID_LENGTH = 24
+
 
 def handleInput(world, event):
-  invalid = False
-  # if event == events.btnSelectOn or event == events.btnStartOn:
-  #   moveForward(world)
   if event == events.btnStartOn:
+    world.sounds['uiaction'].play(0)
     moveForward(world)
-
-  elif event == events.btnLeftOn or event == events.btnRightOn:
-    changeFocusedElm(world,event)
-
-  elif event == events.btnUpOn or event == events.btnDownOn:
-    changeFocusUpDown(world, event)
 
   elif event == events.btnEscapeOn:
     world.running = False
 
-  elif event == events.keyBack or events.keyTextStart <= event < events.keyTextStart + len(events.textCharacters):
-    handleInputtext(world, event)
+  elif event == events.keyPaste:
+    if not world.session_started:
+      paste(world, read_clipboard())
 
+  elif event == events.keyBack:
+    if not world.session_started:
+      world.participant_id = world.participant_id[:-1]
+      world.intro_message = ""
+
+  elif events.keyTextStart <= event < events.keyTextStart + len(events.textCharacters):
+    if not world.session_started and len(world.participant_id) < MAX_ID_LENGTH:
+      world.participant_id += events.textCharacters[event - events.keyTextStart]
+      world.intro_message = ""
+
+
+def read_clipboard():
+  """The clipboard's text, or "" when it has none or cannot be read."""
+  try:
+    if not pygame.scrap.get_init():
+      pygame.scrap.init()
+    for kind in ("text/plain;charset=utf-8", pygame.SCRAP_TEXT):
+      data = pygame.scrap.get(kind)
+      if data:
+        # Windows may return UTF-16; ID characters are ASCII, so dropping zero bytes is safe.
+        return data.replace(b"\0", b"").decode("utf-8", "ignore")
+  except pygame.error:
+    pass
+  return ""
+
+
+def paste(world, text):
+  text = text.strip()
+  allowed = "".join(char for char in text if char in events.textCharacters)
+  room = MAX_ID_LENGTH - len(world.participant_id)
+  world.participant_id += allowed[:room]
+  if not text:
+    world.intro_message = "The clipboard has no text to paste"
+  elif allowed != text or len(allowed) > room:
+    world.intro_message = "Some pasted characters were left out"
   else:
-    invalid = True
+    world.intro_message = ""
 
-  if event%10 == 1 and not invalid:
-    world.sounds['uiaction'].play(0)
-
-def handleInputtext(world, event):
-  global username_text
-  global password_text
-  global email_text
-
-  if event == events.keyBack:
-    if (world.focused == "signin.username"):
-      username_text = username_text[:-1]
-    elif (world.focused == "signin.pw"):
-      password_text = password_text[:-1]
-    elif (world.focused == "register.email"):
-      email_text = email_text[:-1]
-    return
-
-
-  char = events.textCharacters[event - events.keyTextStart]
-  if(world.focused == "signin.username"):
-    username_text += char
-  elif (world.focused == "signin.pw"):
-    password_text += char
-  elif (world.focused == "register.email"):
-    email_text += char
-
-def changeFocusUpDown(world,event):
-  global signin_screen
-  global upDownElementsSigninIndex
-  global upDownElementsRegiserIndex
-
-  if(signin_screen):
-    #131=up
-    if(event==131):
-      if(upDownElementsSigninIndex+1 == len(upDownElementsSignin)):
-        return
-      upDownElementsSigninIndex += 1
-
-    #141=down
-    if (event == 141):
-      if (world.focused == "intro.play" or world.focused == "intro.settings"):
-        return
-      if (upDownElementsSigninIndex == 0):
-        world.focused = "intro.play"
-        upDownElementsSigninIndex -= 1
-        return
-      upDownElementsSigninIndex -= 1
-
-    world.focused = upDownElementsSignin[upDownElementsSigninIndex]
-  else:
-    # 131=up
-    if (event == 131):
-      if (upDownElementsRegiserIndex + 1 == len(upDownElementsRegiser)):
-        return
-      upDownElementsRegiserIndex += 1
-
-    # 141=down
-    if (event == 141):
-      if (world.focused == "intro.play" or world.focused == "intro.settings"):
-        return
-      if (upDownElementsRegiserIndex == 0):
-        world.focused = "intro.play"
-        upDownElementsRegiserIndex -= 1
-        return
-      upDownElementsRegiserIndex -= 1
-
-    world.focused = upDownElementsRegiser[upDownElementsRegiserIndex]
-
-def changeFocusedElm(world,event):
-  if world.focused == "intro.play":
-    world.focused = "intro.settings"
-  elif world.focused == "intro.performance":
-    world.focused = "intro.settings"
-  elif world.focused == "intro.settings" and event==111:
-    world.focused = "intro.performance"
-  elif world.focused == "intro.settings" and event==121:
-    world.focused = "intro.play"
-
-def register_thread(email_text,username_text,password_text):
-  global status_text
-  print("register_thread")
-  status_text = api_calls.call_register(email_text,username_text,password_text)
-
-def signin_thread(world,username_text,password_text):
-  global status_text
-  print("signin_thread")
-  status_text = api_calls.call_signin(world,username_text,password_text)
 
 def moveForward(world):
-  global signin_screen
-  global username_text
-  global password_text
-  global email_text
+  """PLAY: name the save files after the participant ID, then start or resume the session."""
+  if not world.participant_id:
+    world.intro_message = "Type the participant ID first"
+    return
+  if not world.session_started:
+    world.start_session_logs(world.participant_id)
+  session.begin(world)
 
-  if world.focused == "intro.play":
-    session.begin(world)
-  elif world.focused == "intro.settings":
-    configscreen.enter(world)
-  elif world.focused == "intro.performance":
-    perfscreen.enter(world)
-  elif world.focused == "signin.registeraccount":
-    username_text=""
-    password_text=""
-    signin_screen = False
-  elif world.focused == "register.signinaccount":
-    username_text=""
-    password_text=""
-    email_text=""
-    signin_screen = True
-  elif world.focused == "signin.signin":
-    if(username_text!="" and password_text!=""):
-      t_signin = Thread(target=signin_thread, args=(world,username_text,password_text))
-      t_signin.start()
-      username_text = ""
-      password_text = ""
-  elif world.focused == "register.register":
-    if (username_text != "" and password_text != "" and email_text!=""):
-      t_register = Thread(target=register_thread, args=(email_text,username_text,password_text))
-      t_register.start()
-      username_text = ""
-      password_text = ""
-      email_text = ""
 
 def draw( world ):
   r = world.worldsurf_rect
@@ -164,7 +72,7 @@ def draw( world ):
 
   logo_rect = world.logo.get_rect()
   logo_rect.centerx = r.centerx+10
-  logo_rect.top = 80
+  logo_rect.top = 20
   world.worldsurf.blit( world.logo, logo_rect )
 
   gclogo_rect = world.gclogo.get_rect()
@@ -172,74 +80,17 @@ def draw( world ):
   gclogo_rect.centerx = r.centerx
   world.worldsurf.blit( world.gclogo, gclogo_rect )
 
-  gui.simpleText(world, "Config: " + world.config_name, r.centerx, r.bottom - 138,
-                 color=(200, 200, 200))
+  gui.simpleText(world, "Participant ID", r.centerx, 345, color=(200, 200, 200))
+  shown = world.participant_id
+  if not world.session_started and world.moment % 1 < .5:
+    shown += "|"  # blinking cursor while the ID can be typed
+  gui.textInput(world, shown, r.centerx - 150, 365, 300, 36)
 
-  if(not signin_screen):
-    gui.simpleText(world, "Email :", r.centerx-134, 30)
+  gui.button(world, "PLAY", r.centerx - 50, 425, 100, 46, focused=True)
 
-    if(len(email_text)>22):
-      email_text_show=email_text[len(email_text)-22:]
-    else:
-      email_text_show=email_text
-
-    gui.textInput(world, email_text_show, r.centerx-90, 22, 250, 20, world.focused == "register.email")
-
-    gui.button(world, "REGISTER", r.centerx+40, 120, 120, 32,
-      world.focused == "register.register"
-    )
-
-    gui.button(world, "Sign in to an account", r.centerx-160, 170, 320, 22,
-      world.focused == "register.signinaccount"
-    )
-
-  gui.simpleText(world, status_text, r.centerx-80, 136, (255,0,0))
-
-  gui.simpleText(world, "Username :", r.centerx-110, 60)
-  gui.simpleText(world, "Password  :", r.centerx-110, 90)
-
-  if (len(username_text) > 16):
-    username_text_show = username_text[len(username_text) - 16:]
+  if world.intro_message:
+    gui.simpleText(world, world.intro_message, r.centerx, 494, color=(230, 80, 80))
   else:
-    username_text_show = username_text
-  gui.textInput(world, username_text_show, r.centerx-40, 52, 200, 20 ,world.focused == "signin.username")
-
-  if (len(password_text) > 16):
-    password_text_show = password_text[len(password_text) - 16:]
-  else:
-    password_text_show = password_text
-  gui.textInput(world, password_text_show, r.centerx-40, 82, 200, 20 ,world.focused == "signin.pw")
-
-  if (signin_screen):
-    gui.button(world, "SIGN IN", r.centerx+40, 120, 120, 32,
-      world.focused == "signin.signin"
-    )
-
-    gui.button(world, "Register new account", r.centerx-160, 170, 320, 22,
-      world.focused == "signin.registeraccount"
-    )
-
-
-
-  gui.button(world, "PERFORMANCE", r.centerx - 220, r.bottom - 210, 170, 51,
-    world.focused == "intro.performance"
-  )
-
-  gui.button(world, "SETTINGS", r.centerx-34, r.bottom-210, 120, 51,
-    world.focused == "intro.settings"
-  )
-  gui.button(world, "PLAY", r.centerx+100, r.bottom-210, 100, 51,
-    world.focused == "intro.play"
-  )
-
-  txty = r.height - gclogo_rect.height - 40
-  if world.moment >= world.textBlinkLastTime + 0.7:
-    btnName = "START" if pygame.joystick.get_count() > 0 else "Enter"
-    actName = " to begin" if world.focused == "intro.play" else " for settings"
-    gui.textSurface("Press " + btnName + actName,
-      world.scores_font, ( 200, 200, 200 ),
-      ( r.centerx, txty ),
-      world.worldsurf
-    )
-    if world.moment >= world.textBlinkLastTime + 2:
-      world.textBlinkLastTime = world.moment
+    prompt = ("Press Enter or START to continue the session" if world.session_started
+              else "Type the ID, then press Enter")
+    gui.simpleText(world, prompt, r.centerx, 494, color=(200, 200, 200))

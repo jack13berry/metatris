@@ -54,7 +54,7 @@ class World( object ):
     # Time Now
     self.moment = time.perf_counter()
 
-    self.focused = "intro.play"
+    self.focused = "intro.id"
 
     ## Constants
 
@@ -89,10 +89,16 @@ class World( object ):
     self.session = self.args.logfile
 
     cnf.load(self, getattr(args, "config", "default"))
+    # Typed on the home screen; the save files are renamed for it when play starts.
+    self.participant_id = getattr(args, "SID", None) or ""
+    self.session_started = False
+    self.intro_message = ""
     self.unlimited_games = self.continues == 0
     self.blockStartTime = None
     self.time_limit_reached = False
     self.game_active = False
+    # Set when the researcher asks for the next participant at the end of a session.
+    self.restart = False
     # events.init(self)
 
     self.timing = getattr(timing, self.timingSetup)
@@ -351,14 +357,31 @@ class World( object ):
     self.avg_latency = 0
     self.prop_drop = 0.0
 
+    #Initialization complete! Log the history file and get started:
+    self.write_log_headers()
+
+
+  def write_log_headers(self):
     if self.fixed_log:
       logger.universal_header(self)
 
     logger.game_event(self, "LOG_VERSION", self.LOG_VERSION)
     logger.game_event(self,  "BOARD_INIT" )
-
-    #Initialization complete! Log the history file and get started:
     logger.history(self)
+
+
+  def start_session_logs(self, participant_id):
+    """Replace the placeholder logs opened at launch with <ID>_<date>_<time> logs."""
+    if self.game_number == 0:
+      logger.discard(self)
+      self.SID = participant_id
+      self.session = self.args.logfile = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+      logger.init(self)
+      # logger.init resets the header; restore the board-feature columns added at startup.
+      self.fixed_header = self.fixed_header + self.features_set
+      cnf.write(self)
+      self.write_log_headers()
+    self.session_started = True
 
 
   def setperf(self, perfdata):
@@ -606,10 +629,14 @@ class World( object ):
     if self.pause_enabled:
       if self.state == states.Play:
         self.state = states.Pause
+        self.pause_started = self.moment
         logger.game_event(self, "PAUSED")
         pygame.mixer.music.pause()
       elif self.state == states.Pause:
         self.state = states.Play
+        # The stage clock does not run while paused.
+        if self.blockStartTime is not None:
+          self.blockStartTime += self.moment - self.pause_started
         logger.game_event(self, "UNPAUSED")
         pygame.mixer.music.unpause()
       self.sounds["pause"].play()
@@ -1155,7 +1182,7 @@ class World( object ):
 
 
   def process_game_logic( self ):
-    if self.blockStartTime is not None and self.time_limit > 0:
+    if self.blockStartTime is not None and self.time_limit > 0 and self.state != states.Pause:
       if not self.time_limit_reached and self.moment >= self.blockStartTime + self.time_limit:
         self.time_limit_reached = True
         logger.game_event(self, "TIME_LIMIT_REACHED", self.time_limit)

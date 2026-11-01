@@ -216,10 +216,10 @@ class StudyProfileTests(unittest.TestCase):
       with self.subTest(name=name):
         world = SimpleNamespace(startTime=1.0)
         cnf.load(world, name)
-        self.assertEqual(session.names(world.session_stages), ["practice", "baseline", "playing"])
+        self.assertEqual(session.names(world.session_stages), ["practice", "baseline", "playing", "test"])
         self.assertEqual(session.names(world.aid_stages), ["playing"])
-        self.assertEqual([float(world.config[stage + "_time"]) for stage in ("practice", "baseline", "playing")],
-                         [60, 360, 1680])
+        self.assertEqual([float(world.config[stage + "_time"])
+                          for stage in ("practice", "baseline", "playing", "test")], [60, 360, 1680, 600])
         self.assertEqual(world.starting_level, 0)
         self.assertEqual(world.continues, 0)
         self.assertTrue(world.render_scores)
@@ -234,12 +234,13 @@ class StudyProfileTests(unittest.TestCase):
           self.assertEqual(world.controller, "score_506_dellacherie")
           self.assertFalse(world.sim_overhangs)
         stage_settings[name] = {key: value for key, value in world.config.items()
-                                if key.endswith(("_time", "_seeds")) or key in ("practice_instructions",
-                                                                                "baseline_instructions")}
+                                if key.endswith(("_time", "_seeds")) or (key.startswith(("practice_instructions",
+                                                                                                "baseline_instructions",
+                                                                                                "test_instructions")))}
     for name in ("leading", "lagging", "prescriptive"):
       self.assertEqual(stage_settings[name], stage_settings["normal"])
     seeds = [set(session.names(stage_settings["normal"][stage + "_seeds"]))
-             for stage in ("practice", "baseline", "playing")]
+             for stage in ("practice", "baseline", "playing", "test")]
     for index, stage_seeds in enumerate(seeds):
       for other in seeds[index + 1:]:
         self.assertTrue(stage_seeds.isdisjoint(other))
@@ -489,20 +490,34 @@ class GameConfigIntegrationTests(unittest.TestCase):
     self.assertEqual(len(summaries), 2)
     self.assertEqual(summaries[-1][header.index("completed")], "False")
 
-  def test_time_limit_includes_pause_but_not_initial_menu(self):
+  def test_stage_clock_stops_while_paused_and_ignores_the_initial_menu(self):
     world = self.make_world("normal")
+    events.init(world)
     world.moment += 1000
     world.process_game_logic()
     self.assertFalse(world.time_limit_reached)
     self.start_game(world)
-    world.state = states.Pause
-    world.moment = world.blockStartTime + 59
+    start = world.blockStartTime
+    world.moment = start + 30
+    start_button = events.map(world, pygame.event.Event(pygame.JOYBUTTONDOWN, button=world.JOY_START))
+    inputhandler.HANDLERS[world.state](world, start_button)
+    self.assertEqual(world.state, states.Pause)
+    world.moment = start + 500
     world.process_game_logic()
     self.assertFalse(world.time_limit_reached)
-    world.moment = world.blockStartTime + 60
+    inputhandler.HANDLERS[world.state](world, start_button)
+    self.assertEqual(world.state, states.Play)
+    world.moment = start + 500 + 29
+    world.process_game_logic()
+    self.assertFalse(world.time_limit_reached)
+    world.moment = start + 500 + 30
     world.process_game_logic()
     self.assertTrue(world.time_limit_reached)
     self.assertEqual(world.state, states.Instructions)
+    world.unifile.flush()
+    rows = Path(world.unifile_path).read_text()
+    self.assertIn("PAUSED", rows)
+    self.assertIn("UNPAUSED", rows)
 
   def test_saved_logs_snapshots_scores_and_performance_identify_config(self):
     world = self.make_world("lagging")
@@ -616,9 +631,11 @@ class GameConfigIntegrationTests(unittest.TestCase):
   def test_space_and_select_do_not_leave_the_game_but_esc_does(self):
     world = self.make_world()
     events.init(world)
+    world.state = states.Play
     space = events.map(world, pygame.event.Event(pygame.KEYDOWN, key=pygame.K_SPACE))
     select = events.map(world, pygame.event.Event(pygame.JOYBUTTONDOWN, button=world.JOY_SELECT))
     self.assertEqual((space, select), (events.btnSelectOn, events.btnSelectOn))
+    world.state = states.Intro
     world.running = True
     introscreen.handleInput(world, space)
     self.assertTrue(world.running)
@@ -632,24 +649,29 @@ class GameConfigIntegrationTests(unittest.TestCase):
     inputhandler.HANDLERS[states.Play](world, events.btnEscapeOn)
     self.assertEqual(world.state, states.Intro)
 
-  def press_after_delay(self, world, event=events.anyPress):
+  def press_after_delay(self, world, event=events.btnStartOn):
     world.moment += session.INPUT_DELAY
     inputhandler.HANDLERS[world.state](world, event)
 
   def test_session_shows_instructions_before_each_stage_and_aids_only_while_playing(self):
     world = self.make_world("lagging")
-    world.focused = "intro.play"
+    world.participant_id = "P01"
     introscreen.moveForward(world)
-    expected = [("practice", 60, "1101", False), ("baseline", 360, "2101", False),
-                ("playing", 1680, "3101", True)]
-    for index, (stage, duration, first_seed, aided) in enumerate(expected):
+    expected = [("practice", 60, "1101", False, 4), ("baseline", 360, "2101", False, 1),
+                ("playing", 1680, "3101", True, 1), ("test", 600, "4101", False, 1)]
+    for stage, duration, first_seed, aided, screens in expected:
       with self.subTest(stage=stage):
         self.assertEqual(world.state, states.Instructions)
         self.assertEqual((world.game_type, world.time_limit, world.bar), (stage, duration, aided))
-        session.draw(world)
-        inputhandler.HANDLERS[world.state](world, events.anyPress)
-        self.assertEqual(world.state, states.Instructions)
-        self.press_after_delay(world, events.btnDownOn if index else events.anyPress)
+        self.assertEqual(len(session.pages(world, stage)), screens)
+        for page in range(screens):
+          self.assertEqual(world.instruction_page, page)
+          session.draw(world)
+          # A press before the delay, or of any other button, does not move on.
+          inputhandler.HANDLERS[world.state](world, events.btnStartOn)
+          self.press_after_delay(world, events.btnDownOn)
+          self.assertEqual((world.state, world.instruction_page), (states.Instructions, page))
+          self.press_after_delay(world)
         self.assertEqual(world.state, states.Setup)
         world.process_game_logic()
         self.assertEqual(world.state, states.Play)
@@ -660,15 +682,13 @@ class GameConfigIntegrationTests(unittest.TestCase):
     self.assertTrue(session.complete(world))
     self.assertEqual(world.state, states.Instructions)
     session.draw(world)
-    self.press_after_delay(world)
-    self.assertEqual(world.state, states.Instructions)
     world.unifile.flush()
     lines = Path(world.unifile_path).read_text().splitlines()
     header = lines[0].split("\t")
     stage_events = [(row["evt_data1"], row["evt_data2"])
                     for row in (dict(zip(header, line.split("\t"))) for line in lines[1:])
                     if row["evt_id"] == "STAGE"]
-    self.assertEqual(stage_events, [(edge, stage) for stage in ("practice", "baseline", "playing")
+    self.assertEqual(stage_events, [(edge, stage) for stage in ("practice", "baseline", "playing", "test")
                                     for edge in ("BEGIN", "END")])
 
   def test_lost_game_restarts_by_itself_until_the_stage_time_runs_out(self):
@@ -730,21 +750,129 @@ class GameConfigIntegrationTests(unittest.TestCase):
     self.assertEqual(world.worldsurf.get_at((238, 540))[:3], world.bg_color)
     self.assertEqual(drawer.menuScreen(states.Play), None)
 
-  def test_any_key_controller_button_or_click_counts_on_instruction_screen(self):
+  def test_only_start_moves_on_from_an_instruction_screen(self):
     world = self.make_world()
     events.init(world)
     session.show_instructions(world)
-    for event in (pygame.event.Event(pygame.KEYDOWN, key=pygame.K_a),
-                  pygame.event.Event(pygame.JOYBUTTONDOWN, button=5),
-                  pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1)):
-      self.assertEqual(events.map(world, event), events.anyPress)
-    self.assertIsNone(events.map(world, pygame.event.Event(pygame.KEYUP, key=pygame.K_a)))
+    self.assertEqual(events.map(world, pygame.event.Event(pygame.KEYDOWN, key=pygame.K_RETURN)),
+                     events.btnStartOn)
+    self.assertEqual(events.map(world, pygame.event.Event(pygame.JOYBUTTONDOWN, button=9)),
+                     events.btnStartOn)
+    self.assertIsNone(events.map(world, pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1)))
+    for event in (events.btnRotateCwOn, events.btnLeftOn, events.btnSelectOn):
+      self.press_after_delay(world, event)
+      self.assertEqual((world.state, world.instruction_page), (states.Instructions, 0))
+    self.press_after_delay(world)
+    self.assertEqual(world.instruction_page, 1)
+
+  def test_instruction_screens_keep_the_text_word_for_word_and_fit_a_small_screen(self):
+    small = pygame.Rect(0, 0, 800, 600)
+    for name in ("normal", "lagging", "leading", "prescriptive"):
+      world = self.make_world(name)
+      for stage in world.stages:
+        for text in session.pages(world, stage):
+          with self.subTest(name=name, stage=stage, text=text[:30]):
+            face, line_height, rows, height = session.layout(text, small)
+            self.assertEqual(" ".join(line for line, _, _ in rows),
+                             " ".join(part.strip() for part in text.split("|")))
+            self.assertLessEqual(height, small.height * .7)
+            self.assertLessEqual(max(face.size(line)[0] for line, _, _ in rows), small.width * .75)
+            self.assertEqual([color for line, color, _ in rows if line.startswith("Press Start")],
+                             [session.ACCENT] if "Press Start" in text else [])
+
+  def test_esc_on_an_instruction_screen_returns_home_and_enter_resumes(self):
+    world = self.make_world()
+    world.participant_id = "P01"
+    introscreen.moveForward(world)
+    self.press_after_delay(world)
+    self.press_after_delay(world, events.btnEscapeOn)
+    self.assertEqual(world.state, states.Intro)
+    introscreen.handleInput(world, events.btnStartOn)
+    self.assertEqual((world.state, world.stage_index, world.instruction_page),
+                     (states.Instructions, 0, 0))
+
+  def test_finished_session_starts_over_for_the_next_participant_or_closes(self):
+    for event, restart in ((events.btnStartOn, True), (events.btnEscapeOn, False)):
+      with self.subTest(restart=restart):
+        world = self.make_world()
+        world.running = True
+        world.stage_index = len(world.stages)
+        session.show_instructions(world)
+        session.draw(world)
+        if restart:
+          inputhandler.HANDLERS[world.state](world, event)
+          self.assertTrue(world.running)  # ignored until the delay has passed
+        self.press_after_delay(world, event)
+        self.assertEqual((world.running, world.restart), (False, restart))
+
+  def test_timer_shows_the_stage_time_left_and_stops_while_paused(self):
+    world = self.make_world()
+    session.show_instructions(world)
+    self.assertEqual(playscreen.time_left(world), 60)
+    self.start_game(world)
+    start = world.blockStartTime
+    world.moment = start + 15.5
+    self.assertEqual(playscreen.time_left(world), 44.5)
+    with patch("playscreen.gui.textSurface") as text:
+      playscreen.draw(world)
+    self.assertIn("Time left: 0:45", [call.args[0] for call in text.call_args_list])
+    world.input_pause()
+    world.moment += 100
+    self.assertEqual(playscreen.time_left(world), 44.5)
+    with patch("playscreen.gui.textSurface") as text:
+      playscreen.drawPaused(world)
+    self.assertIn("Time left: 0:45", [call.args[0] for call in text.call_args_list])
+    world.input_pause()
+    world.game_over()
+    with patch("playscreen.gui.textSurface") as text:
+      playscreen.drawGameOver(world)
+    self.assertIn("Time left: 0:45", [call.args[0] for call in text.call_args_list])
+
+  def test_profiles_without_stages_show_no_timer(self):
+    world = self.make_world("default")
+    self.start_game(world)
+    with patch("playscreen.gui.textSurface") as text:
+      playscreen.draw(world)
+    self.assertFalse(any(call.args[0].startswith("Time left") for call in text.call_args_list))
 
   def test_profiles_without_stages_start_playing_directly(self):
     world = self.make_world("default")
-    world.focused = "intro.play"
+    world.participant_id = "P01"
     introscreen.moveForward(world)
     self.assertEqual(world.state, states.Setup)
+
+  def test_home_screen_needs_an_id_and_names_the_save_files_after_it(self):
+    world = self.make_world("normal")
+    placeholder = Path(world.logname)
+    self.assertTrue(placeholder.is_dir())
+    events.init(world)
+    start_button = events.map(world, pygame.event.Event(pygame.JOYBUTTONDOWN, button=world.JOY_START))
+    introscreen.handleInput(world, start_button)
+    self.assertEqual(world.state, states.Intro)
+    self.assertTrue(world.intro_message)
+    for key, text in ((pygame.K_p, "P"), (pygame.K_MINUS, "-"), (pygame.K_0, "0"), (pygame.K_7, "7")):
+      introscreen.handleInput(world, events.map(world, pygame.event.Event(pygame.KEYDOWN, key=key, unicode=text)))
+    self.assertEqual(world.participant_id, "P-07")
+    introscreen.draw(world)
+    introscreen.handleInput(world, start_button)
+    self.assertEqual(world.state, states.Instructions)
+    self.assertFalse(placeholder.exists())
+    folder = Path(world.logname)
+    self.assertRegex(folder.name, r"^P-07_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$")
+    self.assertEqual(world.SID, "P-07")
+    self.assertTrue((folder / ("complete_" + folder.name + ".tsv")).is_file())
+    # The ID is fixed once the session has started.
+    introscreen.handleInput(world, events.keyBack)
+    self.assertEqual(world.participant_id, "P-07")
+    self.press_after_delay(world)
+    world.process_game_logic()
+    world.moment += 1
+    world.unifile.flush()
+    rows = [line.split("\t") for line in Path(world.unifile_path).read_text().splitlines()]
+    sid = rows[0].index("SID")
+    self.assertTrue(all(row[sid] == "P-07" for row in rows[1:]))
+    self.assertIn("pits", rows[0])
+    self.assertEqual({len(row) for row in rows}, {len(rows[0])})
 
   def test_prescriptive_outline_is_visible_before_moving_piece(self):
     world = self.make_world("prescriptive")

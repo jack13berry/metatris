@@ -27,12 +27,10 @@ class TextInputTests(unittest.TestCase):
     pygame.quit()
 
   def setUp(self):
-    self.world = SimpleNamespace(state=states.Intro, focused="signin.username",
+    self.world = SimpleNamespace(state=states.Intro, focused="intro.id",
                                  JOY_A=1, JOY_B=0, running=True,
+                                 participant_id="", session_started=False, intro_message="",
                                  sounds={"uiaction": Mock()})
-    for name, value in (("username_text", ""), ("password_text", ""),
-                        ("email_text", ""), ("signin_screen", True)):
-      self.enterContext(patch.object(introscreen, name, value))
     with patch.object(events, "setupControllers"):
       events.init(self.world)
     pygame.event.clear()
@@ -49,54 +47,73 @@ class TextInputTests(unittest.TestCase):
       with self.subTest(key=key):
         self.assertEqual(self.press(key, mod=pygame.KMOD_SHIFT), [])
         self.assertEqual(self.press(key, event_type=pygame.KEYUP), [])
-    self.assertEqual(introscreen.username_text, "")
+    self.assertEqual(self.world.participant_id, "")
 
-  def test_username_accepts_shifted_underscore_and_uppercase(self):
-    for signing_in in (True, False):
-      with self.subTest(signing_in=signing_in):
-        introscreen.signin_screen = signing_in
-        introscreen.username_text = ""
-        self.press(pygame.K_a, "A", pygame.KMOD_SHIFT)
-        self.press(pygame.K_MINUS, "_", pygame.KMOD_SHIFT)
-        self.press(pygame.K_b, "b")
-        self.press(pygame.K_2, "2")
-        self.assertEqual(introscreen.username_text, "A_b2")
-        self.press(pygame.K_BACKSPACE, "\b")
-        self.assertEqual(introscreen.username_text, "A_b")
-
-  def test_at_sign_comes_from_the_typed_character(self):
-    self.world.focused = "register.email"
-    self.press(pygame.K_RSHIFT, mod=pygame.KMOD_RSHIFT)
-    self.press(pygame.K_2, "@", pygame.KMOD_RSHIFT)
-    self.press(pygame.K_PERIOD, ".")
-    self.press(pygame.K_2, "2")
-    self.assertEqual(introscreen.email_text, "@.2")
-    self.assertEqual(introscreen.username_text, "")
-
-  def test_password_preserves_shifted_characters(self):
-    self.world.focused = "signin.pw"
+  def test_id_accepts_shifted_underscore_dash_uppercase_and_backspace(self):
     self.press(pygame.K_a, "A", pygame.KMOD_SHIFT)
     self.press(pygame.K_MINUS, "_", pygame.KMOD_SHIFT)
-    self.assertEqual(introscreen.password_text, "A_")
+    self.press(pygame.K_b, "b")
+    self.press(pygame.K_MINUS, "-")
+    self.press(pygame.K_2, "2")
+    self.assertEqual(self.world.participant_id, "A_b-2")
+    self.press(pygame.K_BACKSPACE, "\b")
+    self.assertEqual(self.world.participant_id, "A_b-")
 
-  def test_typing_and_releasing_game_keys_only_changes_the_field(self):
+  def test_id_length_is_limited(self):
+    for _ in range(introscreen.MAX_ID_LENGTH + 5):
+      self.press(pygame.K_x, "x")
+    self.assertEqual(len(self.world.participant_id), introscreen.MAX_ID_LENGTH)
+
+  def test_typing_and_releasing_game_keys_only_changes_the_id(self):
     for key, text in ((pygame.K_i, "i"), (pygame.K_j, "j"),
                       (pygame.K_k, "k"), (pygame.K_p, "p")):
       self.press(key, text)
       self.press(key, event_type=pygame.KEYUP)
-    self.assertEqual(introscreen.username_text, "ijkp")
+    self.assertEqual(self.world.participant_id, "ijkp")
     self.assertEqual(self.world.state, states.Intro)
     self.assertTrue(self.world.running)
 
   def test_unsupported_text_does_not_trigger_menu_actions(self):
     self.assertEqual(self.press(pygame.K_SPACE, " "), [])
-    self.assertEqual(self.press(pygame.K_MINUS, "-"), [])
+    self.assertEqual(self.press(pygame.K_SLASH, "/"), [])
     self.assertTrue(self.world.running)
-    self.assertEqual(introscreen.username_text, "")
+    self.assertEqual(self.world.participant_id, "")
 
-  def test_navigation_and_submit_work_while_a_field_is_focused(self):
-    self.assertEqual(events.map(self.world, pygame.event.Event(pygame.KEYDOWN,
-      key=pygame.K_UP, unicode="")), events.btnUpOn)
+  def test_ctrl_v_cmd_v_and_shift_insert_paste_the_clipboard(self):
+    for key, mod in ((pygame.K_v, pygame.KMOD_LCTRL), (pygame.K_v, pygame.KMOD_RMETA),
+                     (pygame.K_INSERT, pygame.KMOD_LSHIFT)):
+      with self.subTest(key=key, mod=mod):
+        self.world.participant_id = ""
+        with patch.object(introscreen, "read_clipboard", return_value="P-12"):
+          self.assertEqual(self.press(key, "\x16", mod), [events.keyPaste])
+        self.assertEqual(self.world.participant_id, "P-12")
+    # Plain v still types a letter.
+    self.press(pygame.K_v, "v")
+    self.assertEqual(self.world.participant_id, "P-12v")
+
+  def test_paste_trims_whitespace_and_drops_characters_not_allowed(self):
+    introscreen.paste(self.world, "  P-12\n")
+    self.assertEqual((self.world.participant_id, self.world.intro_message), ("P-12", ""))
+    self.world.participant_id = ""
+    introscreen.paste(self.world, "P 12/a")
+    self.assertEqual(self.world.participant_id, "P12a")
+    self.assertTrue(self.world.intro_message)
+    self.world.participant_id = ""
+    introscreen.paste(self.world, "   ")
+    self.assertEqual(self.world.participant_id, "")
+    self.assertTrue(self.world.intro_message)
+
+  def test_paste_respects_the_length_limit_and_a_started_session(self):
+    self.world.participant_id = "x" * (introscreen.MAX_ID_LENGTH - 2)
+    introscreen.paste(self.world, "abcd")
+    self.assertEqual(self.world.participant_id, "x" * (introscreen.MAX_ID_LENGTH - 2) + "ab")
+    self.assertTrue(self.world.intro_message)
+    self.world.session_started = True
+    with patch.object(introscreen, "read_clipboard", return_value="zz"):
+      self.press(pygame.K_v, "\x16", pygame.KMOD_LCTRL)
+    self.assertEqual(len(self.world.participant_id), introscreen.MAX_ID_LENGTH)
+
+  def test_enter_submits_and_escape_quits_while_typing(self):
     with patch.object(introscreen, "moveForward") as submit:
       self.press(pygame.K_RETURN, "\r")
       submit.assert_called_once_with(self.world)
