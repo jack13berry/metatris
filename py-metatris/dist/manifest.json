@@ -1,32 +1,35 @@
 {
-  "built_on": "2026-10-28",
+  "built_on": "2026-10-31",
   "artifacts": [
     {
       "platform": "Linux x86_64",
       "file": "linux-x86_64/metatris",
-      "bytes": 73512864,
-      "sha256": "ff134e881107a3b0f1a6b72a57b05a597349d7a0a8128186c0fad4a369a123f1"
+      "bytes": 73521720,
+      "sha256": "f2e90dc6778211b2297a90fc160c8aae5adcc46b15f0afb328598db269270faa"
     },
     {
       "platform": "Windows x86_64",
       "file": "windows-x86_64/metatris.exe",
-      "bytes": 65004069,
-      "sha256": "986dd15a4f8eb0bdcc9036c1f48a3f67e896c801d943329d4126d56fd22c4ff0"
+      "bytes": 65014900,
+      "sha256": "f596b745aacc079e6ac95c6fd2de428941ec0fc814ecee9900ca547799c576cf"
     }
   ],
   "automated_checks": {
-    "tests_per_environment": 54,
+    "tests_per_environment": 62,
     "passed": [
       "fedora44",
-      "ubuntu20.04",
-      "ubuntu22.04",
       "windows-wine11"
-    ]
+    ],
+    "this_rebuild": {
+      "source_tests": "selftest.py: 62 tests pass",
+      "binary_self_tests": "Linux binary on Fedora 44 and Windows binary under Wine: 62 tests pass each",
+      "manual_check": "Full four-stage sessions with 30-second stages run interactively, from an earlier build of this change and from the final source"
+    }
   },
   "limitations": [
     "Automated tests use dummy SDL video/audio drivers and injected input events.",
     "Native Windows hardware and audible sound were not tested.",
-    "Interactive GUI operation of the rebuilt executables was not manually verified.",
+    "The final executables were self-tested but not run interactively; Ubuntu 20.04/22.04 runs were not repeated for this build.",
     "Authenticated network services were not contacted."
   ],
   "log_version": 3.3,
@@ -47,7 +50,18 @@
     "Clear staged build assets so removed configs are not bundled",
     "A lost game in a timed stage restarts by itself after 2.5 seconds until time runs out",
     "Open the config picker and the game fullscreen by default; -F false runs in a window",
-    "Draw the start, settings and performance screens at their 800x600 layout and scale them to fit, so text no longer overlaps in fullscreen"
+    "Draw the start, settings and performance screens at their 800x600 layout and scale them to fit, so text no longer overlaps in fullscreen",
+    "Add a final 10-minute test stage on the normal display (45 minutes of play)",
+    "Stop the stage clock while a game is paused; START, Enter or P pauses and resumes",
+    "Home screen has only a participant ID field and PLAY; save files are named <ID>_<date>_<time>",
+    "Ignore input left over from the config picker",
+    "Paste the participant ID with Ctrl+V, Cmd+V or Shift+Insert",
+    "Blink a vertical bar in the participant ID field",
+    "Four scripted instruction screens before practice and scripted screens before each later stage, with the arm's panel before the playing stage",
+    "Instruction screens move on only with START (Enter); Esc returns to the home screen",
+    "Instruction text is larger, one sentence per line, in a narrower column that shrinks to fit the screen",
+    "Show the time left in the current stage in the bottom right corner",
+    "At the end of a session, START (Enter) opens the config picker for the next participant and Esc closes the game, instead of freezing"
   ],
   "input_fix_commit": "063dc8dbdb867dbd00de078195c0ca489fce9835",
   "controller_input_verification": {
@@ -75,6 +89,10 @@
       {
         "name": "playing",
         "seconds": 1680
+      },
+      {
+        "name": "test",
+        "seconds": 600
       }
     ],
     "aid_stages": [
